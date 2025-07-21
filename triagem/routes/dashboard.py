@@ -14,8 +14,8 @@ dashboard_bp = Blueprint(
     template_folder=templates_path  # Caminho absoluto para a pasta templates
 )
 
-#@dashboard_bp.route('/')
-@dashboard_bp.route('/dashboard')
+@dashboard_bp.route('/')
+#@dashboard_bp.route('/dashboard')
 @login_required
 def dashboard():
     search = request.args.get('search', '')

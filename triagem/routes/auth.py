@@ -1,17 +1,17 @@
 # routes/auth.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, current_user, login_required # <--- Adicione aqui!
+from flask_login import login_user, logout_user, current_user, login_required
 from models import User
 from urllib.parse import urlsplit
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, template_folder='../../../templates')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('main.index'))
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -34,7 +34,7 @@ def login():
 
         return redirect(next_page)
 
-    return render_template('login.html')
+    return render_template('login.html', title = 'Entrar')
 
 
 @auth_bp.route('/logout')
