@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Caso #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar aos Casos
+    </a>
+</div>
+<div class="card mb-4">
+    <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+        <h2 class="mb-2 mb-sm-0">Caso #{{ ticket.id }} - {{ ticket.title }}</h2>
+
+        <div class="d-flex align-items-center gap-2">
+            {% if current_user.is_admin %}
+            <form id="statusForm" method="POST" action="{{ url_for('ticket.update_status', ticket_id=ticket.id) }}" class="d-flex align-items-center gap-2">
+                <div class="status-indicator
+                    {% if ticket.status == 'Em Análise' %}bg-success
+                    {% elif ticket.status == 'Em Espera' %}bg-warning
+                    {% else %}bg-secondary{% endif %}">
+                </div>
+                <select name="status" class="form-select" onchange="this.form.submit()" style="width: auto;">
+                    <option value="Em Análise" {% if ticket.status == 'Em Análise' %}selected{% endif %}>Em Análise</option>
+                    <option value="Em Espera" {% if ticket.status == 'Em Espera' %}selected{% endif %}>Em Espera</option>
+                    <option value="Arquivado" {% if ticket.status == 'Arquivado' %}selected{% endif %}>Arquivado</option>
+                </select>
+            </form>
+            {% else %}
+            <div class="d-flex align-items-center gap-2">
+                <div class="status-indicator
+                    {% if ticket.status == 'Em Análise' %}bg-success
+                    {% elif ticket.status == 'Em Espera' %}bg-warning
+                    {% else %}bg-secondary{% endif %}">
+                </div>
+                <span class="badge
+                    {% if ticket.status == 'Em Análise' %}bg-success
+                    {% elif ticket.status == 'Em Espera' %}bg-warning
+                    {% else %}bg-secondary{% endif %}">
+                    {{ ticket.status }}
+                </span>
+            </div>
+            {% endif %}
+
+            {% if current_user.is_admin or ticket.user_id == current_user.id %}
+            <form method="POST" action="{{ url_for('ticket.delete_ticket', ticket_id=ticket.id) }}">
+                <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Tem certeza que deseja deletar este Caso permanentemente?')">
+                    <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Excluir Caso</span> </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p><strong>Título:</strong> {{ ticket.title }}</p>
+                <p><strong>Tipo de Caso:</strong> {{ ticket.case_number }}</p>
+                <p><strong>Delegado: </strong> {{ ticket.delegado }} </p>
+                <p class="d-flex align-items-center">
+                    <strong class="me-2">Prioridade</strong>
+                    {% if current_user.is_admin or ticket.user_id == current_user.id %}
+                    <form id="priorityForm" method="POST" action="{{ url_for('ticket.update_priority', ticket_id=ticket.id) }}" class="d-inline-flex align-items-center">
+                        <span class="priority-icon me-2
+                            {% if ticket.priority == 'Alta' %}priority-high
+                            {% elif ticket.priority == 'Média' %}priority-medium
+                            {% else %}priority-low{% endif %}">
+                        </span>
+                        <select name="priority" class="form-select-sm border-0 bg-transparent p-0" onchange="this.form.submit()">
+                            <option value="Alta" {% if ticket.priority == 'Alta' %}selected{% endif %}>Alta</option>
+                            <option value="Média" {% if ticket.priority == 'Média' %}selected{% endif %}>Média</option>
+                            <option value="Baixa" {% if ticket.priority == 'Baixa' %}selected{% endif %}>Baixa</option>
+                        </select>
+                    </form>
+                    {% else %}
+                    <span class="d-inline-flex align-items-center">
+                        <span class="priority-icon me-2
+                            {% if ticket.priority == 'Alta' %}priority-high
+                            {% elif ticket.priority == 'Média' %}priority-medium
+                            {% else %}priority-low{% endif %}">
+                        </span>
+                        {{ ticket.priority }}
+                    </span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Cadastrado por:</strong> {{ ticket.author.username }}  em  {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Atualizado em:</strong> {{ ticket.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+            </div>
+            {% if current_user.is_admin or ticket.user_id == current_user.id %}
+            <div class="col-12 text-end">
+                <a href="{{ url_for('ticket.edit_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i> Editar Detalhes do Caso
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="mb-4 position-relative">
+            <h4>Relatório do Caso</h4>
+            <div id="reportView" class="border p-3 bg-light text-justify" style="white-space: pre-wrap; text-align: justify;
+                      min-height: 200px; position: relative;">
+                {{ ticket.description }}
+                {% if current_user.is_admin or ticket.user_id == current_user.id %}
+                <div class="position-absolute bottom-0 end-0 m-2">
+                    <button class="btn btn-sm btn-outline-primary btn-edit-report" onclick="enableEdit()">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            <form id="reportEditForm" method="POST" action="{{ url_for('ticket.update_report', ticket_id=ticket.id) }}" class="d-none">
+                <textarea class="form-control mb-2" id="reportEdit" name="description" rows="5"
+                          style="white-space: pre-wrap; text-align: justify; font-family: monospace">{{ ticket.description }}</textarea>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit()">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+
+        {% if ticket.attachments.count() > 0 or current_user.is_admin or ticket.user_id == current_user.id %}
+        <div class="mb-4">
+            <h4>Anexos</h4>
+            {% if ticket.attachments.count() > 0 %}
+            <div id="attachmentsList" class="list-group mb-3">
+            {% for attachment in ticket.attachments.order_by('position') %}
+            <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center attachment-item"
+                 data-id="{{ attachment.id }}">
+                <div class="d-flex align-items-center flex-grow-1 mb-2 mb-sm-0"> <span id="filename_{{ attachment.id }}"
+                          class="me-2 editable-filename"
+                          data-attachment-id="{{ attachment.id }}"
+                          style="cursor: pointer; word-break: break-all;"> {{ attachment.filename }}
+                    </span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('ticket.download_attachment', attachment_id=attachment.id) }}"
+                       class="btn btn-sm btn-outline-primary">Download</a>
+                    <form method="POST" action="{{ url_for('ticket.delete_attachment', attachment_id=attachment.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Tem certeza que deseja deletar este anexo?')">
+                            Deletar
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if current_user.is_admin or ticket.user_id == current_user.id %}
+            <form method="POST" action="{{ url_for('ticket.add_ticket_attachment', ticket_id=ticket.id) }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="ticket_attachments" class="form-label">Adicionar anexos ao ticket</label>
+                    <input class="form-control" type="file" id="ticket_attachments" name="ticket_attachments" multiple>
+                    <div class="form-text">Formatos permitidos: PDF, DOC, JPG, PNG (máx. 1024MB cada)</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Enviar</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h3>Comentários</h3>
+    </div>
+    <div class="card-body">
+        {% for comment in comments %}
+        <div class="mb-3 border-bottom pb-3">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start mb-2">
+                <strong class="mb-1 mb-sm-0">{{ comment.author.username }}</strong>
+                <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+            </div>
+            <p style="word-wrap: break-word;">{{ comment.content }}</p> {% if comment.attachments.count() > 0 %}
+            <div class="mt-3">
+                <h6>Anexos:</h6>
+                <div class="list-group">
+                    {% for attachment in comment.attachments %}
+                     <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+                        <span class="mb-2 mb-sm-0" style="word-break: break-all;">{{ attachment.filename }}</span>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('ticket.download_comment_attachment', attachment_id=attachment.id) }}"
+                               class="btn btn-sm btn-outline-primary">Download</a>
+                            {% if current_user.is_admin or comment.user_id == current_user.id %}
+                            <form method="POST" action="{{ url_for('ticket.delete_comment_attachment', attachment_id=attachment.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Tem certeza que deseja deletar este anexo?')">Deletar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+       <form method="POST" action="{{ url_for('ticket.add_comment', ticket_id=ticket.id) }}">
+         <div class="mb-3">
+            <label for="content" class="form-label">Adicionar Comentário</label>
+            <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+    </div>
+</div>
+
+<a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Voltar</a>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} <script>
+document.addEventListener('DOMContentLoaded', function() {
+
+
+    // Delegar eventos para os formulários dinâmicos
+    document.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('rename-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const attachmentId = form.dataset.attachmentId;
+            const newName = form.querySelector('input').value;
+
+            fetch("{{ url_for('ticket.rename_attachment', ticket_id=ticket.id) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `attachment_id=${attachmentId}&new_name=${encodeURIComponent(newName)}`
+            }).then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            });
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-rename') ||
+            e.target.parentElement.classList.contains('cancel-rename')) {
+            const form = e.target.closest('.rename-form');
+            const attachmentId = form.dataset.attachmentId;
+            const filenameSpan = document.getElementById(`filename_${attachmentId}`);
+            filenameSpan.innerHTML = filenameSpan.querySelector('input').value;
+        }
+    });
+
+
+    const attachmentsList = document.getElementById('attachmentsList');
+
+    if (attachmentsList) {
+        new Sortable(attachmentsList, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            onEnd: function() {
+                const items = attachmentsList.querySelectorAll('.attachment-item');
+                const newOrder = Array.from(items).map((item, index) => ({
+                    id: parseInt(item.dataset.id),
+                    position: index
+                }));
+
+                fetch("{{ url_for('ticket.reorder_attachments', ticket_id=ticket.id) }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(newOrder)
+                }).then(response => response.json())
+                  .then(data => {
+                      if (!data.success) {
+                          console.error('Erro ao reordenar anexos');
+                      }
+                  });
+            }
+        });
+    }
+    // Confirmação antes de deletar anexos
+    const deleteButtons = document.querySelectorAll('.btn-danger');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Tem certeza que deseja deletar este anexo?')) {
+                e.preventDefault();
+            }
+        });
+    });
+
+     // Feedback visual ao alterar o status
+    const statusSelect = document.querySelector('select[name="status"]');
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+});
+
+    // Validação apenas para os anexos do ticket
+    const ticketFileInput = document.getElementById('ticket_attachments');
+    if (ticketFileInput) {
+        ticketFileInput.addEventListener('change', function() {
+            const files = this.files;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileSize = file.size / 1024 / 1024; // in MB
+                if (fileSize > 1024) {
+                    alert('O arquivo ' + file.name + ' excede o tamanho máximo de 1024MB');
+                    this.value = '';
+                    break;
+                }
+
+                const validExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+                const extension = file.name.split('.').pop().toLowerCase();
+                if (!validExtensions.includes(extension)) {
+                    alert('O arquivo ' + file.name + ' tem um tipo não permitido. Por favor, envie apenas PDF, DOC, JPG ou PNG.');
+                    this.value = '';
+                    break;
+                }
+            }
+        });
+    }
+
+    // Funções para editar o relatório
+    function enableEdit() {
+        console.log("Edit button clicked"); // Debug
+        document.getElementById('reportView').classList.add('d-none');
+        document.getElementById('reportEditForm').classList.remove('d-none');
+        document.getElementById('reportEdit').focus();
+    }
+
+    function cancelEdit() {
+        console.log("Cancel button clicked"); // Debug
+        document.getElementById('reportView').classList.remove('d-none');
+        document.getElementById('reportEditForm').classList.add('d-none');
+    }
+
+
+    // Função para ativar a edição de nome de anexo
+    function activateEdit(spanElement) {
+        const attachmentId = spanElement.dataset.attachmentId;
+        const currentName = spanElement.textContent.trim();
+        const nameWithoutExt = currentName.lastIndexOf('.') > 0
+            ? currentName.substring(0, currentName.lastIndexOf('.'))
+            : currentName;
+
+        spanElement.innerHTML = `
+            <form class="d-inline-flex align-items-center rename-form"
+                  data-attachment-id="${attachmentId}"
+                  style="gap: 5px;">
+                <input type="text" class="form-control form-control-sm"
+                       value="${nameWithoutExt}" required
+                       style="min-width: 200px;">
+                <button class="btn btn-success btn-sm" type="submit">
+                    <i class="bi bi-check"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm cancel-rename" type="button">
+                    <i class="bi bi-x"></i>
+                </button>
+            </form>
+        `;
+
+        // Foca no input e seleciona o texto (exceto a extensão)
+        const input = spanElement.querySelector('input');
+        input.focus();
+        input.setSelectionRange(0, nameWithoutExt.length);
+    }
+
+
+    // Delegar eventos para os spans de nome
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('editable-filename')) {
+            activateEdit(e.target);
+        }
+    });
+
+    // Tratar envio do formulário de renomear
+    document.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('rename-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const attachmentId = form.dataset.attachmentId;
+            const newName = form.querySelector('input').value.trim();
+
+            if (!newName) return;
+
+            fetch("{{ url_for('ticket.rename_attachment', ticket_id=ticket.id) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `attachment_id=${attachmentId}&new_name=${encodeURIComponent(newName)}`
+            }).then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            });
+        }
+    });
+
+    // Cancelar edição de nome de anexo
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-rename') ||
+            e.target.parentElement.classList.contains('cancel-rename')) {
+            const form = e.target.closest('.rename-form');
+            const span = form.parentElement;
+            const originalName = form.querySelector('input').value +
+                                (span.textContent.includes('.') ? span.textContent.substring(span.textContent.lastIndexOf('.')) : '');
+            span.innerHTML = originalName;
+        }
+    });
+
+    // Fechar edição ao pressionar Esc
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const activeForm = document.querySelector('.rename-form');
+            if (activeForm) {
+                const cancelBtn = activeForm.querySelector('.cancel-rename');
+                cancelBtn.click();
+            }
+        }
+    });
+
+</script>
+{% endblock %}

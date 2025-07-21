@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_specific.css') }}">
+<style>
+    /* Estilos específicos para este layout */
+    .clickable-row {
+        cursor: pointer;
+    }
+    .clickable-row:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Ajustes para mobile */
+    @media (max-width: 767.98px) { /* Small devices (phones, 768px and down) */
+        h1 {
+            font-size: 1.75rem; /* Reduzir tamanho do título principal */
+            margin-bottom: 1rem;
+        }
+        .d-flex.justify-content-between.align-items-center.mb-4 {
+            flex-direction: column; /* Empilha título e botão "Página Inicial" */
+            align-items: flex-start !important;
+        }
+        .d-flex.justify-content-between.mb-3 {
+            flex-direction: column; /* Empilha botão "Novo Caso" e barra de busca */
+            align-items: stretch !important; /* Estica para largura total */
+        }
+        .d-flex.justify-content-between.mb-3 .btn-primary {
+            width: 100%; /* Botão "Novo Caso" ocupa toda a largura */
+            margin-bottom: 1rem; /* Espaço abaixo do botão */
+        }
+        .d-flex.justify-content-between.mb-3 form {
+            width: 100%; /* Formulário de busca ocupa toda a largura */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap"> {# flex-wrap para quebra de linha em telas pequenas #}
+    <h1>Casos Em Fase De Triagem</h1>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary btn-sm"> {# btn-sm para botão menor em mobile #}
+        <i class="bi bi-house-door"></i> Página Inicial
+    </a>
+</div>
+
+<div class="d-flex justify-content-between mb-3 flex-wrap"> {# flex-wrap para empilhar em telas pequenas #}
+    <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
+    <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex ms-md-auto mt-2 mt-md-0"> {# ms-md-auto para alinhar à direita em md+, mt-2 para espaço em mobile #}
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Buscar casos..." value="{{ request.args.get('search', '') }}">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+{# table-responsive garante rolagem horizontal em telas pequenas #}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Título de Caso</th>
+                <th>Tipo de Caso</th>
+                <th>Status</th>
+                <th>Prioridade</th>
+                <th>Delegado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr class="clickable-row" data-href="{{ url_for('ticket.view_ticket', ticket_id=ticket.id) }}">
+                <td>{{ ticket.id }}</td>
+                <td>{{ ticket.title }}</td>
+                <td>{{ ticket.case_number }}</td>
+                <td>
+                    <span class="badge
+                        {% if ticket.status == 'Em Análise' %}bg-success
+                        {% elif ticket.status == 'Em Espera' %}bg-warning text-dark
+                        {% elif ticket.status == 'Arquivado' %}bg-secondary
+                        {% else %}bg-info{% endif %}">
+                        {{ ticket.status }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge
+                        {% if ticket.priority == 'Alta' %}bg-danger
+                        {% elif ticket.priority == 'Média' %}bg-warning text-dark
+                        {% elif ticket.priority == 'Baixa' %}bg-info
+                        {% else %}bg-secondary{% endif %}">
+                        {{ ticket.priority }}
+                    </span>
+                </td>
+                <td>{{ ticket.delegado }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if tickets|length == 0 and not request.args.get('search') %}
+<div class="alert alert-info mt-3" role="alert">
+    Não há casos em fase de triagem.
+</div>
+{% elif tickets|length == 0 and request.args.get('search') %}
+<div class="alert alert-warning mt-3" role="alert">
+    Nenhum caso encontrado para a busca "{{ request.args.get('search') }}". Tente outro termo.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

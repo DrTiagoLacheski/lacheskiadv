@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{# Bloco para CSS específico do Dashboard - será carregado no <head> do base.html #}
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_specific.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Casos Em Fase De Triagem</h1>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+        <i class="bi bi-house-door"></i> Página Inicial
+    </a>
+</div>
+
+<div class="d-flex justify-content-between mb-3">
+    <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
+    <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex">
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Buscar casos..." value="{{ request.args.get('search', '') }}">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+             <tr class="table-dark">
+                <th>ID</th>
+                <th>Título de Caso</th>
+                <th>Tipo de Caso</th>
+                <th>Status</th>
+                <th>Prioridade</th>
+                <th>Delegado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            {# Adicionando data-href para o JS de clique na linha #}
+            <tr class="clickable-row" data-href="{{ url_for('ticket.view_ticket', ticket_id=ticket.id) }}">
+                <td>{{ ticket.id }}</td>
+                <td>{{ ticket.title }}</td>
+                <td>{{ ticket.case_number }}</td>
+                <td>
+                    <span class="badge
+                        {% if ticket.status == 'Em Análise' %}bg-success
+                        {% elif ticket.status == 'Em Espera' %}bg-warning text-dark
+                        {% elif ticket.status == 'Arquivado' %}bg-secondary
+                        {% else %}bg-info{% endif %}">
+                        {{ ticket.status }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge
+                        {% if ticket.priority == 'Alta' %}bg-danger
+                        {% elif ticket.priority == 'Média' %}bg-warning text-dark
+                        {% elif ticket.priority == 'Baixa' %}bg-info
+                        {% else %}bg-secondary{% endif %}">
+                        {{ ticket.priority }}
+                    </span>
+                </td>
+                <td>{{ ticket.delegado }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if tickets|length == 0 and not request.args.get('search') %}
+<div class="alert alert-info mt-3" role="alert">
+    Não há casos em fase de triagem.
+</div>
+{% elif tickets|length == 0 and request.args.get('search') %}
+<div class="alert alert-warning mt-3" role="alert">
+    Nenhum caso encontrado para a busca "{{ request.args.get('search') }}". Tente outro termo.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{# Bloco para JavaScript específico do Dashboard - será carregado no final do <body> do base.html #}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

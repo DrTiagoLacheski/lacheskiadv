@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Trabalhista</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos temporários para demonstração - você pode mover para seu CSS */
+        .card-option {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .card-option:hover {
+            border-color: #4a90e2;
+            background-color: #f5f9ff;
+        }
+        .card-option.selected {
+            border-color: #2a6fdb;
+            background-color: #e6f0ff;
+        }
+        .card-option h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .card-option p {
+            margin-bottom: 0;
+            color: #666;
+        }
+        .card-options {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>CALCULADORA TRABALHISTA</h1>
+            <p class="subtitle">Preencha os dados para cálculo trabalhista:</p>
+        </header>
+
+        <form id="calcTrabalhistaForm" class="form">
+            <!-- 1. Informações básicas do vínculo -->
+            <section class="form-section">
+                <h2 class="section-title">1. Informações básicas do vínculo</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="data_inicio">Data de início do vínculo</label>
+                        <input type="date" id="data_inicio" name="data_inicio" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data_termino">Data de término do vínculo</label>
+                        <input type="date" id="data_termino" name="data_termino" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="funcao_exercida">Função exercida</label>
+                    <input type="text" id="funcao_exercida" name="funcao_exercida" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="remuneracao">Remuneração percebida (R$)</label>
+                    <input type="number" id="remuneracao" name="remuneracao" class="form-control" step="0.01" min="0" required>
+                </div>
+            </section>
+
+            <!-- 2. Empresa reclamada (ANTIGA 6) -->
+            <section class="form-section">
+                <h2 class="section-title">2. Empresa reclamada</h2>
+
+                <div class="form-group">
+                    <label for="nome_empresa">Nome da empresa</label>
+                    <input type="text" id="nome_empresa" name="nome_empresa" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cnpj_empresa">CNPJ da empresa</label>
+                    <input type="text" id="cnpj_empresa" name="cnpj_empresa" class="form-control" placeholder="00.000.000/0000-00" required>
+                </div>
+            </section>
+
+            <!-- 3. Regime da jornada de trabalho (ANTIGA 2) -->
+            <section class="form-section">
+                <h2 class="section-title">3. Regime da jornada de trabalho</h2>
+                <p class="section-description">Selecione o regime de trabalho aplicável:</p>
+
+                <div class="select-wrapper">
+                    <select id="regime_jornada" name="regime_jornada" class="custom-select" required>
+                        <option value="6x1_44h" selected>6x1 - 44h (Jornada semanal)</option>
+                        <option value="5x2_40h">5x2 - 40h (Jornada semanal)</option>
+                        <option value="12x36">12x36 (Jornada semanal)</option>
+                        <option value="36h">36h (Jornada semanal)</option>
+                        <option value="30h">30h (Jornada semanal)</option>
+                        <option value="25h">25h (Jornada semanal)</option>
+                        <option value="20h">20h (Jornada semanal)</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- 4. Cláusula de compensação -->
+            <section class="form-section">
+                <h2 class="section-title">4. Cláusula de compensação</h2>
+                <p class="section-description">Existe cláusula de compensação de horas no contrato?</p>
+
+                <div class="radio-options">
+                    <label class="radio-option">
+                        <input type="radio" name="clausula_compensacao" value="sim" id="compensacao_sim">
+                        <span class="radio-label">Sim</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="clausula_compensacao" value="nao" id="compensacao_nao" checked>
+                        <span class="radio-label">Não</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- 5. Insalubridade -->
+            <section class="form-section">
+                <h2 class="section-title">5. Insalubridade</h2>
+                <p class="section-description">O trabalho é realizado em condições insalubres?</p>
+
+                <div class="select-wrapper">
+                    <select id="insalubridade" name="insalubridade" class="custom-select" required>
+                        <option value="nao" selected>Não se aplica</option>
+                        <option value="10%">Sim - Grau mínimo (10%)</option>
+                        <option value="20%">Sim - Grau médio (20%)</option>
+                        <option value="40%">Sim - Grau máximo (40%)</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- 6. Depósitos FGTS -->
+            <section class="form-section">
+                <h2 class="section-title">6. Depósitos FGTS</h2>
+                <p class="section-description">Houve depósitos FGTS durante o vínculo?</p>
+
+                <div class="radio-options">
+                    <label class="radio-option">
+                        <input type="radio" name="depositos_fgts" value="sim" id="fgts_sim">
+                        <span class="radio-label">Sim</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="depositos_fgts" value="nao" id="fgts_nao" checked>
+                        <span class="radio-label">Não</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- 7. Hora extra -->
+            <section class="form-section">
+                <h2 class="section-title">7. Hora extra</h2>
+                <p class="section-description">São realizadas horas extras regularmente?</p>
+
+                <div class="radio-options">
+                    <label class="radio-option">
+                        <input type="radio" name="hora_extra" value="sim" id="hora_extra_sim">
+                        <span class="radio-label">Sim</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="hora_extra" value="nao" id="hora_extra_nao" checked>
+                        <span class="radio-label">Não</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- 8. Horários -->
+            <section class="form-section">
+                <h2 class="section-title">8. Horário de trabalho</h2>
+                <p class="section-description">Informe os horários regulares de trabalho:</p>
+
+                <div class="time-grid">
+                    <div class="time-input-group">
+                        <label for="inicio_expediente">Início do expediente</label>
+                        <input type="time" id="inicio_expediente" name="inicio_expediente" class="time-input" required>
+                    </div>
+                    <div class="time-input-group">
+                        <label for="inicio_intervalo">Início do intervalo</label>
+                        <input type="time" id="inicio_intervalo" name="inicio_intervalo" class="time-input" required>
+                    </div>
+                    <div class="time-input-group">
+                        <label for="fim_intervalo">Fim do intervalo</label>
+                        <input type="time" id="fim_intervalo" name="fim_intervalo" class="time-input" required>
+                    </div>
+                    <div class="time-input-group">
+                        <label for="fim_expediente">Fim do expediente</label>
+                        <input type="time" id="fim_expediente" name="fim_expediente" class="time-input" required>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. Natureza da demissão -->
+            <section class="form-section">
+                <h2 class="section-title">9. Natureza da demissão</h2>
+                <p class="section-description">Qual foi o motivo da rescisão contratual?</p>
+
+                <div class="select-wrapper">
+                    <select id="natureza_demissao" name="natureza_demissao" class="custom-select" required>
+                        <option value="rescisao_indireta" selected>Rescisão indireta</option>
+                        <option value="demitido">Demissão sem justa causa</option>
+                        <option value="justa_causa">Demissão por justa causa</option>
+                        <option value="sem_justificativa">Demissão sem justificativa</option>
+                    </select>
+                </div>
+            </section>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Calcular</button>
+                <button type="button" id="limparCampos" class="btn btn-secondary">Limpar Campos</button>
+            </div>
+
+            <div id="statusMessage" class="status-message">
+                Preencha todos os dados e clique em 'Calcular' para obter o resultado
+            </div>
+        </form>
+    </div>
+
+    <div id="resultadoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Cálculo trabalhista concluído!</h2>
+            <p id="modalMessage"></p>
+            <div class="modal-actions">
+                <a id="downloadLink" class="btn btn-primary">Baixar Relatório</a>
+                <button id="abrirArquivo" class="btn btn-secondary">Visualizar Detalhes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para selecionar os cards de opção
+        function selectCardOption(element, inputName) {
+            // Remove a classe 'selected' de todos os cards do grupo
+            const cards = document.querySelectorAll(`[onclick*="${inputName}"]`);
+            cards.forEach(card => card.classList.remove('selected'));
+
+            // Adiciona a classe 'selected' apenas ao card clicado
+            element.classList.add('selected');
+
+            // Atualiza o valor do input hidden correspondente
+            document.getElementById(inputName).value = element.getAttribute('data-value');
+        }
+
+        // Seleciona a primeira opção por padrão ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstCard = document.querySelector('.card-option');
+            if (firstCard) {
+                firstCard.classList.add('selected');
+            }
+        });
+    </script>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

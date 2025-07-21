@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Criar Ticket{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Novo Caso</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="title" class="form-label">Título do Caso</label>
+        <input type="text" class="form-control" id="title" name="title"
+            placeholder="Ex: Juliano Mello X Banco do Brasil" required>
+    </div>
+    <div class="mb-3">
+        <label for="case_number" class="form-label">Tipo de Caso</label>
+        <input type="text" class="form-control" id="case_number" name="case_number" required
+                    placeholder="Ex: Trabalhista, Criminal, Civil, Divórcio...">
+    </div>
+
+    <div class="mb-3">
+        <label for="delegado" class="form-label">Responsável</label>
+        <input type="text" class="form-control" id="delegado" name="delegado"
+                    placeholder="Ex: joão, Tiago...">
+    </div>
+
+    <div class="mb-3">
+        <label for="priority" class="form-label">Prioridade</label>
+        <select class="form-select" id="priority" name="priority" required>
+            <option value="Baixa">Baixa</option>
+            <option value="Média" selected>Média</option>
+            <option value="Alta">Alta</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">Relatório Do Caso</label>
+        <textarea class="form-control" id="description" name="description" rows="5"
+                  Style = "white-space: pre-wrap; text-align: justify; font-family: monospace"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Cadastrar</button>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

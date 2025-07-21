@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Kanban{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_specific.css') }}">
+<style>
+    /* Estilos para o painel Kanban */
+    .kanban-board {
+        display: flex;
+        gap: 1.5rem; /* Espaçamento entre as colunas */
+    }
+
+    .kanban-column {
+        flex: 1;
+        min-width: 280px; /* Largura mínima para telas menores */
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+    }
+
+    .kanban-column-header {
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .kanban-column-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .ticket-list-item {
+        background-color: #fff;
+        /* BORDA MAIS VISÍVEL: A cor foi alterada para um cinza mais escuro (#ced4da) */
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        margin-bottom: 0.75rem; /* Espaçamento entre os cards */
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        /* A borda esquerda de prioridade permanece */
+        border-left-width: 5px;
+    }
+    .ticket-list-item:hover {
+        background-color: #fdfdff;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+    .ticket-meta {
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+
+    /* Cores de Prioridade para a borda esquerda */
+    .priority-high {
+        border-left-color: #dc3545 !important; /* Vermelho */
+    }
+    .priority-medium {
+        border-left-color: #ffc107 !important; /* Amarelo */
+    }
+    .priority-low {
+        border-left-color: #198754 !important; /* Verde */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Casos Em Fase De Triagem</h1>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+        <i class="bi bi-house-door"></i> Página Inicial
+    </a>
+</div>
+
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
+    <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex ms-auto">
+        <div class="input-group" style="max-width: 350px;">
+            <input type="text" name="search" class="form-control" placeholder="Busca rápida..." value="{{ request.args.get('search', '') }}">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="accordion mb-4" id="accordionAdvancedSearch">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button {% if not request.args.get('status_filter') and not request.args.get('priority_filter') %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="{% if request.args.get('status_filter') or request.args.get('priority_filter') %}true{% else %}false{% endif %}" aria-controls="collapseOne">
+                <i class="bi bi-sliders me-2"></i>Filtros Avançados
+            </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse {% if request.args.get('status_filter') or request.args.get('priority_filter') %}show{% endif %}" aria-labelledby="headingOne" data-bs-parent="#accordionAdvancedSearch">
+            <div class="accordion-body">
+                <form method="GET" action="{{ url_for('dashboard.dashboard') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select name="status_filter" id="status_filter" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="Em Análise" {% if request.args.get('status_filter') == 'Em Análise' %}selected{% endif %}>Em Análise</option>
+                                <option value="Em Espera" {% if request.args.get('status_filter') == 'Em Espera' %}selected{% endif %}>Em Espera</option>
+                                <option value="Arquivado" {% if request.args.get('status_filter') == 'Arquivado' %}selected{% endif %}>Arquivado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="priority_filter" class="form-label">Prioridade</label>
+                            <select name="priority_filter" id="priority_filter" class="form-select">
+                                <option value="">Todas</option>
+                                <option value="Alta" {% if request.args.get('priority_filter') == 'Alta' %}selected{% endif %}>Alta</option>
+                                <option value="Média" {% if request.args.get('priority_filter') == 'Média' %}selected{% endif %}>Média</option>
+                                <option value="Baixa" {% if request.args.get('priority_filter') == 'Baixa' %}selected{% endif %}>Baixa</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mt-3 text-end">
+                            <button type="submit" class="btn btn-primary me-2">Aplicar Filtros</button>
+                            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">Limpar Filtros</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if tickets|length == 0 and not request.args.get('search') and not request.args.get('status_filter') and not request.args.get('priority_filter') %}
+<div class="alert alert-info mt-3" role="alert">
+    Não há casos em fase de triagem.
+</div>
+{% elif tickets|length == 0 %}
+<div class="alert alert-warning mt-3" role="alert">
+    Nenhum caso encontrado com os filtros aplicados. Tente ajustar sua busca.
+</div>
+{% else %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <span class="kanban-column-title">Em Análise</span>
+                <span class="badge bg-success rounded-pill">{{ tickets|selectattr('status', 'equalto', 'Em Análise')|list|length }}</span>
+            </div>
+            {% for ticket in tickets if ticket.status == 'Em Análise' %}
+            <div class="ticket-list-item clickable-row {% if ticket.priority == 'Alta' %}priority-high{% elif ticket.priority == 'Média' %}priority-medium{% elif ticket.priority == 'Baixa' %}priority-low{% endif %}" data-href="{{ url_for('ticket.view_ticket', ticket_id=ticket.id) }}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">#{{ ticket.id }} - {{ ticket.title }}</h6>
+                    <span class="badge
+                        {% if ticket.priority == 'Alta' %}bg-danger
+                        {% elif ticket.priority == 'Média' %}bg-warning text-dark
+                        {% else %}bg-info{% endif %}">
+                        {{ ticket.priority }}
+                    </span>
+                </div>
+                <div class="d-flex w-100 justify-content-between ticket-meta mt-1">
+                    <span>Tipo: {{ ticket.case_number }}</span>
+                    <small>{{ ticket.updated_at.strftime('%d/%m') }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <span class="kanban-column-title">Em Espera</span>
+                <span class="badge bg-warning text-dark rounded-pill">{{ tickets|selectattr('status', 'equalto', 'Em Espera')|list|length }}</span>
+            </div>
+            {% for ticket in tickets if ticket.status == 'Em Espera' %}
+            <div class="ticket-list-item clickable-row {% if ticket.priority == 'Alta' %}priority-high{% elif ticket.priority == 'Média' %}priority-medium{% elif ticket.priority == 'Baixa' %}priority-low{% endif %}" data-href="{{ url_for('ticket.view_ticket', ticket_id=ticket.id) }}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">#{{ ticket.id }} - {{ ticket.title }}</h6>
+                    <span class="badge
+                        {% if ticket.priority == 'Alta' %}bg-danger
+                        {% elif ticket.priority == 'Média' %}bg-warning text-dark
+                        {% else %}bg-info{% endif %}">
+                        {{ ticket.priority }}
+                    </span>
+                </div>
+                <div class="d-flex w-100 justify-content-between ticket-meta mt-1">
+                    <span>Tipo: {{ ticket.case_number }}</span>
+                    <small>{{ ticket.updated_at.strftime('%d/%m') }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <span class="kanban-column-title">Arquivado</span>
+                 <span class="badge bg-secondary rounded-pill">{{ tickets|selectattr('status', 'equalto', 'Arquivado')|list|length }}</span>
+            </div>
+            {% for ticket in tickets if ticket.status == 'Arquivado' %}
+            <div class="ticket-list-item clickable-row {% if ticket.priority == 'Alta' %}priority-high{% elif ticket.priority == 'Média' %}priority-medium{% elif ticket.priority == 'Baixa' %}priority-low{% endif %}" data-href="{{ url_for('ticket.view_ticket', ticket_id=ticket.id) }}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">#{{ ticket.id }} - {{ ticket.title }}</h6>
+                    <span class="badge
+                        {% if ticket.priority == 'Alta' %}bg-danger
+                        {% elif ticket.priority == 'Média' %}bg-warning text-dark
+                        {% else %}bg-info{% endif %}">
+                        {{ ticket.priority }}
+                    </span>
+                </div>
+                <div class="d-flex w-100 justify-content-between ticket-meta mt-1">
+                    <span>Tipo: {{ ticket.case_number }}</span>
+                    <small>{{ ticket.updated_at.strftime('%d/%m') }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Script para tornar as linhas clicáveis
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.clickable-row');
+    rows.forEach(row => {
+        row.addEventListener('click', () => {
+            window.location.href = row.dataset.href;
+        });
+    });
+});
+</script>
+{% endblock %}

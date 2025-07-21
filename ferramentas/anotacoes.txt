@@ -1,0 +1,15 @@
+No formulario de SUBSTABELECENTE vamos trabalhar começando perguntando se é COM ou SEM reserva. 
+Resultado de COM o ou SEM vai mudar o Titulo do Documento e final do texto
+
+Aplicação: 
+
+os dados de SUBSTABELECENTE vão permanecer 
+
+Os dados do SUBSTABELECIDO precisam de input (sao os dados do advogado que vai receber)
+então precisa criar um fomulario para SUBSTABELECIDO
+
+Os dados do OUTORGANTE precisam de input (dados do cliente)
+Criar uum formulario para colocar os dados do OUTORGANTE
+
+
+Quando gerar o PDF não esquecer de colocar a logo 

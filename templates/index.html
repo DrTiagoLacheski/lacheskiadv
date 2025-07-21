@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lacheski Advocacia - Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>LACHESKI ADVOCACIA</h1>
+            <p>Portal de Ferramentas e Gerenciamento</p>
+        </header>
+
+        <div class="dashboard">
+            <div class="date-time-card">
+                <div class="calendar-header">
+                    <button id="prev-month-btn" class="calendar-nav-btn">&lt;</button>
+                    <h3 id="month-year"></h3>
+                    <button id="next-month-btn" class="calendar-nav-btn">&gt;</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>D</div>
+                    <div>S</div>
+                    <div>T</div>
+                    <div>Q</div>
+                    <div>Q</div>
+                    <div>S</div>
+                    <div>S</div>
+                </div>
+                <div class="calendar-days" id="calendar-days"></div>
+            </div>
+
+            <div class="appointments-card">
+                <h3>Compromissos do Dia</h3>
+                <div class="appointment">
+                    <p><strong>09:30</strong> - Audiência com Cliente X</p>
+                    <p><strong>14:00</strong> - Reunião com Escritório Y</p>
+                    <p><strong>16:30</strong> - Protocolo de Documentos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-options">
+            <a href="{{ url_for('ferramentas.index') }}" class="main-option-card">
+                <div class="option-icon">⚖️</div>
+                <h3>Ferramentas Jurídicas</h3>
+                <p>Acesse todas as ferramentas automatizadas</p>
+            </a>
+
+            <a href="{{ url_for('dashboard.dashboard') }}" class="main-option-card">
+                <div class="option-icon">📋</div>
+                <h3>Gerenciamento de Triagem</h3>
+                <p>Controle de casos e clientes</p>
+            </a>
+
+            <a href="#" class="main-option-card">
+                <div class="option-icon">📚</div>
+                <h3>Guidelines</h3>
+                <p>Procedimentos e modelos documentais</p>
+            </a>
+
+            <a href="#" class="main-option-card finance-card">
+                <div class="option-icon">💰</div>
+                <h3>Finanças do Escritório</h3>
+                <p>Controle de fluxo de caixa e finanças</p>
+            </a>
+
+            <!-- NOVO CARD - Manipulador de PDF -->
+            <a href="#" class="main-option-card pdf-tools-card">
+                <div class="option-icon">📄</div>
+                <h3>Manipulador de PDF</h3>
+                <p>Compressão, divisão, junção e conversão de PDFs</p>
+            </a>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const monthYearEl = document.getElementById('month-year');
+            const daysEl = document.getElementById('calendar-days');
+            const prevMonthBtn = document.getElementById('prev-month-btn');
+            const nextMonthBtn = document.getElementById('next-month-btn');
+
+            let date = new Date();
+            let month = date.getMonth();
+            let year = date.getFullYear();
+
+            const meses = [
+                "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+            ];
+
+            const renderCalendar = () => {
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const lastDateOfMonth = new Date(year, month + 1, 0).getDate();
+                const lastDayOfPrevMonth = new Date(year, month, 0).getDate();
+
+                monthYearEl.innerText = `${meses[month]} ${year}`;
+
+                let days = "";
+
+                // Dias do mês anterior
+                for (let i = firstDayOfMonth; i > 0; i--) {
+                    days += `<div class="prev-date">${lastDayOfPrevMonth - i + 1}</div>`;
+                }
+
+                // Dias do mês atual
+                for (let i = 1; i <= lastDateOfMonth; i++) {
+                    const today = new Date();
+                    if (i === today.getDate() && year === today.getFullYear() && month === today.getMonth()) {
+                        days += `<div class="today">${i}</div>`;
+                    } else {
+                        days += `<div>${i}</div>`;
+                    }
+                }
+
+                // Calcula e adiciona os dias do próximo mês para completar a grade
+                const totalDaysDisplayed = firstDayOfMonth + lastDateOfMonth;
+                const nextDays = (7 - (totalDaysDisplayed % 7)) % 7;
+                for (let i = 1; i <= nextDays; i++) {
+                    days += `<div class="next-date">${i}</div>`;
+                }
+
+                daysEl.innerHTML = days;
+            };
+
+            prevMonthBtn.addEventListener('click', () => {
+                month--;
+                if (month < 0) {
+                    month = 11;
+                    year--;
+                }
+                renderCalendar();
+            });
+
+            nextMonthBtn.addEventListener('click', () => {
+                month++;
+                if (month > 11) {
+                    month = 0;
+                    year++;
+                }
+                renderCalendar();
+            });
+
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>
