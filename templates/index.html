@@ -4,12 +4,12 @@
 
 {% block styles %}
     {{ super() }} {# Mantém os estilos definidos em base.html, incluindo a nova fonte #}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index_custom.css') }}"> {# Adicione seu CSS específico para index.html aqui #}
-    {# Exemplo: se houver um style.css ou outro CSS que era de index.html, coloque aqui. #}
-    {# <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index_custom.css') }}"> {# Adicione seu CSS específico#}
+    {# Exemplo: se houver um style2.css ou outro CSS que era de index.html, coloque aqui. #}
+    {# <link rel="stylesheet" href="{{ url_for('static', filename='css/style2.css') }}"> #}
 {% endblock %}
 
-{% block content %} {# Todo o conteúdo principal da página index.html vai dentro deste bloco #}
+{% block content %}
     <div class="container">
         <header class="header">
             <h1>LACHESKI ADVOCACIA</h1>
