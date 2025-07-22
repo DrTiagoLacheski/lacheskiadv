@@ -1,13 +1,15 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lacheski Advocacia - Portal</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
+{% extends "base.html" %} {# Indica que este template herda de base.html #}
+
+{% block title %}Lacheski Advocacia - Início{% endblock %} {# Título específico para a página inicial #}
+
+{% block styles %}
+    {{ super() }} {# Mantém os estilos definidos em base.html, incluindo a nova fonte #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index_custom.css') }}"> {# Adicione seu CSS específico para index.html aqui #}
+    {# Exemplo: se houver um style.css ou outro CSS que era de index.html, coloque aqui. #}
+    {# <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> #}
+{% endblock %}
+
+{% block content %} {# Todo o conteúdo principal da página index.html vai dentro deste bloco #}
     <div class="container">
         <header class="header">
             <h1>LACHESKI ADVOCACIA</h1>
@@ -68,7 +70,6 @@
                 <p>Controle de fluxo de caixa e finanças</p>
             </a>
 
-            <!-- NOVO CARD - Manipulador de PDF -->
             <a href="#" class="main-option-card pdf-tools-card">
                 <div class="option-icon">📄</div>
                 <h3>Manipulador de PDF</h3>
@@ -80,6 +81,10 @@
     <footer class="footer">
         <p>© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
     </footer>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Inclui os scripts da base (Bootstrap, SortableJS) #}
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -152,5 +157,4 @@
             renderCalendar();
         });
     </script>
-</body>
-</html>
+{% endblock %}
