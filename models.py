@@ -64,3 +64,20 @@ class Attachment(db.Model):
     # Chaves estrangeiras que podem ser nulas, determinando a quem o anexo pertence
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=True)
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
+
+class Appointment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    appointment_date = db.Column(db.Date, nullable=False, index=True)
+    appointment_time = db.Column(db.String(5), nullable=False)  # Formato HH:MM
+    priority = db.Column(db.String(20), nullable=False, default='Normal')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    author = db.relationship('User')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'content': self.content,
+            'date': self.appointment_date.strftime('%Y-%m-%d'),
+            'time': self.appointment_time
+        }
