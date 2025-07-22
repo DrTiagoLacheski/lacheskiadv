@@ -6,64 +6,43 @@
     <title>Ferramentas Jurídicas Online</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
 <body>
     <div class="container">
         <header class="header">
-    {# #}
-    <div class="row align-items-center mb-4">
-
-        {# #}
-        <div class="col-4">
-            </div>
-
-        {# #}
-        <div class="col-4 text-center">
             <h1>FERRAMENTAS JURÍDICAS ONLINE</h1>
-            <p class="mb-0">Selecione a ferramenta que deseja utilizar:</p>
-        </div>
-
-        {# #}
-        <div class="col-4 text-end">
-            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-house-door"></i> Página Inicial
-            </a>
-        </div>
-
-    </div>
-</header>
+            <p>Selecione a ferramenta que deseja utilizar:</p>
+        </header>
 
         <div class="tools-grid">
             <!-- Serviços Ativos -->
-            <a href="{{ url_for('main.pagina_procuracao') }}" class="tool-card">
+            <a href="{{ url_for('ferramentas.pagina_procuracao') }}" class="tool-card">
                 <div class="tool-icon">📄</div>
                 <h3>Procuração Judicial</h3>
                 <p>Gerar procurações jurídicas em segundos</p>
             </a>
 
-            <a href="{{ url_for('main.pagina_contrato_honorarios') }}" class="tool-card">
+            <a href="{{ url_for('ferramentas.pagina_contrato_honorarios') }}" class="tool-card">
                 <div class="tool-icon">📝</div>
                 <h3>Contrato de Honorários</h3>
                 <p>Gerar contrato de honorário advocatício</p>
             </a>
 
-            <!-- ATUALIZAÇÃO: Link para Substabelecimento agora está ativo -->
-            <a href="{{ url_for('main.pagina_substabelecimento') }}" class="tool-card">
+            <a href="{{ url_for('ferramentas.pagina_substabelecimento') }}" class="tool-card">
                 <div class="tool-icon">📄</div>
                 <h3>Substabelecimento Judicial</h3>
                 <p>Gerar subs com ou sem Reservas de Poderes</p>
             </a>
 
-            <!-- Serviços Em Breve -->
-            <a href="#" class="tool-card coming-soon">
+            <a href="{{ url_for('ferramentas.pagina_calculo_trabalhista') }}" class="tool-card">
                 <div class="tool-icon">🧮</div>
                 <h3>Cálculo Trabalhista</h3>
-                <p>Calcule verbas trabalhistas automaticamente</p>
-                <span class="badge">EM BREVE</span>
+                <p>Gere um relatório preliminar de verbas trabalhistas</p>
             </a>
+            
 
+
+            <!-- Serviços Em Breve -->
             <div class="tool-card coming-soon">
                 <div class="tool-icon">🧾</div>
                 <h3>Recibos de Pagamento</h3>

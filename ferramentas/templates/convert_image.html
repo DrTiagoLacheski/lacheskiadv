@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Converter Imagens para PDF</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .file-input-multi-wrapper {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .file-input-multi-wrapper.has-files {
+            border-color: var(--success-color);
+            background-color: #f0fff4;
+        }
+        .file-input-multi-wrapper input[type="file"] {
+            display: none;
+        }
+        .file-input-multi-wrapper .file-list {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #555;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>CONVERTER IMAGENS PARA PDF</h1>
+            <p>Selecione um ou mais arquivos de imagem (JPG, PNG, etc.) para converter em um único PDF.</p>
+        </header>
+
+        <form id="convertForm" class="form" data-action="{{ url_for('ferramentas.convert_image_route') }}">
+            
+            <div class="form-group">
+                <label for="output_filename">Nome do arquivo PDF final (opcional):</label>
+                <input type="text" id="output_filename" name="output_filename" placeholder="Ex: Documentos_Cliente_XYZ">
+            </div>
+
+            <h2 class="section-title">Selecione os arquivos de imagem</h2>
+            <div class="form-group">
+                <div id="file-wrapper" class="file-input-multi-wrapper">
+                    <label for="image-files" class="btn btn-secondary">Clique aqui para escolher as imagens</label>
+                    <input type="file" name="images" id="image-files" accept="image/jpeg, image/png, image/gif" multiple required>
+                    <div id="file-list-display" class="file-list">Nenhum arquivo selecionado.</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Converter para PDF</button>
+            </div>
+
+            <div id="statusMessage" class="status-message">
+                Selecione um ou mais arquivos de imagem para iniciar.
+            </div>
+        </form>
+    </div>
+
+    <div id="downloadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>PDF gerado com sucesso!</h2>
+            <p id="modalMessage"></p>
+            <div class="modal-actions">
+                <a id="downloadLink" class="btn btn-primary">Baixar PDF</a>
+                <button id="abrirArquivo" class="btn btn-secondary">Abrir Arquivo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/convert_image.js') }}"></script>
+</body>
+</html>

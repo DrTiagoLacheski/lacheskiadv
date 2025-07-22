@@ -1,0 +1,93 @@
+/* static/css/index_custom.css */
+
+/* Estilos para o Calendário */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+.calendar-nav-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #555;
+}
+#month-year {
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+.calendar-weekdays, .calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+}
+.calendar-weekdays div {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #888;
+    padding: 5px 0;
+}
+.calendar-days div {
+    padding: 10px 0;
+    transition: background-color 0.2s;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.calendar-days div:hover:not(.prev-date):not(.next-date):not(.selected) {
+    background-color: #f0f0f0;
+}
+.calendar-days .prev-date,
+.calendar-days .next-date {
+    color: #ccc;
+    cursor: default;
+}
+.calendar-days .today {
+    background-color: #ffc107;
+    color: #fff;
+    font-weight: 600;
+}
+.calendar-days .selected {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Estilos para a lista de compromissos */
+#appointment-list {
+    max-height: 260px; /* Define a altura máxima que você desejar */
+    overflow-y: auto;  /* Adiciona a barra de rolagem vertical APENAS se necessário */
+    padding-right: 15px; /* Espaço para a barra de rolagem não sobrepor os botões */
+    margin-right: -15px;/* Compensa o padding para manter o alinhamento */
+}
+
+.appointment-item {
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+}
+.appointment-item:last-child {
+    border-bottom: none;
+}
+.dropdown-item i {
+    margin-right: 8px;
+}
+
+/* Estilos para o "Modo de Edição" */
+.appointment-item .appointment-actions {
+    display: none; /* Esconde as ações por padrão */
+    gap: 8px;      /* Espaçamento entre os botões */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Quando o card de compromissos tem a classe 'edit-mode-active',
+   mostra os botões de ação */
+.appointments-card.edit-mode-active .appointment-actions {
+    display: flex;
+    opacity: 1;
+}
+
+/* Esconde o botão de "Adicionar" durante o modo de edição */
+.appointments-card.edit-mode-active #add-appointment-btn {
+    display: none;
+}
