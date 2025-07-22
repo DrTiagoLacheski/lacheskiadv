@@ -12,14 +12,26 @@
 <body>
     <div class="container">
         <header class="header">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
+    {# #}
+    <div class="row align-items-center mb-4">
+
+        {# #}
+        <div class="col-4">
+            </div>
+
+        {# #}
+        <div class="col-4 text-center">
             <h1>FERRAMENTAS JURÍDICAS ONLINE</h1>
-            <p>Selecione a ferramenta que deseja utilizar:</p>
+            <p class="mb-0">Selecione a ferramenta que deseja utilizar:</p>
         </div>
-        <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
-            <i class="bi bi-house-door"></i> Página Inicial
-        </a>
+
+        {# #}
+        <div class="col-4 text-end">
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-house-door"></i> Página Inicial
+            </a>
+        </div>
+
     </div>
 </header>
 
