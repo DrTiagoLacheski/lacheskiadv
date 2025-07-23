@@ -42,6 +42,9 @@ class Ticket(db.Model):
     # AJUSTE: Adicionado 'cascade' para exclusão automática no banco de dados
     comments = db.relationship('Comment', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")
     attachments = db.relationship('Attachment', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")
+    # --- NOVO RELACIONAMENTO ADICIONADO ---
+    # Adiciona a relação com a nova tabela de tarefas
+    todos = db.relationship('TodoItem', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")
 
     def update_status(self, new_status):
         self.status = new_status
@@ -98,3 +101,21 @@ class Appointment(db.Model):
             'priority': self.priority,
             'recurring': self.is_recurring  # Novo campo adicionado
         }
+
+    # --- NOVA CLASSE ADICIONADA ---
+
+
+class TodoItem(db.Model):
+    __tablename__ = 'todo_item'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(300), nullable=False)
+    is_completed = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    position = db.Column(db.Integer, default=0, nullable=False)
+
+    # Chave estrangeira para ligar a tarefa a um ticket específico
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
+
+    def __repr__(self):
+        return f'<TodoItem {self.id}: {self.content[:20]}>'
