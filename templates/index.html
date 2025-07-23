@@ -6,14 +6,24 @@
     {{ super() }}
     {# Link para o Font Awesome para ícones #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    {# Link para o seu CSS customizado, que agora contém os estilos do calendário #}
+    {# Link para o seu CSS customizado #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index_custom.css') }}">
+
+    {# Estilo para a logo no cabeçalho #}
+    <style>
+        .header-logo {
+            max-width: 350px; /* Ajuste o tamanho conforme necessário */
+            height: auto;
+            margin-bottom: 10px; /* Espaço entre a logo e o subtítulo */
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
     <div class="container">
         <header class="header">
-            <h1>LACHESKI ADVOCACIA</h1>
+            {# Título H1 substituído pela imagem da logo #}
+            <img src="{{ url_for('static', filename='images/logolacheski.png') }}" alt="Logo Lacheski Advocacia" class="header-logo">
             <p>Portal de Ferramentas e Gerenciamento</p>
         </header>
 

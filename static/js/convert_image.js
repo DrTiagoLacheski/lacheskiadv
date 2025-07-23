@@ -1,23 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('convertForm');
     const statusMessage = document.getElementById('statusMessage');
-    
-    // ATUALIZAÇÃO: Seletores para o novo input múltiplo
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    // Seletores para o input de múltiplos arquivos
     const fileInput = document.getElementById('image-files');
     const fileListDisplay = document.getElementById('file-list-display');
     const fileWrapper = document.getElementById('file-wrapper');
 
-    // Elementos do Modal
-    const modal = document.getElementById('downloadModal');
-    const closeModalButton = modal ? modal.querySelector('.close') : null;
-    const openFileButton = document.getElementById('abrirArquivo');
-
     // Atualiza a lista de arquivos na interface quando selecionados
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
+            // Cria uma lista mais limpa dos nomes dos arquivos
             let fileListHTML = '<strong>Imagens selecionadas:</strong><ul>';
             Array.from(fileInput.files).forEach(file => {
-                fileListHTML += `<li>${file.name}</li>`;
+                // CORREÇÃO: Garante que tanto '<' quanto '>' sejam escapados para segurança.
+                const safeName = file.name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                fileListHTML += `<li>${safeName}</li>`;
             });
             fileListHTML += '</ul>';
             fileListDisplay.innerHTML = fileListHTML;
@@ -31,60 +30,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Evento de submissão do formulário
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
-        const url = form.dataset.action;
 
-        const formData = new FormData(form);
-        const files = formData.getAll('images');
-
-        if (files[0].size === 0) {
+        // Validação melhorada: verifica se a lista de arquivos está vazia
+        if (fileInput.files.length === 0) {
             statusMessage.textContent = 'Erro: Por favor, selecione pelo menos um arquivo de imagem.';
-            statusMessage.className = 'status-message error';
+            statusMessage.className = 'status-message alert alert-warning';
             return;
         }
 
-        statusMessage.textContent = 'Convertendo imagens para PDF...';
-        statusMessage.className = 'status-message processing';
+        if (submitButton) submitButton.disabled = true;
+        statusMessage.textContent = 'Convertendo imagens para PDF, por favor aguarde...';
+        statusMessage.className = 'status-message alert alert-info';
+
+        // FormData é o método correto para enviar arquivos
+        const formData = new FormData(form);
 
         try {
-            const response = await fetch(url, {
+            const response = await fetch(form.dataset.action, {
                 method: 'POST',
-                body: formData,
+                body: formData, // Para FormData, o navegador define o Content-Type automaticamente. Não o defina manualmente.
             });
 
             const result = await response.json();
 
             if (response.ok && result.success) {
-                statusMessage.textContent = 'Conversão concluída com sucesso!';
-                statusMessage.className = 'status-message success';
-                showDownloadModal(result.filename, result.download_url);
+                // --- LÓGICA DE DOWNLOAD DIRETO ---
+                const downloadLink = document.createElement('a');
+                downloadLink.href = result.download_url;
+                downloadLink.download = result.filename;
+
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+
+                // --- MENSAGEM DE SUCESSO ATRASADA ---
+                setTimeout(() => {
+                    statusMessage.textContent = `PDF "${result.filename}" gerado com sucesso!`;
+                    statusMessage.className = 'status-message alert alert-success';
+                }, 500); // Atraso de 500ms para o usuário perceber o download
+
             } else {
-                statusMessage.textContent = result.error || 'Ocorreu um erro desconhecido.';
-                statusMessage.className = 'status-message error';
+                // Exibe o erro retornado pelo backend
+                throw new Error(result.error || 'Ocorreu um erro desconhecido no servidor.');
             }
         } catch (error) {
             console.error('Erro na requisição:', error);
-            statusMessage.textContent = 'Erro de conexão. Verifique a sua internet e tente novamente.';
-            statusMessage.className = 'status-message error';
+            statusMessage.textContent = `Erro: ${error.message}`;
+            statusMessage.className = 'status-message alert alert-danger';
+        } finally {
+            // Reabilita o botão no final da operação, seja sucesso ou falha.
+            if (submitButton) submitButton.disabled = false;
         }
     });
-
-    // Funções do Modal
-    function showDownloadModal(filename, downloadUrl) {
-        if (!modal) return;
-        const modalMessage = modal.querySelector('#modalMessage');
-        const downloadLink = modal.querySelector('#downloadLink');
-        modalMessage.textContent = `O seu ficheiro "${filename}" está pronto.`;
-        downloadLink.href = downloadUrl;
-        if (openFileButton) {
-            openFileButton.onclick = () => window.open(downloadUrl, '_blank');
-        }
-        modal.style.display = 'block';
-    }
-
-    if (closeModalButton) {
-        closeModalButton.onclick = () => { modal.style.display = 'none'; };
-    }
-    window.onclick = (event) => {
-        if (event.target == modal) { modal.style.display = 'none'; }
-    };
 });

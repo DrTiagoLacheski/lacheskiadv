@@ -5,9 +5,10 @@ import os
 import re
 from pypdf import PdfReader, PdfWriter
 from fpdf import FPDF
-from datetime import datetime
+from PIL import Image  # <--- IMPORTANTE: Adicionado para ler as dimensões da imagem
 
-# --- NOVA FUNÇÃO AUXILIAR PARA INTERPRETAR PÁGINAS ---
+
+# --- FUNÇÃO AUXILIAR PARA INTERPRETAR PÁGINAS ---
 def parse_page_ranges(page_string, max_pages):
     """Interpreta uma string de páginas (ex: '1, 3-5, 8') e retorna uma lista de índices (base 0)."""
     pages_to_extract = set()
@@ -19,7 +20,7 @@ def parse_page_ranges(page_string, max_pages):
             try:
                 start, end = map(int, part.split('-'))
                 if start > end:
-                    start, end = end, start # Inverte se estiver fora de ordem
+                    start, end = end, start  # Inverte se estiver fora de ordem
                 for i in range(start, end + 1):
                     if 1 <= i <= max_pages:
                         pages_to_extract.add(i - 1)
@@ -34,19 +35,11 @@ def parse_page_ranges(page_string, max_pages):
                 raise ValueError(f"Número de página inválido: '{part}'")
     return sorted(list(pages_to_extract))
 
-# --- NOVA FUNÇÃO PRINCIPAL PARA DIVIDIR PDF ---
+
+# --- FUNÇÃO PRINCIPAL PARA DIVIDIR PDF ---
 def split_pdf(pdf_path, page_string, output_dir, output_filename_user):
     """
     Extrai páginas de um PDF com base em uma string de seleção.
-
-    Args:
-        pdf_path (str): Caminho para o PDF de entrada.
-        page_string (str): String com as páginas a extrair (ex: "1, 3-5").
-        output_dir (str): Diretório para salvar o arquivo de saída.
-        output_filename_user (str): Nome base do arquivo fornecido pelo usuário.
-
-    Returns:
-        str: Caminho para o novo arquivo PDF, ou None em caso de erro.
     """
     if not os.path.exists(pdf_path):
         print(f"Erro: Arquivo de entrada não encontrado: {pdf_path}")
@@ -55,7 +48,7 @@ def split_pdf(pdf_path, page_string, output_dir, output_filename_user):
     try:
         reader = PdfReader(pdf_path)
         writer = PdfWriter()
-        
+
         total_pages = len(reader.pages)
         pages_to_extract_indices = parse_page_ranges(page_string, total_pages)
 
@@ -66,7 +59,8 @@ def split_pdf(pdf_path, page_string, output_dir, output_filename_user):
             writer.add_page(reader.pages[index])
 
         # Lógica para nome do arquivo
-        base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', output_filename_user) if output_filename_user else "Documento_Dividido"
+        base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_',
+                           output_filename_user) if output_filename_user else "Documento_Dividido"
         output_filename = f"{base_name}.pdf" if not base_name.lower().endswith('.pdf') else base_name
         output_path = os.path.join(output_dir, output_filename)
 
@@ -85,7 +79,6 @@ def split_pdf(pdf_path, page_string, output_dir, output_filename_user):
 
     except Exception as e:
         print(f"Erro ao dividir PDF: {e}")
-        # Lança a exceção para que a rota possa capturá-la e informar o usuário
         raise e
 
 
@@ -93,7 +86,6 @@ def merge_pdfs(file_paths, output_dir, output_filename_user):
     """
     Une múltiplos arquivos PDF em um único arquivo.
     """
-    # ... (código existente sem alterações)
     if not file_paths or len(file_paths) < 2:
         return None
     merger = PdfWriter()
@@ -101,7 +93,8 @@ def merge_pdfs(file_paths, output_dir, output_filename_user):
         for pdf_path in file_paths:
             if os.path.exists(pdf_path):
                 merger.append(pdf_path)
-        base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', output_filename_user) if output_filename_user else "Documento_Unido"
+        base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_',
+                           output_filename_user) if output_filename_user else "Documento_Unido"
         output_filename = f"{base_name}.pdf" if not base_name.lower().endswith('.pdf') else base_name
         output_path = os.path.join(output_dir, output_filename)
         counter = 1
@@ -119,15 +112,18 @@ def merge_pdfs(file_paths, output_dir, output_filename_user):
         merger.close()
 
 
+# --- FUNÇÃO DE CONVERSÃO DE IMAGEM (CORRIGIDA) ---
 def convert_images_to_pdf(image_paths, output_dir, output_filename_user):
     """
-    Converte uma lista de arquivos de imagem em um único arquivo PDF.
+    Converte uma lista de arquivos de imagem em um único arquivo PDF,
+    ajustando cada imagem para caber na página A4 sem cortes e mantendo a proporção.
     """
-    # ... (código existente sem alterações)
     if not image_paths:
         return None
     try:
-        base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_', output_filename_user) if output_filename_user else "Documento_Convertido"
+        # Lógica para nome do arquivo (sem alterações)
+        base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_',
+                           output_filename_user) if output_filename_user else "Documento_Convertido"
         output_filename = f"{base_name}.pdf" if not base_name.lower().endswith('.pdf') else base_name
         output_path = os.path.join(output_dir, output_filename)
         counter = 1
@@ -136,18 +132,56 @@ def convert_images_to_pdf(image_paths, output_dir, output_filename_user):
             name, ext = os.path.splitext(original_path)
             output_path = f"{name}_{counter}{ext}"
             counter += 1
-        pdf = FPDF()
+
+        pdf = FPDF(orientation='P', unit='mm', format='A4')
+
+        # Dimensões úteis da página A4 (210x297mm) com margens de 10mm de cada lado
+        page_width_mm = 210 - 20
+        page_height_mm = 297 - 20
+
         for image_path in image_paths:
-            if os.path.exists(image_path):
-                pdf.add_page()
-                pdf.image(image_path, x=10, y=10, w=190)
+            if not os.path.exists(image_path):
+                continue
+
+            # Usa Pillow para obter as dimensões da imagem em pixels
+            with Image.open(image_path) as img:
+                img_width_px, img_height_px = img.size
+
+            # Calcula a proporção da imagem
+            aspect_ratio = img_width_px / img_height_px
+
+            # Determina as novas dimensões em mm para caber na página, mantendo a proporção
+            if aspect_ratio > 1:  # Imagem é paisagem (mais larga que alta)
+                new_width = page_width_mm
+                new_height = new_width / aspect_ratio
+                # Se, mesmo assim, a altura for maior que a da página, recalcula com base na altura
+                if new_height > page_height_mm:
+                    new_height = page_height_mm
+                    new_width = new_height * aspect_ratio
+            else:  # Imagem é retrato (mais alta que larga) ou quadrada
+                new_height = page_height_mm
+                new_width = new_height * aspect_ratio
+                # Se, mesmo assim, a largura for maior que a da página, recalcula com base na largura
+                if new_width > page_width_mm:
+                    new_width = page_width_mm
+                    new_height = new_width / aspect_ratio
+
+            # Calcula a posição para centralizar a imagem na página
+            x_pos = (210 - new_width) / 2
+            y_pos = (297 - new_height) / 2
+
+            pdf.add_page()
+            pdf.image(image_path, x=x_pos, y=y_pos, w=new_width, h=new_height)
+
         if not pdf.pages:
-             return None
+            return None
+
         pdf.output(output_path)
         return output_path
     except Exception as e:
         print(f"Ocorreu um erro durante a conversão das imagens para PDF: {e}")
-        return None
+        # Lança a exceção para que a rota possa capturá-la e informar o usuário
+        raise e
 
 
 def cleanup_files(file_paths):
@@ -160,4 +194,3 @@ def cleanup_files(file_paths):
                 os.remove(path)
         except Exception as e:
             print(f"Erro ao remover o arquivo {path}: {e}")
-

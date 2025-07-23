@@ -1,26 +1,28 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unir Arquivos PDF</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base_ferramentas.html" %}
+
+{% block title %}Unir Arquivos PDF{% endblock %}
+
+{% block styles %}
+    {{ super() }}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos para o novo campo de upload múltiplo */
         .file-input-multi-wrapper {
             border: 2px dashed #ddd;
             border-radius: 8px;
             padding: 20px;
             text-align: center;
+            cursor: pointer;
             transition: border-color 0.3s, background-color 0.3s;
+        }
+        .file-input-multi-wrapper:hover {
+            border-color: var(--secondary-color);
         }
         .file-input-multi-wrapper.has-files {
             border-color: var(--success-color);
             background-color: #f0fff4;
         }
         .file-input-multi-wrapper input[type="file"] {
-            display: none; /* O input real fica escondido */
+            display: none;
         }
         .file-input-multi-wrapper .file-list {
             margin-top: 15px;
@@ -29,54 +31,45 @@
             text-align: left;
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>FERRAMENTA PARA UNIR PDFs</h1>
-            <p>Selecione dois ou mais arquivos PDF para unir em um único documento.</p>
-        </header>
+{% endblock %}
 
-        <form id="mergeForm" class="form" data-action="{{ url_for('ferramentas.merge_pdf_route') }}">
-            
-            <div class="form-group">
-                <label for="output_filename">Nome do arquivo final (opcional):</label>
-                <input type="text" id="output_filename" name="output_filename" placeholder="Ex: Processo_Cliente_XYZ">
-            </div>
+{% block content %}
+    <header class="header">
+        <h1>FERRAMENTA PARA UNIR PDFs</h1>
+        <p>Selecione dois ou mais arquivos PDF para unir em um único documento.</p>
+    </header>
 
-            <h2 class="section-title">Selecione os arquivos</h2>
-            
-            <!-- ATUALIZAÇÃO: Campo único para seleção múltipla -->
-            <div class="form-group">
-                <div id="file-wrapper" class="file-input-multi-wrapper">
-                    <label for="pdf-files" class="btn btn-secondary">Clique aqui para escolher os arquivos</label>
-                    <input type="file" id="pdf-files" name="pdfs" accept=".pdf" multiple required>
-                    <div id="file-list-display" class="file-list">Nenhum arquivo selecionado.</div>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Unir PDFs</button>
-            </div>
-
-            <div id="statusMessage" class="status-message">
-                Selecione pelo menos 2 arquivos para unir.
-            </div>
-        </form>
-    </div>
-
-    <div id="downloadModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Documento unido com sucesso!</h2>
-            <p id="modalMessage"></p>
-            <div class="modal-actions">
-                <a id="downloadLink" class="btn btn-primary">Baixar Documento</a>
-                <button id="abrirArquivo" class="btn btn-secondary">Abrir Arquivo</button>
-            </div>
+    <form id="mergeForm" class="form" data-action="{{ url_for('ferramentas.merge_pdf_route') }}">
+        
+        <div class="form-group">
+            <label for="output_filename">Nome do arquivo final (opcional):</label>
+            <input type="text" id="output_filename" name="output_filename" placeholder="Ex: Processo_Cliente_XYZ">
         </div>
-    </div>
 
+        <h2 class="section-title">Selecione os arquivos</h2>
+        
+        <div class="form-group">
+            <label for="pdf-files" id="file-wrapper" class="file-input-multi-wrapper">
+                <span class="btn btn-secondary">Clique aqui para escolher os arquivos</span>
+                <input type="file" id="pdf-files" name="pdfs" accept=".pdf" multiple required>
+                <div id="file-list-display" class="file-list">Nenhum arquivo selecionado.</div>
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Unir PDFs</button>
+            <a href="{{ url_for('ferramentas.pagina_ferramentas_pdf') }}" class="btn btn-outline-secondary d-flex align-items-center">
+                <i class="bi bi-arrow-left-circle me-2"></i>Voltar
+            </a>
+        </div>
+
+        <div id="statusMessage" class="status-message">
+            Selecione pelo menos 2 arquivos para unir.
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
     <script src="{{ url_for('static', filename='js/pdf_tools.js') }}"></script>
-</body>
-</html>
+{% endblock %}
