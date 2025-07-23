@@ -8,7 +8,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
                    flash, send_from_directory, current_app, abort, jsonify)
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models import db, Ticket, Comment, Attachment
+from models import db, Ticket, Comment, Attachment, TodoItem
 import shutil
 
 # Ajuste da definição do Blueprint para encontrar os templates corretamente
@@ -178,7 +178,9 @@ def delete_attachment(attachment_id):
 def view_ticket(ticket_id):
     ticket = Ticket.query.get_or_404(ticket_id)
     comments = ticket.comments.order_by(Comment.created_at).all()
-    return render_template('ticket.html', ticket=ticket, comments=comments)
+    todos = ticket.todos.order_by(TodoItem.position.asc()).all()
+
+    return render_template('ticket.html', ticket=ticket, comments=comments, todos=todos)
 
 
 @ticket_bp.route('/<int:ticket_id>/edit', methods=['GET', 'POST'])
@@ -287,3 +289,82 @@ def reorder_attachments(ticket_id):
             attachment.position = item.get('position')
     db.session.commit()
     return jsonify({'success': True})
+
+@ticket_bp.route('/<int:ticket_id>/todos/add', methods=['POST'])
+@login_required
+def add_todo(ticket_id):
+    ticket = Ticket.query.get_or_404(ticket_id)
+    if not (current_user.is_admin or ticket.user_id == current_user.id):
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+    data = request.get_json()
+    content = data.get('content')
+    if not content:
+        return jsonify({'success': False, 'error': 'Content is required'}), 400
+
+    new_todo = TodoItem(content=content, ticket_id=ticket.id)
+    db.session.add(new_todo)
+    db.session.commit()
+
+    # Retorna o objeto criado para o frontend poder adicioná-lo dinamicamente
+    return jsonify({
+        'success': True,
+        'todo': {
+            'id': new_todo.id,
+            'content': new_todo.content,
+            'is_completed': new_todo.is_completed
+        }
+    }), 201
+
+@ticket_bp.route('/todos/<int:todo_id>/update', methods=['POST'])
+@login_required
+def update_todo(todo_id):
+    todo = TodoItem.query.get_or_404(todo_id)
+    ticket = todo.ticket
+    if not (current_user.is_admin or ticket.user_id == current_user.id):
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+    data = request.get_json()
+    is_completed = data.get('is_completed')
+    if is_completed is None:
+        return jsonify({'success': False, 'error': 'is_completed is required'}), 400
+
+    todo.is_completed = is_completed
+    db.session.commit()
+    return jsonify({'success': True})
+
+@ticket_bp.route('/todos/<int:todo_id>/delete', methods=['POST'])
+@login_required
+def delete_todo(todo_id):
+    todo = TodoItem.query.get_or_404(todo_id)
+    ticket = todo.ticket
+    if not (current_user.is_admin or ticket.user_id == current_user.id):
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+    db.session.delete(todo)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@ticket_bp.route('/<int:ticket_id>/reorder_todos', methods=['POST'])
+@login_required
+def reorder_todos(ticket_id):
+    """Recebe a nova ordem das tarefas e atualiza no banco de dados."""
+    ticket = Ticket.query.get_or_404(ticket_id)
+    if not (current_user.is_admin or ticket.user_id == current_user.id):
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+    new_order = request.get_json()
+    if not new_order:
+        return jsonify({'success': False, 'error': 'Invalid data'}), 400
+
+    try:
+        for item_data in new_order:
+            todo_item = TodoItem.query.get(item_data.get('id'))
+            if todo_item and todo_item.ticket_id == ticket.id:
+                todo_item.position = item_data.get('position')
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Erro ao reordenar tarefas: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500

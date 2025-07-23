@@ -5,19 +5,29 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket.css') }}">
+{# Estilos para botões, formulários e o novo checklist #}
+
 {% endblock %}
 
 {% block content %}
+{# Adicionados os data-attributes para as novas rotas do checklist #}
 <div id="ticket-container"
      data-ticket-id="{{ ticket.id }}"
      data-reorder-url="{{ url_for('ticket.reorder_attachments', ticket_id=ticket.id) }}"
-     data-rename-url="{{ url_for('ticket.rename_attachment', ticket_id=ticket.id) }}">
+     data-rename-url="{{ url_for('ticket.rename_attachment', ticket_id=ticket.id) }}"
+     data-add-todo-url="{{ url_for('ticket.add_todo', ticket_id=ticket.id) }}"
+     data-update-todo-url-base="/ticket/todos"
+     data-delete-todo-url-base="/ticket/todos"
+     data-reorder-todos-url="{{ url_for('ticket.reorder_todos', ticket_id=ticket.id) }}">
+
 
     <div class="mb-3">
         <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Voltar aos Casos
         </a>
     </div>
+
+    {# Card de Detalhes do Caso e Relatório #}
     <div class="card mb-4">
         <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
             <h2 class="mb-2 mb-sm-0">Caso #{{ ticket.id }} - {{ ticket.title }}</h2>
@@ -89,7 +99,7 @@
                     {{ ticket.description }}
                     {% if current_user.is_admin or ticket.user_id == current_user.id %}
                     <div class="position-absolute bottom-0 end-0 m-2">
-                        <button class="btn btn-sm btn-outline-primary btn-edit-report" onclick="enableEdit()">
+                        <button class="btn btn-xs btn-outline-primary btn-edit-report" onclick="enableEdit()">
                             <i class="bi bi-pencil"></i> Editar
                         </button>
                     </div>
@@ -103,54 +113,93 @@
                     </div>
                 </form>
             </div>
-            {% if ticket.attachments.count() > 0 or current_user.is_admin or ticket.user_id == current_user.id %}
-            <div class="mb-4">
-                <h4>Anexos</h4>
-                {% if ticket.attachments.count() > 0 %}
-                <div id="attachmentsList" class="list-group mb-3">
-                {% for attachment in ticket.attachments.order_by('position') %}
-                <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center attachment-item" data-id="{{ attachment.id }}">
-                    <div class="d-flex align-items-center mb-2 mb-sm-0 me-sm-2 flex-grow-1">
-                        <span id="filename_{{ attachment.id }}"
-                              class="editable-filename"
-                              style="word-break: break-all;"
-                              data-bs-toggle="modal"
-                              data-bs-target="#renameAttachmentModal"
-                              data-attachment-id="{{ attachment.id }}"
-                              data-attachment-name="{{ attachment.filename }}">
-                            {{ attachment.filename }}
-                        </span>
-                    </div>
+        </div>
+    </div>
 
-                    <div class="d-flex gap-2 mt-2 mt-sm-0 flex-wrap">
-                        <a href="{{ url_for('ticket.download_attachment', attachment_id=attachment.id) }}"
-                           class="btn btn-outline-primary">Download</a>
-                        <form method="POST" action="{{ url_for('ticket.delete_attachment', attachment_id=attachment.id) }}" class="d-inline">
-                            <button type="submit" class="btn btn-danger"
-                                    onclick="return confirm('Tem certeza que deseja deletar este anexo?')">
-                                Deletar
-                            </button>
-                        </form>
-                    </div>
+    {# Card de Anexos #}
+    {% if ticket.attachments.count() > 0 or current_user.is_admin or ticket.user_id == current_user.id %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Anexos</h4>
+        </div>
+        <div class="card-body">
+            {% if ticket.attachments.count() > 0 %}
+            <div id="attachmentsList" class="list-group mb-3">
+            {% for attachment in ticket.attachments.order_by('position') %}
+            <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center attachment-item" data-id="{{ attachment.id }}">
+                <div class="d-flex align-items-center mb-2 mb-sm-0 me-sm-2 flex-grow-1">
+                    <span class="editable-filename" style="word-break: break-all;">
+                        {{ attachment.filename }}
+                    </span>
+                    <form class="rename-form d-none" data-attachment-id="{{ attachment.id }}">
+                        <input type="text" class="form-control form-control-sm" value="{{ attachment.filename.rsplit('.', 1)[0] }}" required>
+                    </form>
                 </div>
-                {% endfor %}
+                <div class="d-flex gap-2 mt-2 mt-sm-0 flex-wrap">
+                    <a href="{{ url_for('ticket.download_attachment', attachment_id=attachment.id) }}"
+                       class="btn btn-sm btn-outline-primary">Download</a>
+                    <form method="POST" action="{{ url_for('ticket.delete_attachment', attachment_id=attachment.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Tem certeza que deseja deletar este anexo?')">
+                            Deletar
+                        </button>
+                    </form>
                 </div>
-                {% endif %}
-
-                {% if current_user.is_admin or ticket.user_id == current_user.id %}
-                <form method="POST" action="{{ url_for('ticket.add_ticket_attachment', ticket_id=ticket.id) }}" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="ticket_attachments" class="form-label">Adicionar anexos ao ticket</label>
-                        <input class="form-control" type="file" id="ticket_attachments" name="ticket_attachments" multiple>
-                        <div class="form-text">Formatos permitidos: PDF, DOC, JPG, PNG (máx. 1024MB cada)</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Enviar</button>
-                </form>
-                {% endif %}
             </div>
+            {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if current_user.is_admin or ticket.user_id == current_user.id %}
+            <form id="addAttachmentForm" method="POST" action="{{ url_for('ticket.add_ticket_attachment', ticket_id=ticket.id) }}" enctype="multipart/form-data">
+                <input class="d-none" type="file" id="ticket_attachments" name="ticket_attachments" multiple>
+                <label for="ticket_attachments" class="btn btn-success">
+                    <i class="bi bi-paperclip"></i> Anexar Arquivos
+                </label>
+                <div id="attachment-upload-status" class="form-text mt-2">
+                    Formatos permitidos: PDF, DOC, JPG, PNG (máx. 1024MB cada)
+                </div>
+            </form>
             {% endif %}
         </div>
     </div>
+    {% endif %}
+
+    <!-- ================================================== -->
+    <!-- ========= SEÇÃO DE CHECKLIST (AGORA AQUI) ======== -->
+    <!-- ================================================== -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Checklist de Tarefas</h4>
+        </div>
+        <div class="card-body">
+            <div id="todoListContainer">
+                {% if todos %}
+                    {% for todo in todos %}
+                    <div class="todo-item {% if todo.is_completed %}completed{% endif %}" data-id="{{ todo.id }}">
+                        <input class="form-check-input" type="checkbox" id="todo-{{ todo.id }}" {% if todo.is_completed %}checked{% endif %}>
+                        <label class="form-check-label" for="todo-{{ todo.id }}">
+                            {{ todo.content }}
+                        </label>
+                        <button class="btn btn-xs btn-outline-danger delete-todo-btn">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted" id="no-todos-message">Nenhuma tarefa adicionada ainda.</p>
+                {% endif %}
+            </div>
+            {% if current_user.is_admin or ticket.user_id == current_user.id %}
+            <form id="addTodoForm" class="d-flex gap-2 mt-3">
+                <input type="text" id="newTodoContent" class="form-control" placeholder="Adicionar nova tarefa..." required>
+                <button type="submit" class="btn btn-primary">Adicionar</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Card de Comentários #}
     <div class="card mb-4">
         <div class="card-header">
             <h3>Comentários</h3>
@@ -163,7 +212,6 @@
                     <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
                 </div>
                 <p style="word-wrap: break-word;">{{ comment.content }}</p>
-
                 </div>
             {% endfor %}
 
@@ -176,33 +224,8 @@
             </form>
         </div>
     </div>
-    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Voltar</a>
 
-    <div class="modal fade" id="renameAttachmentModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="renameModalLabel">Renomear Anexo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="renameAttachmentForm">
-                    <div class="modal-body">
-                        <p>Você está renomeando o arquivo: <strong id="originalFilename"></strong></p>
-                        <p class="text-muted small">A extensão do arquivo será mantida automaticamente.</p>
-                        <input type="hidden" id="renameAttachmentIdInput" name="attachment_id">
-                        <div class="mb-3">
-                            <label for="newAttachmentNameInput" class="form-label">Novo nome do arquivo:</label>
-                            <input type="text" class="form-control" id="newAttachmentNameInput" name="new_name" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Voltar</a>
 </div>
 {% endblock %}
 
