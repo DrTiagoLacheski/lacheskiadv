@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -16,6 +17,8 @@ class User(UserMixin, db.Model):
     tickets = db.relationship('Ticket', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     attachments = db.relationship('Attachment', backref='author', lazy='dynamic')
+    # Adicionado o relacionamento com Appointment
+    appointments = db.relationship('Appointment', backref='user', lazy='dynamic', cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -23,6 +26,7 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Verifica se a senha fornecida corresponde ao hash armazenado."""
         return check_password_hash(self.password_hash, password)
+
 
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,6 +47,7 @@ class Ticket(db.Model):
         self.status = new_status
         self.updated_at = datetime.utcnow()
 
+
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text)
@@ -52,11 +57,12 @@ class Comment(db.Model):
     # A relação agora aponta para o modelo 'Attachment' unificado
     attachments = db.relationship('Attachment', backref='comment', lazy='dynamic', cascade="all, delete-orphan")
 
+
 # Modelo de anexo unificado. A classe CommentAttachment foi removida.
 class Attachment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(100), nullable=False)
-    path = db.Column(db.String(200), nullable=False) # A coluna se chama 'path'
+    path = db.Column(db.String(200), nullable=False)  # A coluna se chama 'path'
     position = db.Column(db.Integer, default=0)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -65,20 +71,30 @@ class Attachment(db.Model):
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=True)
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
 
+
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     appointment_date = db.Column(db.Date, nullable=False, index=True)
     appointment_time = db.Column(db.String(5), nullable=False)  # Formato HH:MM
     priority = db.Column(db.String(20), nullable=False, default='Normal')
+    # --- NOVO CAMPO ---
+    # Este campo armazenará se o compromisso é recorrente (mensal)
+    is_recurring = db.Column(db.Boolean, default=False, nullable=False)
+
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    author = db.relationship('User')
+
+    # A relação foi movida para o modelo User para seguir a convenção
+    # author = db.relationship('User') # Removido daqui
 
     def to_dict(self):
+        # --- ALTERAÇÃO AQUI ---
+        #novo campo ao dicionário que é enviado como JSON
         return {
             'id': self.id,
             'content': self.content,
             'date': self.appointment_date.strftime('%Y-%m-%d'),
             'time': self.appointment_time,
-            'priority': self.priority
+            'priority': self.priority,
+            'recurring': self.is_recurring  # Novo campo adicionado
         }
