@@ -30,24 +30,31 @@
                 <div class="calendar-days" id="calendar-days"></div>
             </div>
 
-            <div class="appointments-card" id="appointments-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h3>Compromissos do Dia</h3>
-                    <div class="d-flex gap-2">
-                        <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
-                                data-bs-toggle="modal" data-bs-target="#appointmentModal">
-                             <i class="bi bi-plus-lg"></i>
-                        </button>
 
-                        <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle">
-                             <i class="bi bi-gear-fill"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="appointment-list">
-                    <p class="text-muted">Selecione um dia no calendário para ver os compromissos.</p>
-                </div>
-            </div>
+<div class="appointments-card" id="appointments-card">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>Compromissos do Dia</h3>
+        <div class="d-flex gap-2">
+            <!-- NOVO BOTÃO "EXCLUIR TODOS" -->
+            <button id="delete-all-btn" class="btn btn-danger btn-sm">
+                <i class="bi bi-trash3-fill"></i> Excluir Todos
+            </button>
+
+            <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
+                    data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                 <i class="bi bi-plus-lg"></i>
+            </button>
+
+            <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle">
+                 <i class="bi bi-gear-fill"></i>
+            </button>
+        </div>
+    </div>
+    <div id="appointment-list">
+        <!-- ... -->
+    </div>
+
+</div>
         </div>
 
         <div class="main-options">
@@ -87,18 +94,35 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form id="appointment-form">
-              <input type="hidden" id="appointment-id">
-              <div class="mb-3">
-                <label for="appointment-time" class="form-label">Horário (HH:MM)</label>
-                <input type="time" class="form-control" id="appointment-time" required>
-              </div>
-              <div class="mb-3">
-                <label for="appointment-content" class="form-label">Descrição</label>
-                <textarea class="form-control" id="appointment-content" rows="3" required></textarea>
-              </div>
-            </form>
+              <form id="appointment-form">
+                  <input type="hidden" id="appointment-id">
+                  <div class="mb-3">
+                      <label for="appointment-time" class="form-label">Horário (HH:MM)</label>
+                      <input type="time" class="form-control" id="appointment-time" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="appointment-content" class="form-label">Descrição</label>
+                      <textarea class="form-control" id="appointment-content" rows="3" required></textarea>
+                  </div>
+
+                  <div class="mb-3">
+                      <label for="appointment-priority" class="form-label">Prioridade</label>
+                      <select class="form-select" id="appointment-priority">
+                          <option value="Normal" selected>Normal</option>
+                          <option value="Importante">Importante</option>
+                          <option value="Urgente">Urgente</option>
+                      </select>
+                  </div>
+
+                  <div class="mb-3 form-check">
+                      <input type="checkbox" class ="form-check-input" id="appointment-recurring">
+                      <label class="form-check-label" for="appointment-recurring">Repetir mensalmente</label>
+                  </div>
+
+              </form>
           </div>
+
+
           <div class="modal-footer justify-content-between">
             <button type="button" class="btn btn-danger" id="delete-appointment-modal-btn">Excluir</button>
             <div>
