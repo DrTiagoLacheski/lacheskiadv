@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         statusMessage.textContent = 'Convertendo imagens para PDF, por favor aguarde...';
         statusMessage.className = 'status-message alert alert-info';
 
-        // FormData é o método correto para enviar arquivos
+
         const formData = new FormData(form);
 
         try {
