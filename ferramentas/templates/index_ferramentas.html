@@ -1,115 +1,106 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ferramentas Jurídicas Online</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base_ferramentas.html" %}
+
+{% block title %}Ferramentas Jurídicas Online{% endblock %}
+
+{% block styles %}
+    {{ super() }} {# Mantém os estilos do base_ferramentas.html (Bootstrap, style.css, etc.) #}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>FERRAMENTAS JURÍDICAS ONLINE</h1>
-            <p>Selecione a ferramenta que deseja utilizar:</p>
-        </header>
+{% endblock %}
 
-        <div class="tools-grid">
-            <!-- Serviços Ativos -->
-            <a href="{{ url_for('ferramentas.pagina_procuracao') }}" class="tool-card">
-                <div class="tool-icon">📄</div>
-                <h3>Procuração Judicial</h3>
-                <p>Gerar procurações jurídicas em segundos</p>
-            </a>
+{% block content %}
+    <header class="header">
+        <h1>FERRAMENTAS JURÍDICAS ONLINE</h1>
+        <p>Selecione a ferramenta que deseja utilizar:</p>
+    </header>
 
-            <a href="{{ url_for('ferramentas.pagina_contrato_honorarios') }}" class="tool-card">
-                <div class="tool-icon">📝</div>
-                <h3>Contrato de Honorários</h3>
-                <p>Gerar contrato de honorário advocatício</p>
-            </a>
+    <div class="tools-grid">
+        <!-- Serviços Ativos -->
+        <a href="{{ url_for('ferramentas.pagina_procuracao') }}" class="tool-card">
+            <div class="tool-icon">📄</div>
+            <h3>Procuração Judicial</h3>
+            <p>Gerar procurações jurídicas em segundos</p>
+        </a>
 
-            <a href="{{ url_for('ferramentas.pagina_substabelecimento') }}" class="tool-card">
-                <div class="tool-icon">📄</div>
-                <h3>Substabelecimento Judicial</h3>
-                <p>Gerar subs com ou sem Reservas de Poderes</p>
-            </a>
+        <a href="{{ url_for('ferramentas.pagina_contrato_honorarios') }}" class="tool-card">
+            <div class="tool-icon">📝</div>
+            <h3>Contrato de Honorários</h3>
+            <p>Gerar contrato de honorário advocatício</p>
+        </a>
 
-            <a href="{{ url_for('ferramentas.pagina_calculo_trabalhista') }}" class="tool-card">
-                <div class="tool-icon">🧮</div>
-                <h3>Cálculo Trabalhista</h3>
-                <p>Gere um relatório preliminar de verbas trabalhistas</p>
-            </a>
-            
+        <a href="{{ url_for('ferramentas.pagina_substabelecimento') }}" class="tool-card">
+            <div class="tool-icon">📄</div>
+            <h3>Substabelecimento Judicial</h3>
+            <p>Gerar subs com ou sem Reservas de Poderes</p>
+        </a>
 
+        <a href="{{ url_for('ferramentas.pagina_calculo_trabalhista') }}" class="tool-card">
+            <div class="tool-icon">🧮</div>
+            <h3>Cálculo Trabalhista</h3>
+            <p>Gere um relatório preliminar de verbas trabalhistas</p>
+        </a>
+        
+        <!-- Serviços Em Breve -->
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">🧾</div>
+            <h3>Recibos de Pagamento</h3>
+            <p>Crie recibos válidos para diversos fins jurídicos</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <!-- Serviços Em Breve -->
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">🧾</div>
-                <h3>Recibos de Pagamento</h3>
-                <p>Crie recibos válidos para diversos fins jurídicos</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">🧾</div>
+            <h3>Habilitação Processual</h3>
+            <p>Simples pedido de habilitação nos autos</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">🧾</div>
-                <h3>Habilitação Processual</h3>
-                <p>Simples pedido de habilitação nos autos</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">🧾</div>
+            <h3>Gerador de Declaração de Hipossuficiência</h3>
+            <p>Declarações para comprovação de hipossuficiência</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">🧾</div>
-                <h3>Gerador de Declaração de Hipossuficiência</h3>
-                <p>Declarações para comprovação de hipossuficiência</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">⚖️</div>
+            <h3>Defesa Prévia Criminal</h3>
+            <p>Defesa sem adentrar mérito processual e sem ilegalidades</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">⚖️</div>
-                <h3>Defesa Prévia Criminal</h3>
-                <p>Defesa sem adentrar mérito processual e sem ilegalidades</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">📜</div>
+            <h3>Recurso Criminal Sem Razões</h3>
+            <p>Manifestação de interesse de recorrer, não admitida em juizado especiais</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">📜</div>
-                <h3>Recurso Criminal Sem Razões</h3>
-                <p>Manifestação de interesse de recorrer, não admitida em juizado especiais</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">⚖️</div>
+            <h3>Petição de Execução de Títulos</h3>
+            <p>Modelo para execução de títulos extrajudiciais</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">⚖️</div>
-                <h3>Petição de Execução de Títulos</h3>
-                <p>Modelo para execução de títulos extrajudiciais</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">📑</div>
+            <h3>Petição de Execução de Contrato de Honorários</h3>
+            <p>Modelo para execução de honorários advocatícios</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">📑</div>
-                <h3>Petição de Execução de Contrato de Honorários</h3>
-                <p>Modelo para execução de honorários advocatícios</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">👨‍⚖️</div>
+            <h3>Petição Inicial Trabalhista</h3>
+            <p>Modelo para ajuizamento de ação trabalhista</p>
+            <span class="badge">EM BREVE</span>
+        </div>
 
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">👨‍⚖️</div>
-                <h3>Petição Inicial Trabalhista</h3>
-                <p>Modelo para ajuizamento de ação trabalhista</p>
-                <span class="badge">EM BREVE</span>
-            </div>
-
-            <div class="tool-card coming-soon">
-                <div class="tool-icon">💔</div>
-                <h3>Petição de Divórcio Consensual</h3>
-                <p>Modelo para divórcio de comum acordo</p>
-                <span class="badge">EM BREVE</span>
-            </div>
+        <div class="tool-card coming-soon">
+            <div class="tool-icon">💔</div>
+            <h3>Petição de Divórcio Consensual</h3>
+            <p>Modelo para divórcio de comum acordo</p>
+            <span class="badge">EM BREVE</span>
         </div>
     </div>
-
-    <footer class="footer">
-        <p>© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
-    </footer>
-</body>
-</html>
+{% endblock %}

@@ -1,184 +1,164 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Trabalhista</title>
-    <!-- ATUALIZAÇÃO: Usando url_for para os links CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base_ferramentas.html" %}
+
+{% block title %}Calculadora Trabalhista{% endblock %}
+
+{% block styles %}
+    {{ super() }}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>CALCULADORA TRABALHISTA</h1>
-            <p class="subtitle">Preencha os dados para gerar um relatório preliminar:</p>
-        </header>
+{% endblock %}
 
-        <!-- ATUALIZAÇÃO: Adicionado data-action para a nova rota -->
-        <form id="calcTrabalhistaForm" class="form" data-action="{{ url_for('ferramentas.gerar_calculo_trabalhista_route') }}">
-            <!-- 1. Informações básicas do vínculo -->
-            <section class="form-section">
-                <h2 class="section-title">1. Informações básicas do vínculo</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="data_inicio">Data de início do vínculo</label>
-                        <input type="date" id="data_inicio" name="data_inicio" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="data_termino">Data de término do vínculo</label>
-                        <input type="date" id="data_termino" name="data_termino" required>
-                    </div>
+{% block content %}
+    <header class="header">
+        <h1>CALCULADORA TRABALHISTA</h1>
+        <p class="subtitle">Preencha os dados para gerar um relatório preliminar:</p>
+    </header>
+
+    <form id="calcTrabalhistaForm" class="form" data-action="{{ url_for('ferramentas.gerar_calculo_trabalhista_route') }}">
+        <section class="form-section">
+            <h2 class="section-title">1. Informações básicas do vínculo</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="data_inicio">Data de início do vínculo</label>
+                    <input type="date" id="data_inicio" name="data_inicio" required>
                 </div>
                 <div class="form-group">
-                    <label for="funcao_exercida">Função exercida</label>
-                    <input type="text" id="funcao_exercida" name="funcao_exercida" required>
+                    <label for="data_termino">Data de término do vínculo</label>
+                    <input type="date" id="data_termino" name="data_termino" required>
                 </div>
-                <div class="form-group">
-                    <label for="remuneracao">Remuneração percebida (R$)</label>
-                    <input type="number" id="remuneracao" name="remuneracao" step="0.01" min="0" required>
-                </div>
-            </section>
-
-            <!-- 2. Empresa reclamada -->
-            <section class="form-section">
-                <h2 class="section-title">2. Empresa reclamada</h2>
-                <div class="form-group">
-                    <label for="nome_empresa">Nome da empresa</label>
-                    <input type="text" id="nome_empresa" name="nome_empresa" required>
-                </div>
-                <div class="form-group">
-                    <label for="cnpj_empresa">CNPJ da empresa</label>
-                    <input type="text" id="cnpj_empresa" name="cnpj_empresa" placeholder="00.000.000/0000-00" required>
-                </div>
-            </section>
-
-            <!-- 3. Regime da jornada de trabalho -->
-            <section class="form-section">
-                <h2 class="section-title">3. Regime da jornada de trabalho</h2>
-                <div class="form-group">
-                    <select id="regime_jornada" name="regime_jornada" required>
-                        <option value="6x1_44h" selected>6x1 - 44h (Jornada semanal)</option>
-                        <option value="5x2_40h">5x2 - 40h (Jornada semanal)</option>
-                        <option value="12x36">12x36 (Jornada semanal)</option>
-                        <option value="36h">36h (Jornada semanal)</option>
-                        <option value="30h">30h (Jornada semanal)</option>
-                        <option value="25h">25h (Jornada semanal)</option>
-                        <option value="20h">20h (Jornada semanal)</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- 4. Cláusula de compensação -->
-            <section class="form-section">
-                <h2 class="section-title">4. Cláusula de compensação</h2>
-                <p>Existe cláusula de compensação de horas no contrato?</p>
-                <div class="form-group">
-                    <select name="clausula_compensacao" required>
-                        <option value="nao" selected>Não</option>
-                        <option value="sim">Sim</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- 5. Insalubridade -->
-            <section class="form-section">
-                <h2 class="section-title">5. Insalubridade</h2>
-                <div class="form-group">
-                     <select id="insalubridade" name="insalubridade" required>
-                        <option value="nao" selected>Não se aplica</option>
-                        <option value="10%">Sim - Grau mínimo (10%)</option>
-                        <option value="20%">Sim - Grau médio (20%)</option>
-                        <option value="40%">Sim - Grau máximo (40%)</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- 6. Depósitos FGTS -->
-            <section class="form-section">
-                <h2 class="section-title">6. Depósitos FGTS</h2>
-                <p>Houve depósitos FGTS durante o vínculo?</p>
-                <div class="form-group">
-                     <select name="depositos_fgts" required>
-                        <option value="nao" selected>Não</option>
-                        <option value="sim">Sim</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- 7. Hora extra -->
-            <section class="form-section">
-                <h2 class="section-title">7. Hora extra</h2>
-                <p>São realizadas horas extras regularmente?</p>
-                 <div class="form-group">
-                    <select name="hora_extra" required>
-                        <option value="nao" selected>Não</option>
-                        <option value="sim">Sim</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- 8. Horários -->
-            <section class="form-section">
-                <h2 class="section-title">8. Horário de trabalho</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="inicio_expediente">Início do expediente</label>
-                        <input type="time" id="inicio_expediente" name="inicio_expediente" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="inicio_intervalo">Início do intervalo</label>
-                        <input type="time" id="inicio_intervalo" name="inicio_intervalo" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fim_intervalo">Fim do intervalo</label>
-                        <input type="time" id="fim_intervalo" name="fim_intervalo" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fim_expediente">Fim do expediente</label>
-                        <input type="time" id="fim_expediente" name="fim_expediente" required>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 9. Natureza da demissão -->
-            <section class="form-section">
-                <h2 class="section-title">9. Natureza da demissão</h2>
-                <div class="form-group">
-                    <select id="natureza_demissao" name="natureza_demissao" required>
-                        <option value="rescisao_indireta" selected>Rescisão indireta</option>
-                        <option value="demissao_sem_justa_causa">Demissão sem justa causa</option>
-                        <option value="demissao_por_justa_causa">Demissão por justa causa</option>
-                        <option value="pedido_de_demissao">Pedido de demissão</option>
-                    </select>
-                </div>
-            </section>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Gerar Relatório</button>
-                <button type="button" id="limparCampos" class="btn btn-secondary">Limpar Campos</button>
             </div>
-
-            <div id="statusMessage" class="status-message">
-                Preencha todos os dados e clique em 'Gerar Relatório' para obter o resultado
+            <div class="form-group">
+                <label for="funcao_exercida">Função exercida</label>
+                <input type="text" id="funcao_exercida" name="funcao_exercida" required>
             </div>
-        </form>
-    </div>
-
-    <!-- ATUALIZAÇÃO: ID do modal alterado para 'downloadModal' para compatibilidade com script.js -->
-    <div id="downloadModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Relatório gerado com sucesso!</h2>
-            <p id="modalMessage"></p>
-            <div class="modal-actions">
-                <a id="downloadLink" class="btn btn-primary">Baixar Relatório</a>
-                <button id="abrirArquivo" class="btn btn-secondary">Abrir Arquivo</button>
+            <div class="form-group">
+                <label for="remuneracao">Remuneração percebida (R$)</label>
+                <input type="number" id="remuneracao" name="remuneracao" step="0.01" min="0" required>
             </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">2. Empresa reclamada</h2>
+            <div class="form-group">
+                <label for="nome_empresa">Nome da empresa</label>
+                <input type="text" id="nome_empresa" name="nome_empresa" required>
+            </div>
+            <div class="form-group">
+                <label for="cnpj_empresa">CNPJ da empresa</label>
+                <input type="text" id="cnpj_empresa" name="cnpj_empresa" class="cpf-mask" placeholder="00.000.000/0000-00" required>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">3. Regime da jornada de trabalho</h2>
+            <div class="form-group">
+                <select id="regime_jornada" name="regime_jornada" required>
+                    <option value="6x1_44h" selected>6x1 - 44h (Jornada semanal)</option>
+                    <option value="5x2_40h">5x2 - 40h (Jornada semanal)</option>
+                    <option value="12x36">12x36 (Jornada semanal)</option>
+                    <option value="36h">36h (Jornada semanal)</option>
+                    <option value="30h">30h (Jornada semanal)</option>
+                    <option value="25h">25h (Jornada semanal)</option>
+                    <option value="20h">20h (Jornada semanal)</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">4. Cláusula de compensação</h2>
+            <p>Existe cláusula de compensação de horas no contrato?</p>
+            <div class="form-group">
+                <select name="clausula_compensacao" required>
+                    <option value="nao" selected>Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">5. Insalubridade</h2>
+            <div class="form-group">
+                 <select id="insalubridade" name="insalubridade" required>
+                    <option value="nao" selected>Não se aplica</option>
+                    <option value="10%">Sim - Grau mínimo (10%)</option>
+                    <option value="20%">Sim - Grau médio (20%)</option>
+                    <option value="40%">Sim - Grau máximo (40%)</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">6. Depósitos FGTS</h2>
+            <p>Houve depósitos FGTS durante o vínculo?</p>
+            <div class="form-group">
+                 <select name="depositos_fgts" required>
+                    <option value="nao" selected>Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">7. Hora extra</h2>
+            <p>São realizadas horas extras regularmente?</p>
+             <div class="form-group">
+                <select name="hora_extra" required>
+                    <option value="nao" selected>Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">8. Horário de trabalho</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="inicio_expediente">Início do expediente</label>
+                    <input type="time" id="inicio_expediente" name="inicio_expediente" required>
+                </div>
+                <div class="form-group">
+                    <label for="inicio_intervalo">Início do intervalo</label>
+                    <input type="time" id="inicio_intervalo" name="inicio_intervalo" required>
+                </div>
+                <div class="form-group">
+                    <label for="fim_intervalo">Fim do intervalo</label>
+                    <input type="time" id="fim_intervalo" name="fim_intervalo" required>
+                </div>
+                <div class="form-group">
+                    <label for="fim_expediente">Fim do expediente</label>
+                    <input type="time" id="fim_expediente" name="fim_expediente" required>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">9. Natureza da demissão</h2>
+            <div class="form-group">
+                <select id="natureza_demissao" name="natureza_demissao" required>
+                    <option value="rescisao_indireta" selected>Rescisão indireta</option>
+                    <option value="demissao_sem_justa_causa">Demissão sem justa causa</option>
+                    <option value="demissao_por_justa_causa">Demissão por justa causa</option>
+                    <option value="pedido_de_demissao">Pedido de demissão</option>
+                </select>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+            <button type="button" id="limparCampos" class="btn btn-secondary">Limpar Campos</button>
+            <a href="{{ url_for('ferramentas.index') }}" class="btn btn-outline-secondary d-flex align-items-center">
+                <i class="bi bi-arrow-left-circle me-2"></i>Voltar
+            </a>
         </div>
-    </div>
 
-    <!-- ATUALIZAÇÃO: Usando url_for para o link JS -->
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
-</html>
+        <div id="statusMessage" class="status-message">
+            Preencha os dados e clique em 'Gerar Relatório'
+        </div>
+    </form>
+
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/script_download.js') }}"></script>
+{% endblock %}

@@ -1,76 +1,71 @@
-<!DOCTYPE html>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Procuração Jurídica</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base_ferramentas.html" %}
+
+{% block title %}Gerador de Procuração Jurídica{% endblock %}
+
+{% block styles %}
+    {{ super() }} {# Mantém os estilos do base_ferramentas.html (Bootstrap, etc.) #}
+    {# Adiciona fontes específicas para esta página #}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>GERADOR DE PROCURAÇÃO JURÍDICA</h1>
-            <p>Preencha os dados do outorgante (cliente):</p>
-        </header>
+{% endblock %}
 
-        <form id="procuracaoForm" class="form" data-action="{{ url_for('ferramentas.gerar_procuracao_route') }}">
-            <div class="form-group">
-                <label for="nome_completo">Nome completo:</label>
-                <input type="text" id="nome_completo" name="nome_completo" required>
-            </div>
-            <div class="form-group">
-                <label for="estado_civil">Estado civil:</label>
-                <select id="estado_civil" name="estado_civil" required>
-                    <option value="solteiro(a)">Solteiro(a)</option>
-                    <option value="casado(a)">Casado(a)</option>
-                    <option value="divorciado(a)">Divorciado(a)</option>
-                    <option value="viúvo(a)">Viúvo(a)</option>
-                    <option value="em união estável">Em união estável</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="profissao">Profissão:</label>
-                <input type="text" id="profissao" name="profissao" required>
-            </div>
-            <div class="form-group">
-                <label for="cpf">CPF:</label>
-                <!-- ATUALIZAÇÃO: Adicionada a classe 'cpf-mask' para a autoformatação funcionar -->
-                <input type="text" id="cpf" name="cpf" class="cpf-mask" placeholder="000.000.000-00" required>
-            </div>
-            <div class="form-group">
-                <label for="rg">RG (com órgão emissor, opcional):</label>
-                <input type="text" id="rg" name="rg">
-            </div>
-            <div class="form-group">
-                <label for="endereco">Endereço completo (Rua/Av., nº, bairro, cidade/UF, CEP):</label>
-                <input type="text" id="endereco" name="endereco" required>
-            </div>
+{% block content %}
+    {# O <div class="container"> já é fornecido pelo base_ferramentas.html #}
+    <header class="header">
+        <h1>GERADOR DE PROCURAÇÃO JURÍDICA</h1>
+        <p>Preencha os dados do outorgante (cliente):</p>
+    </header>
 
-             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Gerar Procuração</button>
-                <button type="button" id="limparCampos" class="btn btn-secondary">Limpar Campos</button>
-            </div>
-
-            <div id="statusMessage" class="status-message">
-                Preencha os dados e clique em 'Gerar Procuração'
-            </div>
-        </form>
-    </div>
-
-    <div id="downloadModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Documento gerado com sucesso!</h2>
-            <p id="modalMessage"></p>
-            <div class="modal-actions">
-                <a id="downloadLink" class="btn btn-primary">Baixar Documento</a>
-                <button id="abrirArquivo" class="btn btn-secondary">Abrir Ficheiro</button>
-            </div>
+    <form id="procuracaoForm" class="form" data-action="{{ url_for('ferramentas.gerar_procuracao_route') }}">
+        <div class="form-group">
+            <label for="nome_completo">Nome completo:</label>
+            <input type="text" id="nome_completo" name="nome_completo" required>
         </div>
-    </div>
+        <div class="form-group">
+            <label for="estado_civil">Estado civil:</label>
+            <select id="estado_civil" name="estado_civil" required>
+                <option value="solteiro(a)">Solteiro(a)</option>
+                <option value="casado(a)">Casado(a)</option>
+                <option value="divorciado(a)">Divorciado(a)</option>
+                <option value="viúvo(a)">Viúvo(a)</option>
+                <option value="em união estável">Em união estável</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="profissao">Profissão:</label>
+            <input type="text" id="profissao" name="profissao" required>
+        </div>
+        <div class="form-group">
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" name="cpf" class="cpf-mask" placeholder="000.000.000-00" required>
+        </div>
+        <div class="form-group">
+            <label for="rg">RG (com órgão emissor, opcional):</label>
+            <input type="text" id="rg" name="rg">
+        </div>
+        <div class="form-group">
+            <label for="endereco">Endereço completo (Rua/Av., nº, bairro, cidade/UF, CEP):</label>
+            <input type="text" id="endereco" name="endereco" required>
+        </div>
 
-    <script src="{{ url_for('static', filename='js/procuracao.js') }}"></script>
-</body>
-</html>
+         <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Gerar Procuração</button>
+            <button type="button" id="limparCampos" class="btn btn-secondary">Limpar Campos</button>
+            <!-- BOTÃO ADICIONADO -->
+            <a href="{{ url_for('ferramentas.index') }}" class="btn btn-outline-secondary d-flex align-items-center">
+                <i class="bi bi-arrow-left-circle me-2"></i>Voltar
+            </a>
+        </div>
+
+        <div id="statusMessage" class="status-message">
+            Preencha os dados e clique em 'Gerar Procuração'
+        </div>
+    </form>
+
+    {# O modal de download foi removido para o download direto #}
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Mantém os scripts do base_ferramentas.html (Bootstrap, etc.) #}
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}
