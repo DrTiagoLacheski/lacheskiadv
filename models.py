@@ -79,5 +79,6 @@ class Appointment(db.Model):
             'id': self.id,
             'content': self.content,
             'date': self.appointment_date.strftime('%Y-%m-%d'),
-            'time': self.appointment_time
+            'time': self.appointment_time,
+            'priority': self.priority
         }
