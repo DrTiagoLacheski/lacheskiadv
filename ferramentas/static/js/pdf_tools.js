@@ -1,22 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('mergeForm');
     const statusMessage = document.getElementById('statusMessage');
-    
-    // ATUALIZAÇÃO: Seletores para o novo input múltiplo
+
     const fileInput = document.getElementById('pdf-files');
     const fileListDisplay = document.getElementById('file-list-display');
     const fileWrapper = document.getElementById('file-wrapper');
 
-    // Elementos do Modal
-    const modal = document.getElementById('downloadModal');
-    const closeModalButton = modal ? modal.querySelector('.close') : null;
-    const openFileButton = document.getElementById('abrirArquivo');
-
-    // Evento para atualizar a lista de arquivos selecionados
+    // Evento para atualizar a lista de ficheiros selecionados (sem alterações)
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
-            // Cria uma lista HTML com os nomes dos arquivos
-            let fileListHTML = '<strong>Arquivos selecionados:</strong><ul>';
+            let fileListHTML = '<strong>Ficheiros selecionados:</strong><ul>';
             Array.from(fileInput.files).forEach(file => {
                 fileListHTML += `<li>${file.name} (${(file.size / 1024).toFixed(2)} KB)</li>`;
             });
@@ -24,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fileListDisplay.innerHTML = fileListHTML;
             fileWrapper.classList.add('has-files');
         } else {
-            fileListDisplay.innerHTML = 'Nenhum arquivo selecionado.';
+            fileListDisplay.innerHTML = 'Nenhum ficheiro selecionado.';
             fileWrapper.classList.remove('has-files');
         }
     });
@@ -37,19 +30,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(form);
         const files = formData.getAll('pdfs');
 
-        // Validação
-        if (files[0].size === 0) {
-            statusMessage.textContent = 'Erro: Nenhum arquivo foi selecionado.';
+        // Validação (sem alterações)
+        if (files.length > 0 && files[0].size === 0) { // Checa se o primeiro ficheiro está vazio
+            statusMessage.textContent = 'Erro: Nenhum ficheiro foi selecionado.';
             statusMessage.className = 'status-message error';
             return;
         }
         if (files.length < 2) {
-            statusMessage.textContent = 'Erro: Selecione pelo menos dois arquivos para unir.';
+            statusMessage.textContent = 'Erro: Selecione pelo menos dois ficheiros para unir.';
             statusMessage.className = 'status-message error';
             return;
         }
 
-        statusMessage.textContent = 'A processar e unir os arquivos...';
+        statusMessage.textContent = 'A processar e unir os ficheiros...';
         statusMessage.className = 'status-message processing';
 
         try {
@@ -61,9 +54,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                statusMessage.textContent = 'Arquivos unidos com sucesso!';
+                statusMessage.textContent = 'Ficheiros unidos com sucesso! A iniciar o download...';
                 statusMessage.className = 'status-message success';
-                showDownloadModal(result.filename, result.download_url);
+
+                // --- ALTERAÇÃO PRINCIPAL ---
+                // Em vez de mostrar um modal, inicia o download diretamente
+                // redirecionando o navegador para a URL de download.
+                window.location.href = result.download_url;
+
             } else {
                 statusMessage.textContent = result.error || 'Ocorreu um erro desconhecido.';
                 statusMessage.className = 'status-message error';
@@ -75,23 +73,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Funções do Modal (sem alterações)
-    function showDownloadModal(filename, downloadUrl) {
-        if (!modal) return;
-        const modalMessage = modal.querySelector('#modalMessage');
-        const downloadLink = modal.querySelector('#downloadLink');
-        modalMessage.textContent = `O seu ficheiro unido "${filename}" está pronto.`;
-        downloadLink.href = downloadUrl;
-        if (openFileButton) {
-            openFileButton.onclick = () => window.open(downloadUrl, '_blank');
-        }
-        modal.style.display = 'block';
-    }
-
-    if (closeModalButton) {
-        closeModalButton.onclick = () => { modal.style.display = 'none'; };
-    }
-    window.onclick = (event) => {
-        if (event.target == modal) { modal.style.display = 'none'; }
-    };
 });

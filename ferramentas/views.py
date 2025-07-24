@@ -1,9 +1,13 @@
 # unir/ferramentas/views.py
 
 import os
-from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app
+import uuid
+# ALTERAÇÃO 1: Adicionar 'send_from_directory' à importação do Flask
+from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app, send_from_directory
 from flask_login import login_required
 from werkzeug.utils import secure_filename
+
+from . import pdf_tools
 # Importações relativas para funcionar dentro do pacote 'ferramentas'
 from .procuracao import gerar_procuracao_pdf
 from .contratos import gerar_contrato_honorarios_pdf
@@ -18,6 +22,7 @@ ferramentas_bp = Blueprint('ferramentas', __name__,
                            template_folder='templates',
                            static_folder='static',  # Pasta estática relativa a este Blueprint
                            static_url_path='/ferramentas_static')
+
 
 @ferramentas_bp.route('/')
 @login_required
@@ -79,6 +84,7 @@ def gerar_procuracao_route():
             'error': 'Erro interno ao processar a solicitação',
             'details': str(e)
         }), 500
+
 
 @ferramentas_bp.route('/contrato-honorarios')
 @login_required
@@ -196,40 +202,52 @@ def pagina_merge_pdf():
 @ferramentas_bp.route('/merge-pdf-route', methods=['POST'])
 @login_required
 def merge_pdf_route():
-    """Endpoint da API para unir PDFs."""
+    """
+    Recebe os arquivos PDF, os une usando a lógica de pdf_tools
+    e retorna um JSON para o frontend iniciar o download.
+    """
     if 'pdfs' not in request.files:
-        return jsonify({'error': 'Nenhum arquivo enviado.'}), 400
+        return jsonify({'success': False, 'error': 'Nenhum arquivo foi enviado.'}), 400
 
     files = request.files.getlist('pdfs')
-    output_filename_user = request.form.get('output_filename')
-
     if len(files) < 2:
-        return jsonify({'error': 'É necessário enviar pelo menos dois arquivos.'}), 400
+        return jsonify({'success': False, 'error': 'Por favor, selecione pelo menos dois arquivos PDF.'}), 400
 
-    saved_files = []
-    upload_folder = os.path.join(current_app.root_path, 'static', 'temp')
+    temp_upload_dir = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'temp_uploads')
+    output_dir = os.path.join(current_app.root_path, 'static', 'temp')
+    os.makedirs(temp_upload_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
-    for file in files:
-        if file and file.filename.endswith('.pdf'):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(upload_folder, filename)
-            file.save(filepath)
-            saved_files.append(filepath)
-        else:
-            cleanup_files(saved_files)
-            return jsonify({'error': 'Todos os arquivos devem ser do tipo PDF.'}), 400
+    temp_file_paths = []
+    try:
+        for file in files:
+            if file and file.filename.lower().endswith('.pdf'):
+                temp_filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+                temp_path = os.path.join(temp_upload_dir, temp_filename)
+                file.save(temp_path)
+                temp_file_paths.append(temp_path)
 
-    merged_file_path = merge_pdfs(saved_files, upload_folder, output_filename_user)
-    cleanup_files(saved_files)
+        output_filename_user = request.form.get('output_filename', '')
+        output_path = pdf_tools.merge_pdfs(temp_file_paths, output_dir, output_filename_user)
 
-    if merged_file_path:
+        if not output_path:
+            raise ValueError("A função de unir PDFs falhou e não retornou um caminho.")
+
+        final_filename = os.path.basename(output_path)
+        download_url = url_for('ferramentas.download_file', filename=final_filename)
+
         return jsonify({
             'success': True,
-            'filename': os.path.basename(merged_file_path),
-            'download_url': url_for('ferramentas.download_file', filename=os.path.basename(merged_file_path))
+            'filename': final_filename,
+            'download_url': download_url
         })
-    else:
-        return jsonify({'error': 'Falha ao unir os arquivos PDF.'}), 500
+
+    except Exception as e:
+        current_app.logger.error(f"Erro ao unir PDFs: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': f'Ocorreu um erro no servidor: {str(e)}'}), 500
+
+    finally:
+        pdf_tools.cleanup_files(temp_file_paths)
 
 
 @ferramentas_bp.route('/convert-image')
@@ -328,13 +346,18 @@ def split_pdf_route():
 
 
 # --- Rota de Download ---
-@ferramentas_bp.route('/download/<filename>')
+# ALTERAÇÃO 2: Rota de download corrigida e padronizada
+@ferramentas_bp.route('/download/<path:filename>')
 @login_required
 def download_file(filename):
     """Rota para fazer o download dos arquivos gerados."""
-    directory = os.path.join(current_app.root_path, 'static/temp')
-    return send_file(
-        os.path.join(current_app.root_path, 'static/temp', filename),
-        as_attachment=True,
-        download_name=filename
+    # Define o diretório de onde os arquivos serão servidos.
+    directory = os.path.join(current_app.root_path, 'static', 'temp')
+
+    # Usa send_from_directory que é mais seguro e idiomático.
+    # Ele lida com a junção de caminhos e verificações de segurança.
+    return send_from_directory(
+        directory=directory,
+        path=filename,
+        as_attachment=True
     )

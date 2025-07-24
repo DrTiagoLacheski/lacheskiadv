@@ -1,27 +1,32 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('splitForm');
+    const form = document.getElementById('mergeForm');
     if (!form) return; // Sai se o formulário não for encontrado
 
     // Elementos da interface
     const statusMessage = document.getElementById('statusMessage');
     const submitButton = form.querySelector('button[type="submit"]');
-    const fileInput = document.getElementById('pdf-file');
-    const pageRangesInput = document.getElementById('page_ranges');
-    const fileInputContainer = document.getElementById('file-input-container');
-    const fileNameSpan = fileInputContainer.querySelector('.file-name');
+    const fileInput = document.getElementById('pdf-files');
+    const fileListDisplay = document.getElementById('file-list-display');
+    const fileWrapper = document.getElementById('file-wrapper');
 
     // Função para escapar HTML e prevenir XSS
     const escapeHTML = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // Evento para atualizar o nome do arquivo na UI quando selecionado
+    // Evento para atualizar a lista de arquivos selecionados na UI
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            fileNameSpan.textContent = escapeHTML(file.name);
-            fileInputContainer.classList.add('has-file');
+        const files = fileInput.files;
+        if (files.length > 0) {
+            let fileListHTML = '<strong>Arquivos selecionados:</strong><ul>';
+            Array.from(files).forEach(file => {
+                const safeName = escapeHTML(file.name);
+                fileListHTML += `<li>${safeName} (${(file.size / 1024).toFixed(2)} KB)</li>`;
+            });
+            fileListHTML += '</ul>';
+            fileListDisplay.innerHTML = fileListHTML;
+            fileWrapper.classList.add('has-files');
         } else {
-            fileNameSpan.textContent = 'Clique para selecionar o PDF';
-            fileInputContainer.classList.remove('has-file');
+            fileListDisplay.innerHTML = 'Nenhum arquivo selecionado.';
+            fileWrapper.classList.remove('has-files');
         }
     });
 
@@ -29,21 +34,16 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(event) {
         event.preventDefault(); // Impede o envio padrão do formulário
 
-        // Validações
-        if (fileInput.files.length === 0) {
-            statusMessage.textContent = 'Erro: Por favor, selecione um arquivo PDF.';
-            statusMessage.className = 'status-message alert alert-warning';
-            return;
-        }
-        if (!pageRangesInput.value.trim()) {
-            statusMessage.textContent = 'Erro: Por favor, indique as páginas ou intervalos para extrair.';
+        // Validação: verifica se pelo menos 2 arquivos foram selecionados
+        if (fileInput.files.length < 2) {
+            statusMessage.textContent = 'Erro: Por favor, selecione pelo menos dois arquivos PDF para unir.';
             statusMessage.className = 'status-message alert alert-warning';
             return;
         }
 
         // Desabilita o botão e mostra mensagem de processamento
         submitButton.disabled = true;
-        statusMessage.textContent = 'Dividindo o arquivo PDF, por favor aguarde...';
+        statusMessage.textContent = 'Unindo os arquivos PDF, por favor aguarde...';
         statusMessage.className = 'status-message alert alert-info';
 
         const formData = new FormData(form);
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Mostra mensagem de sucesso após um breve atraso
                 setTimeout(() => {
-                    statusMessage.innerHTML = `PDF <strong>"${escapeHTML(result.filename)}"</strong> dividido com sucesso! O download foi iniciado.`;
+                    statusMessage.innerHTML = `PDF <strong>"${escapeHTML(result.filename)}"</strong> unido com sucesso! O download foi iniciado.`;
                     statusMessage.className = 'status-message alert alert-success';
                 }, 500);
 

@@ -40,14 +40,14 @@
     </header>
 
     <form id="mergeForm" class="form" data-action="{{ url_for('ferramentas.merge_pdf_route') }}">
-        
+
         <div class="form-group">
             <label for="output_filename">Nome do arquivo final (opcional):</label>
             <input type="text" id="output_filename" name="output_filename" placeholder="Ex: Processo_Cliente_XYZ">
         </div>
 
         <h2 class="section-title">Selecione os arquivos</h2>
-        
+
         <div class="form-group">
             <label for="pdf-files" id="file-wrapper" class="file-input-multi-wrapper">
                 <span class="btn btn-secondary">Clique aqui para escolher os arquivos</span>
@@ -71,5 +71,5 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/pdf_tools.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/merge_pdf.js') }}"></script>
 {% endblock %}
