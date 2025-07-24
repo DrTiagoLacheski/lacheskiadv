@@ -1,9 +1,7 @@
 # init_db.py
-# Script para inicializar o banco de dados: cria todas as tabelas e o usuário admin.
+# Script para inicializar o banco de dados: cria todas as tabelas e os usuários.
 
-# 1. Importa a FUNÇÃO 'create_app'
 from app import create_app
-# 2. Importa o 'db' e 'User' diretamente do arquivo de modelos
 from models import db, User
 
 def initialize_database():
@@ -25,7 +23,6 @@ def create_admin_user():
             email='admin@escritorio.com',
             is_admin=True
         )
-        # Altere a senha aqui dentro das aspas
         admin.set_password('102030')
         db.session.add(admin)
         db.session.commit()
@@ -33,14 +30,53 @@ def create_admin_user():
     else:
         print("Usuário 'admin' já existe.")
 
-# ... (resto do código)
+def create_user2_user():
+    """
+    Verifica se o usuário user2 existe e, se não, o cria.
+    """
+    user = User.query.filter_by(username='user2').first()
+    if not user:
+        user = User(
+            username='user2',
+            email='user2@escritorio.com',
+            is_admin=False # Não é administrador
+        )
+        user.set_password('user')
+        db.session.add(user)
+        db.session.commit()
+        print("Usuário 'user2' criado com sucesso!")
+    else:
+        print("Usuário 'user2' já existe.")
+
+def create_user_user():
+    """
+    Verifica se o usuário user existe e, se não, o cria.
+    """
+    user = User.query.filter_by(username='user').first()
+    if not user:
+        user = User(
+            username='user',
+            email='user@escritorio.com',
+            is_admin=False # Não é administrador
+        )
+        user.set_password('user')
+        db.session.add(user)
+        db.session.commit()
+        print("Usuário 'user' criado com sucesso!")
+    else:
+        print("Usuário 'user' já existe.")
+
+
 if __name__ == '__main__':
-    # 3. Cria uma instância da aplicação Flask para obter o contexto
+    # Cria uma instância da aplicação Flask para obter o contexto
     app = create_app()
 
-    # 4. Usa o "contexto da aplicação" para que o script saiba qual banco de dados usar
+    # Usa o "contexto da aplicação" para que o script saiba qual banco de dados usar
     with app.app_context():
         initialize_database()
         create_admin_user()
+        # Chama as novas funções para criar os outros usuários
+        create_user2_user()
+        create_user_user()
 
     print("Inicialização do banco de dados concluída.")
