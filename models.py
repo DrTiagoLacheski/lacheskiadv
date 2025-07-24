@@ -119,3 +119,22 @@ class TodoItem(db.Model):
 
     def __repr__(self):
         return f'<TodoItem {self.id}: {self.content[:20]}>'
+
+class Advogado(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(150), nullable=False)
+    estado_civil = db.Column(db.String(50), nullable=False)
+    profissao = db.Column(db.String(100), nullable=False, default='advogado')
+    cpf = db.Column(db.String(14), unique=True, nullable=False)
+    rg = db.Column(db.String(20), nullable=True)
+    orgao_emissor = db.Column(db.String(20), nullable=True)
+    # É melhor separar as OABs em campos distintos para facilitar a consulta
+    oab_pr = db.Column(db.String(20), nullable=True)
+    oab_ro = db.Column(db.String(20), nullable=True)
+    # Adicionamos outros campos de OAB que você possa precisar no futuro
+    oab_sp = db.Column(db.String(20), nullable=True)
+    endereco_profissional = db.Column(db.String(255), nullable=False)
+    is_principal = db.Column(db.Boolean, default=False, nullable=False)
+
+    def __repr__(self):
+        return f'<Advogado {self.nome}>'

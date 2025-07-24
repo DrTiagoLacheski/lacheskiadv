@@ -63,6 +63,24 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitButton) submitButton.disabled = false;
         }
     }
+    function initializeCollaboratorToggle() {
+        const checkbox = document.getElementById('adicionar_colaborador');
+        if (!checkbox) return; // Exit if the element is not on the page
+
+        const container = document.getElementById('colaborador_selecao_container');
+        const select = document.getElementById('colaborador_id');
+
+        if (!container || !select) return; // Exit if other elements are missing
+
+        // Event listener to toggle visibility and requirement
+        checkbox.addEventListener('change', function() {
+            container.style.display = this.checked ? 'block' : 'none';
+            select.required = this.checked;
+            if (!this.checked) {
+                select.value = ''; // Clear selection when hiding
+            }
+        });
+    }
 
     /**
      * Aplica uma máscara de CPF/CNPJ a um campo de input.
@@ -112,4 +130,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // Encontra todos os campos com a máscara de CPF/CNPJ e a aplica
     const cpfFields = document.querySelectorAll('.cpf-mask');
     cpfFields.forEach(applyCpfMask);
+    initializeCollaboratorToggle()
 });

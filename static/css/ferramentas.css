@@ -274,4 +274,41 @@ body {
     color: red;
 }
 
+/* Adicione estas regras ao final do seu arquivo CSS */
+
+/* --- Custom Toggle Switch --- */
+.form-check.form-switch {
+    padding-left: 3.5em; /* Aumenta o espaço para o switch */
+    min-height: 2.2em;   /* Garante altura suficiente para o alinhamento */
+    display: flex;
+    align-items: center;
+}
+
+.form-check.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    margin-left: -3.5em;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280,0,0,0.25%29'/%3e%3c/svg%3e");
+    background-position: left center;
+    border-radius: 2.5em;
+    transition: background-position 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.form-check.form-switch .form-check-input:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%233498db'/%3e%3c/svg%3e");
+}
+
+.form-check.form-switch .form-check-input:checked {
+    background-position: right center;
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.form-check.form-switch .form-check-label {
+    cursor: pointer;
+}
+
+
 /* Mantenha o mesmo estilo do formulário principal */

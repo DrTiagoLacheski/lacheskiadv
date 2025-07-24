@@ -14,8 +14,8 @@
     </header>
 
     <div class="tools-grid">
-        <!-- Serviços Ativos -->
-        <a href="{{ url_for('ferramentas.pagina_procuracao') }}" class="tool-card">
+        <!-- ALTERAÇÃO: Este card agora abre um modal em vez de um link direto -->
+        <a href="#" class="tool-card" data-bs-toggle="modal" data-bs-target="#procuracaoTipoModal">
             <div class="tool-icon">📄</div>
             <h3>Procuração Judicial</h3>
             <p>Gerar procurações jurídicas em segundos</p>
@@ -38,8 +38,8 @@
             <h3>Cálculo Trabalhista</h3>
             <p>Gere um relatório preliminar de verbas trabalhistas</p>
         </a>
-        
-        <!-- Serviços Em Breve -->
+
+                <!-- Serviços Em Breve -->
         <div class="tool-card coming-soon">
             <div class="tool-icon">🧾</div>
             <h3>Recibos de Pagamento</h3>
@@ -102,5 +102,33 @@
             <p>Modelo para divórcio de comum acordo</p>
             <span class="badge">EM BREVE</span>
         </div>
+
+    </div>
+
+    <!-- NOVO: Modal para seleção do tipo de outorgante -->
+    <div class="modal fade" id="procuracaoTipoModal" tabindex="-1" aria-labelledby="procuracaoTipoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="procuracaoTipoModalLabel">Tipo de Outorgante</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            <p>A procuração será para uma pessoa física ou jurídica?</p>
+            <div class="d-grid gap-2 col-8 mx-auto">
+                <a href="{{ url_for('ferramentas.pagina_procuracao', tipo='fisica') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-person-fill me-2"></i>Pessoa Física
+                </a>
+                <a href="{{ url_for('ferramentas.pagina_procuracao', tipo='juridica') }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-building me-2"></i>Pessoa Jurídica
+                </a>
+            </div>
+          </div>
+...
+        </div>
+      </div>
     </div>
 {% endblock %}
+
+
+

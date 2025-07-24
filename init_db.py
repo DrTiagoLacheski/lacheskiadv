@@ -25,7 +25,7 @@ def create_admin_user():
             email='admin@escritorio.com',
             is_admin=True
         )
-        admin.set_password('admin123')  # IMPORTANTE: Troque esta senha após o primeiro login!
+        admin.set_password('102030')  # IMPORTANTE: Troque esta senha após o primeiro login!
         db.session.add(admin)
         db.session.commit()
         print("Usuário 'admin' criado com sucesso!")

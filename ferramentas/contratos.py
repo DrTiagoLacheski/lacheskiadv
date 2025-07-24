@@ -1,159 +1,185 @@
-# contratos.py
+# ferramentas/contratos.py
 # Contém a lógica de negócio para a geração de CONTRATOS DE HONORÁRIOS.
+# REFATORADO para usar a biblioteca ReportLab para formatação avançada.
 
 import os
-from fpdf import FPDF
-from fpdf.enums import XPos, YPos
 from datetime import datetime
-from config import DADOS_ADVOGADOS, ENDERECO_ADV
 
-def _header(pdf):
-    """Função auxiliar para adicionar o cabeçalho com a logo ao PDF."""
-    logo_width = 60
-    page_width = pdf.w
-    x_pos = (page_width - logo_width) / 2
-    logo_path = 'static/images/logolacheski.png'
-    if os.path.exists(logo_path):
-        pdf.image(logo_path, x=x_pos, y=8, w=logo_width)
-    else:
-        print(f"AVISO: Ficheiro de logo não encontrado em '{logo_path}'")
+# Importa o modelo do banco de dados
+from models import Advogado
 
-def _formatar_cpf(cpf_num):
-    """Função auxiliar para formatar o número do CPF."""
-    cpf_num = ''.join(filter(str.isdigit, cpf_num))
-    if len(cpf_num) != 11:
-        return cpf_num
-    return f"{cpf_num[:3]}.{cpf_num[3:6]}.{cpf_num[6:9]}-{cpf_num[9:]}"
+# Importações da biblioteca ReportLab
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from reportlab.lib.units import cm
+
+# Importação da Pillow para ler as dimensões da imagem
+from PIL import Image as PILImage
+
+# Importa a função auxiliar de formatação de CPF/CNPJ
+from .procuracao import _formatar_cpf_cnpj, _get_qualificacao_advogado_parts
 
 def gerar_contrato_honorarios_pdf(dados):
     """
-    Gera o ficheiro PDF do Contrato de Honorários.
+    Gera o ficheiro PDF do Contrato de Honorários usando ReportLab.
     Retorna o caminho do ficheiro gerado.
     """
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=20)
-    pdf.add_page()
+    # 1. Definição do nome e caminho do arquivo de saída
+    nome_arquivo_base = dados.get('nome_completo') or "contrato_honorarios"
+    nome_arquivo_seguro = "".join(c for c in nome_arquivo_base.replace(' ', '_') if c.isalnum() or c in ('_')).rstrip()
+    nome_arquivo = f"Contrato_Honorarios_{nome_arquivo_seguro}.pdf"
+    caminho_arquivo = os.path.join('static/temp', nome_arquivo)
 
-    _header(pdf)
-    
-    pdf.set_margins(left=25, top=20, right=25)
-    
-    pdf.set_font("Times", size=10)
-    
-    pdf.ln(25) 
-
-    # --- Partes do Contrato ---
-    pdf.set_font("Times", 'B', 10)
-    pdf.cell(0, 5, "CONTRATANTE:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Times", '', 10)
-    
-    # ATUALIZAÇÃO: O texto do RG agora é condicional.
-    texto_base = (
-        f"{dados['nome_completo'].upper()}, brasileiro(a), {dados['estado_civil']}, "
-        f"inscrito no CPF sob o n° {_formatar_cpf(dados['cpf'])}"
+    # 2. Configuração do Documento e Estilos
+    doc = SimpleDocTemplate(
+        caminho_arquivo,
+        leftMargin=2.5 * cm,
+        rightMargin=2.5 * cm,
+        topMargin=0.6 * cm,
+        bottomMargin=2.0 * cm
     )
-    
-    # Adiciona o RG apenas se ele foi fornecido.
-    if dados.get('rg'):
-        texto_base += f", portador do RG N° {dados['rg']}"
 
-    texto_final = f", residente e domiciliado na {dados['endereco']}."
-    
-    texto_contratante = texto_base + texto_final
-    
-    pdf.multi_cell(0, 5, texto_contratante, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(5)
-
-    advogado = DADOS_ADVOGADOS["TIAGO"]
-    pdf.set_font("Times", 'B', 10)
-    pdf.cell(0, 5, "CONTRATADO:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Times", '', 10)
-    texto_contratado = (
-        f"{advogado['nome']}, brasileiro, casado, advogado, inscrito no CPF sob o n° {advogado['cpf']}, "
-        f"RG n° {advogado['rg']}, {advogado['orgao_emissor']}, OAB/PR n° {advogado['oab'][0]}, e OAB/RO n° {advogado['oab'][1]}, "
-        f"com endereço profissional situado na {ENDERECO_ADV}."
+    styles = getSampleStyleSheet()
+    style_justified_no_indent = ParagraphStyle(
+        name='JustifiedNoIndent',
+        parent=styles['Normal'],
+        fontName='Times-Roman',
+        fontSize=10,
+        leading=12,
+        alignment=TA_JUSTIFY
     )
-    pdf.multi_cell(0, 5, texto_contratado, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    
-    pdf.ln(5)
+    style_center = ParagraphStyle(
+        name='Center',
+        parent=styles['Normal'],
+        fontName='Times-Roman',
+        fontSize=10,
+        alignment=TA_CENTER
+    )
+    style_titulo_contrato = ParagraphStyle(
+        name='ContratoTitulo',
+        parent=style_center,
+        fontName='Times-Bold',
+        fontSize=14,
+        spaceAfter=10
+    )
+
+    # 3. Construção do Conteúdo (A "Story" do ReportLab)
+    story = []
+
+    # --- LÓGICA DA LOGO ---
+    logo_path = 'static/images/logolacheski.png'
+    if os.path.exists(logo_path):
+        try:
+            with PILImage.open(logo_path) as img:
+                img_width, img_height = img.size
+            aspect_ratio = img_height / float(img_width)
+            display_width = 6 * cm
+            display_height = display_width * aspect_ratio
+            logo = Image(logo_path, width=display_width, height=display_height)
+            logo.hAlign = 'CENTER'
+            story.append(logo)
+            story.append(Spacer(1, 1 * cm))
+        except Exception as e:
+            print(f"Erro ao processar a imagem da logo: {e}")
+
+
+    # --- Seção do contratante(Cliente) ---
+    texto_rg = f", portador(a) do RG n.º {dados['rg']}" if dados.get('rg') else ""
+    texto_contratante= (
+        f"CONTRATANTE: <b>{dados['nome_completo'].upper()}</b>, brasileiro(a), {dados['estado_civil']}, "
+        f"inscrito(a) no CPF sob o n.º {_formatar_cpf_cnpj(dados['cpf'])}{texto_rg}, "
+        f"residente e domiciliado(a) na {dados['endereco']}."
+    )
+    story.append(Paragraph(texto_contratante, style_justified_no_indent))
+    story.append(Spacer(1, 0.5 * cm))
+
+    # --- Seção do contratado(Advogados) ---
+    advogado_principal = Advogado.query.filter_by(is_principal=True).first()
+    if not advogado_principal:
+        raise ValueError("Nenhum advogado principal (is_principal=True) encontrado no banco de dados.")
+
+    colaborador_id = dados.get('colaborador_id')
+    advogado_colaborador = Advogado.query.get(colaborador_id) if colaborador_id else None
+
+    texto_contratado= ""
+    if not advogado_colaborador:
+        p_qual_core, p_endereco = _get_qualificacao_advogado_parts(advogado_principal)
+        texto_contratado= f"<b>{advogado_principal.nome.upper()}</b>{p_qual_core}, com endereço profissional situado na {p_endereco}."
+    else:
+        p_qual_core, p_endereco = _get_qualificacao_advogado_parts(advogado_principal)
+        c_qual_core, c_endereco = _get_qualificacao_advogado_parts(advogado_colaborador)
+        if p_endereco == c_endereco or not c_endereco:
+            texto_contratado= (
+                f"<b>{advogado_principal.nome.upper()}</b>{p_qual_core} e "
+                f"<b>{advogado_colaborador.nome.upper()}</b>{c_qual_core}, "
+                f"ambos com endereço profissional situado na {p_endereco}."
+            )
+        else:
+            texto_contratado= (
+                f"<b>{advogado_principal.nome.upper()}</b>{p_qual_core}, com endereço profissional situado na {p_endereco} e "
+                f"<b>{advogado_colaborador.nome.upper()}</b>{c_qual_core}, com endereço profissional situado na {c_endereco}."
+            )
+
+    texto_final_contratado= f"CONTRATADO: {texto_contratado}"
+    story.append(Paragraph(texto_final_contratado, style_justified_no_indent))
+    story.append(Spacer(1, 0.5 * cm))
 
     # --- Cláusulas ---
-    clausula_1 = (
-        f"1 - O presente contrato tem por objeto a prestação de serviços de advocacia, por parte do Advogado "
-        f"contratado, para o fim especial {dados['objeto_contrato']}."
-    )
-    pdf.multi_cell(0, 5, clausula_1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(3)
+    # CORREÇÃO: O texto das cláusulas foi atualizado conforme solicitado.
+    # Variáveis dinâmicas para singular/plural
+    if advogado_colaborador:
+        contratado_com_artigo = "do(s) contratado(s)"
+        contratado_sem_artigo = "O(s) contratado(s)"
+        contratado_sem_artigo_ao = "ao(s) contratado(s)"
+        verbo_ter = "tenham"
+        verbo_comprometer = "se comprometem"
+        verbo_reservar = "se reservam"
+        verbo_entender = "entenderem"
+    else:
+        contratado_com_artigo = "do contratado"
+        contratado_sem_artigo = "o contratado"
+        contratado_sem_artigo_ao = "ao contratado"
+        verbo_ter = "tenha"
+        verbo_comprometer = "se compromete"
+        verbo_reservar = "se reserva"
+        verbo_entender = "entender"
 
-    clausula_2 = (
-        "2 - Em caso de indeferimento ou inviabilidade da justiça gratuita, as custas e demais despesas "
-        "judiciais e extrajudiciais correrão por conta exclusiva do(a) contratante. O(A) contratante "
-        "obriga-se, ainda, a fornecer as informações e os documentos necessários ao ajuizamento da ação, "
-        "bem como outros que porventura venham a ser necessários no curso dos mesmos."
-    )
-    pdf.multi_cell(0, 5, clausula_2, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(3)
+    clausulas = [
+        f"1 - O presente contrato tem por objeto a prestação de serviços de advocacia, por parte {contratado_com_artigo}, para o fim especial de {dados['objeto_contrato']}.",
+        f"2 -  Em caso de indeferimento ou inviabilidade da justiça gratuita, as custas e demais despesas judiciais e extrajudiciais correrão por conta exclusiva do(a) contratante. O(A) contratanteobriga-se, ainda, a fornecer as informações e os documentos necessários ao ajuizamento da ação, bem como outros que porventura venham a ser necessários no curso dos mesmos.",
+        f"3 -  Os honorários profissionais devidos pelo(a) contratantea favor {contratado_com_artigo}, corresponderão a {dados['condicoes_honorarios']}.",
+        f"4 -  Os honorários serão devidos também na hipótese de haver acordo das partes; e/ou se obter êxito em resolver administrativamente e independente da propositura da ação. Considerar-se-ão vencidos e imediatamente exigíveis os honorários ora contratados, no caso de o(a) contratantevir a revogar ou cassar o mandato outorgado {contratado_sem_artigo_ao} ou a exigir o substabelecimento sem reservas, sem que este(s) {verbo_ter}, para isso, dado causa. Nesta hipótese, os honorários serão calculados pelo valor da causa, ou, caso publicada sentença ou acórdão, pelo valor da condenação, ou, ainda, acaso liquidado o processo, pelo valor arbitrado em sentença de liquidação.",
+        f"5 -  {contratado_sem_artigo} não {verbo_comprometer} a recorrer e buscar o duplo grau de jurisdição, {verbo_reservar} ao direito de não recorrer da sentença ou acórdão, sem prévio aviso ao cliente, se este for o seu entendimento jurídico. Quando {verbo_entender} que não há possibilidade de reversão ou não preenche os requisitos para apreciação de legalidade por instância superior, já que esta não analisa questões de mérito.",
+    ]
 
-    clausula_3 = (
-        "3 - Os honorários profissionais devidos pelo contratante a favor do advogado contratado, corresponderão a "
-        f"{dados['condicoes_honorarios']}"
-    )
-    pdf.multi_cell(0, 5, clausula_3, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(3)
-    
-    clausula_4 = (
-        "4 - Os honorários serão devidos também na hipótese de haver acordo das partes; e/ou se obter êxito em "
-        "resolver administrativamente e independente da propositura da ação. Considerar-se-ão vencidos e "
-        "imediatamente exigíveis os honorários ora contratados, no caso de o CONTRATANTE vir a revogar ou "
-        "cassar o mandato outorgado ao CONTRATADO ou a exigir o substabelecimento sem reservas, sem que este "
-        "tenha, para isso, dado causa. Nesta hipótese, os honorários serão calculados pelo valor da causa, ou, "
-        "caso publicada sentença ou acórdão, pelo valor da condenação, ou, ainda, acaso liquidado o processo, "
-        "pelo valor arbitrado em sentença de liquidação."
-    )
-    pdf.multi_cell(0, 5, clausula_4, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(3)
+    for clausula in clausulas:
+        story.append(Paragraph(clausula, style_justified_no_indent))
+        story.append(Spacer(1, 0.5 * cm))
 
-    clausula_5 = (
-        "5 - O contratado não se compromete a recorrer e buscar o duplo grau de jurisdição, se reserva ao "
-        "direito de não recorrer da sentença ou acórdão, sem prévio aviso ao cliente, se este for o seu "
-        "entendimento jurídico. Quando entender que não há possibilidade de reversão ou não preenche os "
-        "requisitos para apreciação de legalidade por instância superior, já que esta não analisa questões de mérito."
-    )
-    pdf.multi_cell(0, 5, clausula_5, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(5)
+    # Parágrafo de fechamento
+    texto_fechamento = "E, por assim estarem justos e contratados, assinam o presente em 02 (duas) vias, para um só efeito, na presença das testemunhas abaixo, elegendo o foro da Comarca de Machadinho D'Oeste/RO para dirimir quaisquer dúvidas resultantes deste contrato."
+    story.append(Paragraph(texto_fechamento, style_justified_no_indent))
+    story.append(Spacer(1, 0.5 * cm))
 
-    # --- Fechamento e Assinaturas ---
-    fechamento = (
-        "E, por assim estarem justos e contratados, assinam o presente em 02 (duas) vias, para um só efeito, "
-        "na presença das testemunhas abaixo, elegendo o foro da Comarca de Machadinho Do Oeste - RO, para "
-        "dirimir quaisquer dúvidas resultantes deste contrato."
-    )
-    pdf.multi_cell(0, 5, fechamento, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(5)
 
+    # --- Data e Assinatura ---
     data_atual = datetime.now().strftime("%d de %B de %Y").lower()
-    meses = {
-        "january": "janeiro", "february": "fevereiro", "march": "março", "april": "abril", 
-        "may": "maio", "june": "junho", "july": "julho", "august": "agosto", 
-        "september": "setembro", "october": "outubro", "november": "novembro", "december": "dezembro"
-    }
+    meses = { "january": "janeiro", "february": "fevereiro", "march": "março", "april": "abril", "may": "maio", "june": "junho", "july": "julho", "august": "agosto", "september": "setembro", "october": "outubro", "november": "novembro", "december": "dezembro" }
     for eng, pt in meses.items():
         data_atual = data_atual.replace(eng, pt)
-    pdf.cell(0, 5, f"Machadinho D'Oeste - RO, {data_atual}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    
-    pdf.ln(10)
 
-    pdf.cell(0, 5, "__________________________________________", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.cell(0, 5, "CONTRATANTE", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    
-    pdf.ln(8)
-    
-    pdf.cell(0, 5, "__________________________________________", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.cell(0, 5, "ADVOGADO", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    story.append(Paragraph(f"Machadinho D'Oeste/RO, {data_atual}."))
+    story.append(Spacer(1, 2 * cm))
 
-    # Salva o ficheiro
-    nome_arquivo = f"Contrato_Honorarios_{dados['nome_completo'].replace(' ', '_')}.pdf"
-    caminho_arquivo = os.path.join('static/temp', nome_arquivo)
-    pdf.output(caminho_arquivo)
+    story.append(Paragraph("________________________________", style_center))
+    story.append(Paragraph("CONTRATANTE", style_center))
+    story.append(Spacer(1, 1 * cm))
+
+    story.append(Paragraph("________________________________", style_center))
+    story.append(Paragraph("CONTRATADO(S)", style_center))
+
+    # 4. Geração do PDF
+    doc.build(story)
 
     return caminho_arquivo

@@ -3,9 +3,10 @@
 import os
 import uuid
 # ALTERAÇÃO 1: Adicionar 'send_from_directory' à importação do Flask
-from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app, send_from_directory, redirect
 from flask_login import login_required
 from werkzeug.utils import secure_filename
+from models import Advogado
 
 from . import pdf_tools
 # Importações relativas para funcionar dentro do pacote 'ferramentas'
@@ -27,30 +28,56 @@ ferramentas_bp = Blueprint('ferramentas', __name__,
 @ferramentas_bp.route('/')
 @login_required
 def index():
-    """Rota para a página inicial."""
+    """Rota para a página inicial das ferramentas."""
     return render_template('index_ferramentas.html')
 
 
 # --- Rotas de Geração de Documentos ---
-@ferramentas_bp.route('/procuracao')
+
+# Rota atualizada para direcionar para o formulário correto.
+@ferramentas_bp.route('/procuracao/<tipo>')
 @login_required
-def pagina_procuracao():
-    return render_template('procuracao.html')
+def pagina_procuracao(tipo):
+    """
+    Renderiza o formulário de procuração correto com base no tipo.
+    """
+    # Busca todos os advogados que NÃO são o principal para a lista de colaboradores
+    colaboradores = Advogado.query.filter_by(is_principal=False).order_by(Advogado.nome).all()
+
+    if tipo == 'fisica':
+        return render_template('procuracao_fisica.html', colaboradores=colaboradores)
+    elif tipo == 'juridica':
+        return render_template('procuracao_juridica.html', colaboradores=colaboradores)
+    else:
+        # Se um tipo inválido for passado, redireciona para a página inicial das ferramentas.
+        return redirect(url_for('ferramentas.index'))
 
 
 @ferramentas_bp.route('/gerar-procuracao', methods=['POST'])
 @login_required
 def gerar_procuracao_route():
-    """Endpoint da API para gerar o PDF da procuração."""
+    # ... (o resto desta função permanece exatamente o mesmo) ...
     try:
         data = request.json
         if not data:
-            return jsonify({
-                'success': False,
-                'error': 'Nenhum dado enviado no corpo da requisição'
-            }), 400
+            return jsonify({'success': False, 'error': 'Nenhum dado enviado.'}), 400
 
-        required_fields = ['nome_completo', 'profissao', 'cpf', 'endereco', 'estado_civil']
+        tipo_outorgante = data.get('tipo_outorgante')
+
+        if tipo_outorgante == 'juridica':
+            required_fields = ['razao_social', 'cnpj', 'endereco_sede', 'rep_nome', 'rep_cpf', 'rep_qualificacao']
+            # Validação CNPJ
+            cnpj_limpo = ''.join(filter(str.isdigit, data.get('cnpj', '')))
+            if len(cnpj_limpo) != 14:
+                return jsonify({'success': False, 'error': 'CNPJ deve conter 14 dígitos.'}), 400
+        else: # Padrão para 'fisica'
+            required_fields = ['nome_completo', 'profissao', 'cpf', 'endereco', 'estado_civil']
+            # Validação CPF
+            cpf_limpo = ''.join(filter(str.isdigit, data.get('cpf', '')))
+            if len(cpf_limpo) != 11:
+                return jsonify({'success': False, 'error': 'CPF deve conter 11 dígitos.'}), 400
+
+        # Validação de campos obrigatórios
         for field in required_fields:
             if not data.get(field):
                 return jsonify({
@@ -59,22 +86,12 @@ def gerar_procuracao_route():
                     'missing_field': field
                 }), 400
 
-        # Validação adicional do CPF
-        cpf_limpo = ''.join(filter(str.isdigit, data['cpf']))
-        if len(cpf_limpo) != 11:
-            return jsonify({
-                'success': False,
-                'error': 'CPF deve conter exatamente 11 dígitos numéricos',
-                'invalid_field': 'cpf'
-            }), 400
-
         arquivo = gerar_procuracao_pdf(data)
 
         return jsonify({
             'success': True,
             'filename': os.path.basename(arquivo),
-            'download_url': url_for('ferramentas.download_file', filename=os.path.basename(arquivo)),
-            'file_path': arquivo  # Para debug
+            'download_url': url_for('ferramentas.download_file', filename=os.path.basename(arquivo))
         })
 
     except Exception as e:
@@ -85,11 +102,12 @@ def gerar_procuracao_route():
             'details': str(e)
         }), 500
 
-
 @ferramentas_bp.route('/contrato-honorarios')
 @login_required
 def pagina_contrato_honorarios():
-    return render_template('contrato_honorarios.html')
+    # Busca todos os advogados que NÃO são o principal para a lista de colaboradores
+    colaboradores = Advogado.query.filter_by(is_principal=False).order_by(Advogado.nome).all()
+    return render_template('contrato_honorarios.html', colaboradores=colaboradores)
 
 
 @ferramentas_bp.route('/gerar-contrato-honorarios', methods=['POST'])
@@ -104,7 +122,12 @@ def gerar_contrato_honorarios_route():
         ]
         for field in required_fields:
             if not data.get(field):
-                return jsonify({'error': f'O campo {field.replace("_", " ")} é obrigatório!'}), 400
+                return jsonify({'success': False, 'error': f'O campo {field.replace("_", " ")} é obrigatório!'}), 400
+
+        # Validação CPF
+        cpf_limpo = ''.join(filter(str.isdigit, data.get('cpf', '')))
+        if len(cpf_limpo) != 11:
+            return jsonify({'success': False, 'error': 'CPF deve conter 11 dígitos.'}), 400
 
         arquivo = gerar_contrato_honorarios_pdf(data)
         return jsonify({
@@ -114,7 +137,7 @@ def gerar_contrato_honorarios_route():
         })
     except Exception as e:
         current_app.logger.error("Ocorreu uma exceção em 'gerar_contrato_honorarios_route'", exc_info=True)
-        return jsonify({'error': f'Ocorreu um erro ao gerar o contrato: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': f'Ocorreu um erro ao gerar o contrato: {str(e)}'}), 500
 
 
 @ferramentas_bp.route('/substabelecimento')
