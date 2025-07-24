@@ -28,21 +28,16 @@
     padding: 5px 0;
 }
 
-/* ALTERADO: Adicionamos uma borda transparente para evitar que o layout "pule"
-   quando um dia é selecionado, e adicionamos 'border-color' à transição. */
-/* ALTERADO: Aprimoramos o estilo das células do calendário */
+/* CORREÇÃO: Regra unificada e limpa para as células do calendário. */
 .calendar-days div {
-    /* padding: 10px 0; */ /* Removido para dar lugar a um layout mais flexível */
     transition: background-color 0.2s, border-color 0.2s;
     cursor: pointer;
-    border-radius: 50%;
-    border: 2px solid transparent; /* Borda invisível para manter o espaçamento */
-
-    /* NOVOS ESTILOS para garantir células quadradas e conteúdo centralizado */
-    aspect-ratio: 1 / 1; /* Garante que a célula seja sempre um quadrado perfeito */
+    border: 2px solid transparent; /* Base para os destaques de borda */
+    aspect-ratio: 1 / 1; /* Garante que a célula seja sempre um quadrado */
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative; /* Necessário para o posicionamento do marcador recorrente */
 }
 
 .calendar-days div:hover:not(.prev-date):not(.next-date):not(.selected) {
@@ -53,18 +48,23 @@
     color: #ccc;
     cursor: default;
 }
+
+/*
+  SOLUÇÃO DE DESTAQUE: O dia de "hoje" é destacado com uma borda sutil.
+  Isso resolve todos os conflitos visuais com marcadores recorrentes e cores de compromissos.
+*/
 .calendar-days .today {
-    background-color: #d1cfcf;
-    color: #fff;
-    font-weight: 600;
+    border-color: #0b7505;      /* Contorno cinza para o dia atual */
+    background-color: transparent; /* Garante que o fundo não seja preenchido */
+    font-weight: 700;
 }
 
-/* ALTERADO: Este é o novo estilo modernizado para o dia selecionado. */
+/* O dia selecionado usa uma borda azul, funcionando bem com o dia de hoje. */
 .calendar-days .selected {
-    background-color: #ffffff; /* Remove o fundo sólido */
-    border-color: #0d6efd;      /* Adiciona o contorno azul */
-    color: #333;                /* Mantém a cor do texto padrão para melhor leitura */
-    font-weight: 700;           /* Deixa o número em negrito para destaque */
+    background-color: #ffffff;
+    border-color: #0d6efd;
+    color: #333;
+    font-weight: 700;
 }
 
 
@@ -108,7 +108,7 @@
     display: block;
 }
 
-/* Estilos para prioridade dos compromissos */
+/* Estilos para prioridade dos compromissos na lista */
 .appointment-item.priority-normal {
     background-color: #f0f8ff;
     border-left: 5px solid #1e90ff;
@@ -122,34 +122,29 @@
     border-left: 5px solid #f44336;
 }
 
-/* --- ESTILOS PARA INDICADORES NO CALENDÁRIO --- */
+/* --- ESTILOS PARA INDICADORES NO CALENDÁRIO (SEM CONFLITOS) --- */
+
+/* CORREÇÃO: Removido '!important'. A especificidade é suficiente agora que .today não muda a cor do texto. */
 
 /* 1. Estilo para dias com compromissos URGENTES */
-/* A cor vermelha e o negrito já são o indicador principal. */
 .calendar-days div.urgent-day {
-    color: #dc3545 !important;
-    font-weight: 700 !important;
+    color: #dc3545;
+    font-weight: 700;
 }
 
 /* 2. Estilo para dias com compromissos IMPORTANTES */
-/* O número do dia fica amarelo/âmbar e em negrito. */
 .calendar-days div.important-day {
-    color: #ffc107 !important;
-    font-weight: 700 !important;
+    color: #ffc107;
+    font-weight: 700;
 }
 
 /* 3. Estilo para dias com compromissos NORMAIS */
-/* O número do dia fica azul e em negrito. */
 .calendar-days div.has-appointment {
-    color: #0965c1 !important;
-    font-weight: 700 !important;
+    color: #0965c1;
+    font-weight: 700;
 }
 
 /* 4. Estilo para dias com compromissos RECORRENTES (Marcador de Canto) */
-/* Esta parte permanece, pois o marcador de canto é um indicador separado. */
-.calendar-days div.recurring-day {
-    position: relative;
-}
 .calendar-days div.recurring-day::after {
     content: "";
     position: absolute;
@@ -170,14 +165,4 @@
 }
 .calendar-days div.recurring-urgente::after {
     border-color: transparent #dc3545 transparent transparent; /* Vermelho */
-}
-
-/* 5. AJUSTES DE INTERAÇÃO (PARA O DIA DE "HOJE") */
-/* Como as cores dos números agora usam !important, elas já irão sobrepor
-   a cor branca do dia "hoje". A única coisa que precisamos ajustar é o
-   marcador de canto para que ele fique visível. */
-
-/* O marcador de canto fica branco no dia de "hoje" para manter o contraste */
-.calendar-days div.recurring-day.today::after {
-    border-color: transparent white transparent transparent;
 }
