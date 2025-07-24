@@ -25,13 +25,15 @@ def create_admin_user():
             email='admin@escritorio.com',
             is_admin=True
         )
-        admin.set_password('102030')  # IMPORTANTE: Troque esta senha após o primeiro login!
+        # Altere a senha aqui dentro das aspas
+        admin.set_password('102030')
         db.session.add(admin)
         db.session.commit()
         print("Usuário 'admin' criado com sucesso!")
     else:
         print("Usuário 'admin' já existe.")
 
+# ... (resto do código)
 if __name__ == '__main__':
     # 3. Cria uma instância da aplicação Flask para obter o contexto
     app = create_app()
