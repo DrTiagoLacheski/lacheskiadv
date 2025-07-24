@@ -345,6 +345,90 @@ def split_pdf_route():
         return jsonify({'error': 'Ocorreu um erro inesperado ao dividir o PDF.'}), 500
 
 
+@ferramentas_bp.route('/view/<path:filename>')
+@login_required
+def view_pdf(filename):
+    """
+    Renderiza a página do visualizador de PDF, passando o nome do arquivo
+    que será carregado pelo JavaScript.
+    """
+    # Você precisará criar o template 'viewer.html' para esta rota.
+    return render_template('viewer.html', filename=filename)
+
+
+@ferramentas_bp.route('/get-pdf/<path:filename>')
+@login_required
+def get_pdf_file(filename):
+    """
+    Serve o arquivo PDF bruto para ser carregado pelo PDF.js no frontend.
+    'as_attachment=False' é crucial para que o navegador possa exibi-lo inline.
+    """
+    pdf_directory = os.path.join(current_app.root_path, 'static', 'temp')
+
+    return send_from_directory(
+        directory=pdf_directory,
+        path=filename,
+        as_attachment=False  # Garante que o PDF seja exibido, não baixado
+    )
+
+
+@ferramentas_bp.route('/preview-split-pdf', methods=['POST'])
+@login_required
+def preview_split_pdf_route():
+    """
+    Gera uma pré-visualização do PDF dividido sem iniciar o download.
+    Retorna uma URL para ser exibida em um iframe/card.
+    """
+    if 'pdf' not in request.files:
+        return jsonify({'success': False, 'error': 'Nenhum arquivo PDF enviado.'}), 400
+
+    file = request.files['pdf']
+    page_ranges = request.form.get('page_ranges')
+
+    if file.filename == '' or not page_ranges:
+        return jsonify({'success': False, 'error': 'Dados insuficientes para a pré-visualização.'}), 400
+
+    upload_folder = os.path.join(current_app.root_path, 'static', 'temp_uploads')
+    output_folder = os.path.join(current_app.root_path, 'static', 'temp')
+    os.makedirs(upload_folder, exist_ok=True)
+
+    original_filename = f"original_{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+    original_filepath = os.path.join(upload_folder, original_filename)
+    file.save(original_filepath)
+
+    try:
+        preview_output_filename = f"preview_{uuid.uuid4().hex}.pdf"
+
+        # --- CORREÇÃO APLICADA AQUI ---
+        # 1. Capture o caminho real do arquivo retornado pela função.
+        created_pdf_path = split_pdf(original_filepath, page_ranges, output_folder, preview_output_filename)
+
+        # 2. Verifique se o caminho retornado é válido e se o arquivo existe.
+        if not created_pdf_path or not os.path.exists(created_pdf_path):
+            # Esta mensagem de erro é a que você estava vendo.
+            raise ValueError("A divisão do PDF para pré-visualização falhou.")
+
+        # 3. Use o nome do arquivo real que foi criado.
+        final_preview_filename = os.path.basename(created_pdf_path)
+        preview_url = url_for('ferramentas.get_pdf_file', filename=final_preview_filename)
+
+        return jsonify({
+            'success': True,
+            'filename': final_preview_filename,
+            'preview_url': preview_url
+        })
+    except ValueError as e:
+        # Retorna o erro específico da validação (ex: páginas inválidas).
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Erro ao gerar pré-visualização de PDF: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Ocorreu um erro inesperado ao gerar a pré-visualização.'}), 500
+    finally:
+        if os.path.exists(original_filepath):
+            cleanup_files([original_filepath])
+
+
+
 # --- Rota de Download ---
 # ALTERAÇÃO 2: Rota de download corrigida e padronizada
 @ferramentas_bp.route('/download/<path:filename>')
