@@ -6,6 +6,8 @@ from flask import Flask
 from flask_login import LoginManager
 from models import db, User
 from config import Config
+from core.utils import clean_temp_folder
+
 
 def create_app():
     """
@@ -20,25 +22,20 @@ def create_app():
 
     # --- CONFIGURAÇÃO DE LOGGING ---
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO, # Recomendo INFO para produção para não poluir os logs
         format='%(asctime)s %(levelname)s %(name)s : %(message)s'
     )
     app.logger.info('Iniciando configuração da aplicação Flask')
 
     # --- INICIALIZAÇÃO DE EXTENSÕES ---
-    # Banco de dados
     db.init_app(app)
-
-    # Autenticação (Flask-Login)
     login_manager = LoginManager()
     login_manager.init_app(app)
-    # Define a view padrão para login (redireciona usuários não logados)
     login_manager.login_view = 'auth.login'
 
     @login_manager.user_loader
     def load_user(user_id):
         """Carrega o usuário a partir do ID da sessão."""
-        # AJUSTE: Usando a sintaxe moderna do SQLAlchemy para evitar warnings.
         return db.session.get(User, int(user_id))
 
     # --- REGISTRO DOS BLUEPRINTS (ROTAS SEPARADAS) ---
@@ -57,12 +54,12 @@ def create_app():
     app.register_blueprint(appointment_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
-    # Garante que o diretório para arquivos temporários exista
-    temp_dir = os.path.join(app.root_path, 'static', 'temp')
-    os.makedirs(temp_dir, exist_ok=True)
-
-    # Cria as tabelas do banco de dados (se não existirem)
     with app.app_context():
+        # ALTERAÇÃO: A função de limpeza é chamada aqui, antes de criar as tabelas.
+        # Este era o passo que faltava.
+        clean_temp_folder(app)
+
+        # Cria as tabelas do banco de dados (se não existirem)
         db.create_all()
         app.logger.info('Tabelas do banco de dados verificadas/criadas.')
 
@@ -74,4 +71,6 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
+    # Em modo de debug, o servidor reinicia a cada alteração, executando a limpeza.
+    # Em produção, a limpeza rodará apenas uma vez na inicialização.
     app.run(host='0.0.0.0', port=5001, debug=True)

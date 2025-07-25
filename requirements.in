@@ -1,0 +1,15 @@
+# requirements.in
+
+# Framework principal
+flask
+
+# Gerenciamento de login e usuários
+flask-login
+flask-sqlalchemy
+werkzeug
+
+# Agendador de tarefas em segundo plano
+apscheduler
+
+#Para pdf
+reportlab
