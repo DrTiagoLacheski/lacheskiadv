@@ -19,6 +19,7 @@ class User(UserMixin, db.Model):
     attachments = db.relationship('Attachment', backref='author', lazy='dynamic')
     # Adicionado o relacionamento com Appointment
     appointments = db.relationship('Appointment', backref='user', lazy='dynamic', cascade="all, delete-orphan")
+    advogados = db.relationship('Advogado', backref='owner_user', lazy='dynamic', cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -123,6 +124,8 @@ class TodoItem(db.Model):
 
 class Advogado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
     nome = db.Column(db.String(150), nullable=False)
     estado_civil = db.Column(db.String(50), nullable=False)
     profissao = db.Column(db.String(100), nullable=False, default='advogado')

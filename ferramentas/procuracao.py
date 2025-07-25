@@ -1,6 +1,5 @@
-# ferramentas/procuracao.py
+# ferramentas/procuracao.py (Versão Corrigida)
 # Contém a lógica de negócio para a geração de PROCURAÇÕES.
-# REFATORADO para usar a biblioteca ReportLab para formatação avançada.
 
 import os
 from datetime import datetime
@@ -8,20 +7,17 @@ from datetime import datetime
 # Importa o modelo do banco de dados
 from models import Advogado
 
-# Importações da biblioteca ReportLab
+# ... (outros imports do ReportLab e PIL permanecem iguais) ...
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
 from reportlab.lib.units import cm
-
-# Importação da Pillow para ler as dimensões da imagem
 from PIL import Image as PILImage
 
 
-# --- FUNÇÕES AUXILIARES (A MAIORIA PERMANECE IGUAL) ---
-
+# --- FUNÇÕES AUXILIARES (permanecem iguais) ---
 def _formatar_cpf_cnpj(num):
-    """Função auxiliar para formatar CPF ou CNPJ, removendo caracteres não numéricos."""
+    # ... (código sem alteração) ...
     if not num:
         return ""
     num_only = ''.join(filter(str.isdigit, str(num)))
@@ -33,11 +29,7 @@ def _formatar_cpf_cnpj(num):
 
 
 def _get_qualificacao_advogado_parts(advogado):
-    """
-    Retorna as partes da qualificação de um advogado (texto principal e endereço).
-    Isso permite comparar os endereços antes de escrever no PDF.
-    Retorna: (string_qualificacao_sem_endereco, string_endereco)
-    """
+    # ... (código sem alteração) ...
     if not advogado:
         return None, None
 
@@ -63,20 +55,20 @@ def _get_qualificacao_advogado_parts(advogado):
     return qualificacao_sem_endereco, endereco
 
 
-# --- FUNÇÃO PRINCIPAL DE GERAÇÃO DO PDF (USANDO REPORTLAB) ---
+# --- FUNÇÃO PRINCIPAL DE GERAÇÃO DO PDF (COM A CORREÇÃO) ---
 
-def gerar_procuracao_pdf(dados_cliente):
+def gerar_procuracao_pdf(dados_cliente, current_user):
     """
     Gera o arquivo PDF da procuração com base nos dados do cliente usando ReportLab.
+    Recebe 'current_user' para garantir que apenas os advogados corretos sejam usados.
     Retorna o caminho do arquivo gerado.
     """
-    # 1. Definição do nome e caminho do arquivo de saída
+    # ... (código de definição de nome de arquivo e estilos permanece igual) ...
     nome_arquivo_base = dados_cliente.get('razao_social') or dados_cliente.get('nome_completo') or "procuracao"
     nome_arquivo_seguro = "".join(c for c in nome_arquivo_base.replace(' ', '_') if c.isalnum() or c in ('_')).rstrip()
     nome_arquivo = f"Procuracao_{nome_arquivo_seguro}.pdf"
     caminho_arquivo = os.path.join('static/temp', nome_arquivo)
 
-    # 2. Configuração do Documento e Estilos
     doc = SimpleDocTemplate(
         caminho_arquivo,
         leftMargin=2.5 * cm,
@@ -84,35 +76,7 @@ def gerar_procuracao_pdf(dados_cliente):
         topMargin=0.6 * cm,
         bottomMargin=2.5 * cm
     )
-
     styles = getSampleStyleSheet()
-    # Estilo para parágrafos justificados COM recuo na primeira linha
-    style_justified_with_indent = ParagraphStyle(
-        name='JustifiedWithIndent',
-        parent=styles['Normal'],
-        fontName='Times-Roman',
-        fontSize=12,
-        leading=18,  # Espaçamento entre linhas
-        alignment=TA_JUSTIFY,
-        firstLineIndent=1.25 * cm
-    )
-    # Estilo para os títulos das seções (quando em linha separada)
-    style_titulo = ParagraphStyle(
-        name='Titulo',
-        parent=styles['Normal'],
-        fontName='Times-Bold',
-        fontSize=12,
-        leading=18,
-    )
-    # Estilo para a assinatura centralizada
-    style_center = ParagraphStyle(
-        name='Center',
-        parent=styles['Normal'],
-        fontName='Times-Roman',
-        fontSize=12,
-        alignment=TA_CENTER
-    )
-    # Estilo para parágrafos justificados SEM recuo (para títulos na mesma linha)
     style_justified_no_indent = ParagraphStyle(
         name='JustifiedNoIndent',
         parent=styles['Normal'],
@@ -122,37 +86,30 @@ def gerar_procuracao_pdf(dados_cliente):
         alignment=TA_JUSTIFY,
         firstLineIndent=0
     )
-
-    # 3. Construção do Conteúdo (A "Story" do ReportLab)
+    style_center = ParagraphStyle(
+        name='Center',
+        parent=styles['Normal'],
+        fontName='Times-Roman',
+        fontSize=12,
+        alignment=TA_CENTER
+    )
     story = []
-
-    # --- LÓGICA CORRIGIDA E DEFINITIVA PARA A LOGO ---
+    # ... (código da logo e do outorgante permanece igual) ...
     logo_path = 'static/images/logolacheski.png'
     if os.path.exists(logo_path):
         try:
-            # Abre a imagem para ler suas dimensões originais
             with PILImage.open(logo_path) as img:
                 img_width, img_height = img.size
-
-            # Calcula a proporção (aspect ratio)
             aspect_ratio = img_height / float(img_width)
-
-            # Define a largura desejada no PDF
             display_width = 6 * cm
-
-            # Calcula a altura correspondente para MANTER a proporção
             display_height = display_width * aspect_ratio
-
-            # Cria o objeto Image com as dimensões exatas e sem deformação
             logo = Image(logo_path, width=display_width, height=display_height)
             logo.hAlign = 'CENTER'
             story.append(logo)
-            story.append(Spacer(1, 1 * cm))  # Espaço após a logo
+            story.append(Spacer(1, 1 * cm))
         except Exception as e:
             print(f"Erro ao processar a imagem da logo: {e}")
 
-
-    # --- Seção do Outorgante (Cliente) ---
     tipo_outorgante = dados_cliente.get('tipo_outorgante')
     texto_outorgante = ""
     if tipo_outorgante == 'juridica':
@@ -164,7 +121,7 @@ def gerar_procuracao_pdf(dados_cliente):
             f"<b>{dados_cliente['rep_nome'].upper()}</b>, inscrito(a) no CPF sob o n.º "
             f"{_formatar_cpf_cnpj(dados_cliente['rep_cpf'])}."
         )
-    else:  # Padrão para Pessoa Física
+    else:
         qualificacao_pf = (
             f"brasileiro(a), {dados_cliente['estado_civil']}, {dados_cliente['profissao']}, "
             f"devidamente inscrito(a) no CPF n.º {_formatar_cpf_cnpj(dados_cliente['cpf'])}"
@@ -174,21 +131,27 @@ def gerar_procuracao_pdf(dados_cliente):
         qualificacao_pf += f", residente e domiciliado(a) à {dados_cliente['endereco']}."
         texto_outorgante = f"<b>{dados_cliente['nome_completo'].upper()}</b>, {qualificacao_pf}"
 
-    # Combina título e texto em um único parágrafo
     texto_final_outorgante = f"OUTORGANTE: {texto_outorgante}"
     story.append(Paragraph(texto_final_outorgante, style_justified_no_indent))
     story.append(Spacer(1, 0.5 * cm))
 
-    # --- Seção do Outorgado (Advogados) ---
-    advogado_principal = Advogado.query.filter_by(is_principal=True).first()
+    # --- Seção do Outorgado (Advogados) - LÓGICA CORRIGIDA ---
+
+    # 1. Busca o advogado principal QUE PERTENCE AO USUÁRIO LOGADO
+    advogado_principal = current_user.advogados.filter_by(is_principal=True).first()
     if not advogado_principal:
-        raise ValueError("Nenhum advogado principal (is_principal=True) encontrado no banco de dados.")
+        raise ValueError(f"Nenhum advogado principal encontrado para o usuário '{current_user.username}'.")
 
+    # 2. Busca o advogado colaborador, garantindo que ele também pertença ao usuário logado
     colaborador_id = dados_cliente.get('colaborador_id')
-    advogado_colaborador = Advogado.query.get(colaborador_id) if colaborador_id else None
+    advogado_colaborador = None
+    if colaborador_id:
+        # A busca é feita dentro da lista de advogados do próprio usuário
+        advogado_colaborador = current_user.advogados.filter_by(id=colaborador_id).first()
 
+    # O resto da lógica para montar o texto permanece a mesma
     texto_outorgado = ""
-    if not advogado_colaborador:
+    if not advogado_colaborador or advogado_colaborador.id == advogado_principal.id:
         p_qual_core, p_endereco = _get_qualificacao_advogado_parts(advogado_principal)
         texto_outorgado = f"<b>{advogado_principal.nome.upper()}</b>{p_qual_core}, com endereço profissional situado na {p_endereco}."
     else:
@@ -207,19 +170,16 @@ def gerar_procuracao_pdf(dados_cliente):
                 f"<b>{advogado_colaborador.nome.upper()}</b>{c_qual_core}, com endereço profissional situado na {c_endereco}."
             )
 
-    # Combina título e texto em um único parágrafo
     texto_final_outorgado = f"OUTORGADO: {texto_outorgado}"
     story.append(Paragraph(texto_final_outorgado, style_justified_no_indent))
     story.append(Spacer(1, 0.5 * cm))
 
-    # --- Seção dos Poderes ---
-
+    # ... (código da seção de poderes, data e assinatura permanece igual) ...
     poderes = "O outorgante nomeia os outorgados seus procuradores, concedendo-lhes os poderes inerentes da cláusula ad judicia et extra para o foro em geral, podendo promover quaisquer medidas judiciais ou administrativas, oferecer defesa, interpor recursos, ajuizar ações e conduzir os respectivos processos, solicitar, providenciar e ter acesso a documentos de qualquer natureza, sendo o presente instrumento de mandato oneroso e contratual, podendo substabelecer este a outrem, com ou sem reserva de poderes, a fim de praticar todos os demais atos necessários ao fiel desempenho deste mandato, além de reconhecer a procedência do pedido, transigir, desistir, renunciar ao direito sobre o qual se funda a ação, receber, dar quitação, firmar compromisso e assinar declaração de hipossuficiência econômica."
     texto_final_poderes = f"<b>PODERES:</b> {poderes}"
     story.append(Paragraph(texto_final_poderes, style_justified_no_indent))
     story.append(Spacer(1, 1 * cm))
 
-    # --- Data e Assinatura ---
     data_atual = datetime.now().strftime("%d de %B de %Y").lower()
     meses = {
         "january": "janeiro", "february": "fevereiro", "march": "março",
@@ -235,7 +195,5 @@ def gerar_procuracao_pdf(dados_cliente):
     story.append(Paragraph("___________________________", style_center))
     story.append(Paragraph("OUTORGANTE", style_center))
 
-    # 4. Geração do PDF
     doc.build(story)
-
     return caminho_arquivo

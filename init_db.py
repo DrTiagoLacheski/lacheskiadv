@@ -1,82 +1,107 @@
 # init_db.py
-# Script para inicializar o banco de dados: cria todas as tabelas e os usuários.
+# Este script cria usuários e associa perfis de advogado a eles.
 
-from app import create_app
-from models import db, User
+from app import create_app, db
+from models import User, Advogado
+# A fonte de dados agora vem do config.py de ferramentas
+from ferramentas.config import DADOS_ADVOGADOS
+
 
 def initialize_database():
     """
-    Cria todas as tabelas do banco de dados com base nos modelos.
+    Cria os usuários (admin e user) e popula a tabela de advogados,
+    associando os perfis corretos a cada um.
     """
-    print("Criando tabelas do banco de dados...")
-    db.create_all()
-    print("Tabelas criadas com sucesso.")
+    app = create_app()
+    with app.app_context():
+        print("Iniciando script de inicialização do banco de dados...")
 
-def create_admin_user():
-    """
-    Verifica se o usuário admin existe e, se não, o cria.
-    """
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(
-            username='admin',
-            email='admin@escritorio.com',
-            is_admin=True
-        )
-        admin.set_password('102030')
-        db.session.add(admin)
-        db.session.commit()
-        print("Usuário 'admin' criado com sucesso!")
-    else:
-        print("Usuário 'admin' já existe.")
+        # --- 1. Criar o Usuário Dono da Conta (admin) ---
+        owner_username = 'admin'
+        owner_user = User.query.filter_by(username=owner_username).first()
 
-def create_user2_user():
-    """
-    Verifica se o usuário user2 existe e, se não, o cria.
-    """
-    user = User.query.filter_by(username='user2').first()
-    if not user:
-        user = User(
-            username='user2',
-            email='user2@escritorio.com',
-            is_admin=False # Não é administrador
-        )
-        user.set_password('user')
-        db.session.add(user)
-        db.session.commit()
-        print("Usuário 'user2' criado com sucesso!")
-    else:
-        print("Usuário 'user2' já existe.")
+        if not owner_user:
+            print(f"Criando usuário dono da conta: '{owner_username}'")
+            owner_user = User(
+                username=owner_username,
+                email='admin@escritorio.com',
+                is_admin=True
+            )
+            owner_user.set_password('102030')  # Use uma senha forte em produção
+            db.session.add(owner_user)
+            db.session.commit()
+        else:
+            print(f"Usuário dono da conta '{owner_username}' já existe.")
 
-def create_user_user():
-    """
-    Verifica se o usuário user existe e, se não, o cria.
-    """
-    user = User.query.filter_by(username='user').first()
-    if not user:
-        user = User(
-            username='user',
-            email='user@escritorio.com',
-            is_admin=False # Não é administrador
-        )
-        user.set_password('user')
-        db.session.add(user)
+        # --- 2. Sincronizar os Perfis de Advogado para a conta 'admin' ---
+        for key, adv_data in DADOS_ADVOGADOS.items():
+            advogado_existente = Advogado.query.filter_by(cpf=adv_data['cpf']).first()
+            if advogado_existente:
+                print(f"Perfil de advogado para '{adv_data['nome']}' já existe. Pulando.")
+                continue
+
+            print(f"Criando perfil de advogado para '{adv_data['nome']}' e associando a '{owner_username}'.")
+            novo_advogado = Advogado(
+                user_id=owner_user.id,
+                nome=adv_data['nome'],
+                estado_civil=adv_data['estado_civil'],
+                profissao=adv_data['profissao'],
+                cpf=adv_data['cpf'],
+                rg=adv_data.get('rg', ''),
+                orgao_emissor=adv_data.get('orgao_emissor', ''),
+                oab_pr=adv_data.get('oab', {}).get('pr', ''),
+                oab_ro=adv_data.get('oab', {}).get('ro', ''),
+                oab_sp=adv_data.get('oab', {}).get('sp', ''),
+                endereco_profissional=adv_data['endereco_profissional'],
+                is_principal=adv_data.get('is_principal', False)
+            )
+            db.session.add(novo_advogado)
+
+        # --- 3. Criar um Usuário Normal de Exemplo (user) com múltiplos perfis ---
+        normal_username = 'user'
+        normal_user = User.query.filter_by(username=normal_username).first()
+
+        if not normal_user:
+            print(f"Criando usuário normal de exemplo: '{normal_username}'")
+            normal_user = User(
+                username=normal_username,
+                email='user@exemplo.com',
+                is_admin=False
+            )
+            normal_user.set_password('user')
+
+            # Cria um perfil de advogado principal para este usuário
+            default_advogado = Advogado(
+                nome="USUÁRIO PADRÃO",
+                estado_civil="não informado",
+                profissao="advogado",
+                cpf="999.999.999-99",
+                endereco_profissional="Endereço Padrão do Usuário",
+                is_principal=True
+            )
+
+            # --- NOVO: Cria um perfil de advogado associado para este usuário ---
+            associate_advogado = Advogado(
+                nome="ASSOCIADO PADRÃO (TESTE)",
+                estado_civil="não informado",
+                profissao="advogado",
+                cpf="888.888.888-88",  # CPF único para o associado de teste
+                endereco_profissional="Endereço do Associado de Teste",
+                is_principal=False  # Importante: este não é o principal
+            )
+
+            # Associa ambos os perfis ao usuário 'user'
+            normal_user.advogados.append(default_advogado)
+            normal_user.advogados.append(associate_advogado)
+
+            db.session.add(normal_user)
+        else:
+            print(f"Usuário normal de exemplo '{normal_username}' já existe.")
+
+        # --- 4. Salva todas as alterações no banco ---
         db.session.commit()
-        print("Usuário 'user' criado com sucesso!")
-    else:
-        print("Usuário 'user' já existe.")
+        print("\nOperação de inicialização concluída com sucesso!")
 
 
 if __name__ == '__main__':
-    # Cria uma instância da aplicação Flask para obter o contexto
-    app = create_app()
-
-    # Usa o "contexto da aplicação" para que o script saiba qual banco de dados usar
-    with app.app_context():
-        initialize_database()
-        create_admin_user()
-        # Chama as novas funções para criar os outros usuários
-        create_user2_user()
-        create_user_user()
-
-    print("Inicialização do banco de dados concluída.")
+    initialize_database()

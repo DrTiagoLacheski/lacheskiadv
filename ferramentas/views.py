@@ -1,10 +1,10 @@
-# unir/ferramentas/views.py
+# ferramentas/views.py (Versão Corrigida e Implementada)
 
 import os
 import uuid
-# ALTERAÇÃO 1: Adicionar 'send_from_directory' à importação do Flask
-from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app, send_from_directory, redirect
-from flask_login import login_required
+from flask import Blueprint, render_template, request, jsonify, url_for, current_app, send_from_directory, redirect
+# ALTERAÇÃO 1: Importar 'current_user' para saber quem está logado
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import Advogado
 
@@ -17,11 +17,9 @@ from .calctrabalhista import gerar_relatorio_trabalhista_pdf
 # Importa as funções de pdf_tools
 from .pdf_tools import merge_pdfs, convert_images_to_pdf, split_pdf, cleanup_files
 
-# CORREÇÃO: Adicionado template_folder='templates' para que o Flask encontre os HTMLs
-# nesta pasta (.../ferramentas/templates/)
 ferramentas_bp = Blueprint('ferramentas', __name__,
                            template_folder='templates',
-                           static_folder='static',  # Pasta estática relativa a este Blueprint
+                           static_folder='static',
                            static_url_path='/ferramentas_static')
 
 
@@ -34,50 +32,44 @@ def index():
 
 # --- Rotas de Geração de Documentos ---
 
-# Rota atualizada para direcionar para o formulário correto.
 @ferramentas_bp.route('/procuracao/<tipo>')
 @login_required
 def pagina_procuracao(tipo):
     """
     Renderiza o formulário de procuração correto com base no tipo.
     """
-    # Busca todos os advogados que NÃO são o principal para a lista de colaboradores
-    colaboradores = Advogado.query.filter_by(is_principal=False).order_by(Advogado.nome).all()
+    # ALTERAÇÃO 2: Busca os colaboradores QUE PERTENCEM ao usuário logado.
+    colaboradores = current_user.advogados.filter_by(is_principal=False).order_by(Advogado.nome).all()
 
     if tipo == 'fisica':
         return render_template('procuracao_fisica.html', colaboradores=colaboradores)
     elif tipo == 'juridica':
         return render_template('procuracao_juridica.html', colaboradores=colaboradores)
     else:
-        # Se um tipo inválido for passado, redireciona para a página inicial das ferramentas.
         return redirect(url_for('ferramentas.index'))
 
 
 @ferramentas_bp.route('/gerar-procuracao', methods=['POST'])
 @login_required
 def gerar_procuracao_route():
-    # ... (o resto desta função permanece exatamente o mesmo) ...
     try:
         data = request.json
         if not data:
             return jsonify({'success': False, 'error': 'Nenhum dado enviado.'}), 400
 
+        # ... (validações de campos permanecem iguais) ...
         tipo_outorgante = data.get('tipo_outorgante')
-
         if tipo_outorgante == 'juridica':
             required_fields = ['razao_social', 'cnpj', 'endereco_sede', 'rep_nome', 'rep_cpf', 'rep_qualificacao']
-            # Validação CNPJ
             cnpj_limpo = ''.join(filter(str.isdigit, data.get('cnpj', '')))
             if len(cnpj_limpo) != 14:
                 return jsonify({'success': False, 'error': 'CNPJ deve conter 14 dígitos.'}), 400
-        else: # Padrão para 'fisica'
+        else:
             required_fields = ['nome_completo', 'profissao', 'cpf', 'endereco', 'estado_civil']
-            # Validação CPF
             cpf_limpo = ''.join(filter(str.isdigit, data.get('cpf', '')))
             if len(cpf_limpo) != 11:
                 return jsonify({'success': False, 'error': 'CPF deve conter 11 dígitos.'}), 400
 
-        # Validação de campos obrigatórios
         for field in required_fields:
             if not data.get(field):
                 return jsonify({
@@ -86,7 +78,8 @@ def gerar_procuracao_route():
                     'missing_field': field
                 }), 400
 
-        arquivo = gerar_procuracao_pdf(data)
+        # ALTERAÇÃO 3: Passa o 'current_user' para a função de geração do PDF.
+        arquivo = gerar_procuracao_pdf(data, current_user)
 
         return jsonify({
             'success': True,
@@ -102,11 +95,12 @@ def gerar_procuracao_route():
             'details': str(e)
         }), 500
 
+
 @ferramentas_bp.route('/contrato-honorarios')
 @login_required
 def pagina_contrato_honorarios():
-    # Busca todos os advogados que NÃO são o principal para a lista de colaboradores
-    colaboradores = Advogado.query.filter_by(is_principal=False).order_by(Advogado.nome).all()
+    # ALTERAÇÃO 4: Busca os colaboradores QUE PERTENCEM ao usuário logado.
+    colaboradores = current_user.advogados.filter_by(is_principal=False).order_by(Advogado.nome).all()
     return render_template('contrato_honorarios.html', colaboradores=colaboradores)
 
 
@@ -116,6 +110,7 @@ def gerar_contrato_honorarios_route():
     """Endpoint da API para gerar o PDF do contrato de honorários."""
     try:
         data = request.json
+        # ... (validações de campos permanecem iguais) ...
         required_fields = [
             'nome_completo', 'estado_civil', 'cpf', 'endereco',
             'objeto_contrato', 'condicoes_honorarios'
@@ -124,12 +119,14 @@ def gerar_contrato_honorarios_route():
             if not data.get(field):
                 return jsonify({'success': False, 'error': f'O campo {field.replace("_", " ")} é obrigatório!'}), 400
 
-        # Validação CPF
         cpf_limpo = ''.join(filter(str.isdigit, data.get('cpf', '')))
         if len(cpf_limpo) != 11:
             return jsonify({'success': False, 'error': 'CPF deve conter 11 dígitos.'}), 400
 
-        arquivo = gerar_contrato_honorarios_pdf(data)
+        # ALTERAÇÃO 5: Passa o 'current_user' para a função de geração do contrato.
+        # (Assumindo que 'contratos.py' também será atualizado para usar o current_user)
+        arquivo = gerar_contrato_honorarios_pdf(data, current_user)
+
         return jsonify({
             'success': True,
             'filename': os.path.basename(arquivo),
@@ -139,6 +136,8 @@ def gerar_contrato_honorarios_route():
         current_app.logger.error("Ocorreu uma exceção em 'gerar_contrato_honorarios_route'", exc_info=True)
         return jsonify({'success': False, 'error': f'Ocorreu um erro ao gerar o contrato: {str(e)}'}), 500
 
+
+# --- O RESTANTE DO ARQUIVO PERMANECE IGUAL ---
 
 @ferramentas_bp.route('/substabelecimento')
 @login_required
@@ -162,7 +161,8 @@ def gerar_substabelecimento_route():
             if not data.get(field):
                 return jsonify({'error': f'O campo {field.replace("_", " ")} é obrigatório!'}), 400
 
-        arquivo = gerar_substabelecimento_pdf(data)
+        # NOTA: Esta função também deveria receber 'current_user' para identificar o advogado principal.
+        arquivo = gerar_substabelecimento_pdf(data, current_user)
         return jsonify({
             'success': True,
             'filename': os.path.basename(arquivo),
@@ -173,6 +173,8 @@ def gerar_substabelecimento_route():
         return jsonify({'error': f'Ocorreu um erro ao gerar o substabelecimento: {str(e)}'}), 500
 
 
+# ... (O restante das rotas de cálculo trabalhista e ferramentas PDF não precisam de alteração) ...
+# ... (As rotas de download, preview, etc., também permanecem iguais) ...
 @ferramentas_bp.route('/calculo-trabalhista')
 @login_required
 def pagina_calculo_trabalhista():
@@ -453,16 +455,11 @@ def preview_split_pdf_route():
 
 
 # --- Rota de Download ---
-# ALTERAÇÃO 2: Rota de download corrigida e padronizada
 @ferramentas_bp.route('/download/<path:filename>')
 @login_required
 def download_file(filename):
     """Rota para fazer o download dos arquivos gerados."""
-    # Define o diretório de onde os arquivos serão servidos.
     directory = os.path.join(current_app.root_path, 'static', 'temp')
-
-    # Usa send_from_directory que é mais seguro e idiomático.
-    # Ele lida com a junção de caminhos e verificações de segurança.
     return send_from_directory(
         directory=directory,
         path=filename,
