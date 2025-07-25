@@ -1,13 +1,15 @@
-# routes/auth.py
+# triagem/routes/auth.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
-from models import User
+# ALTERAÇÃO 1: Importar o 'db' e os modelos 'User' e 'Advogado'
+from models import db, User, Advogado
 from urllib.parse import urlsplit
 
 auth_bp = Blueprint('auth', __name__, template_folder='../../../templates')
 
 
+# Rota de login (sem alterações)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -24,19 +26,66 @@ def login():
 
         login_user(user, remember=True)
 
-        # --- LÓGICA DE REDIRECIONAMENTO ---
         next_page = request.args.get('next')
-
-        # A nova verificação: permite URLs relativas (sem domínio)
-        # OU URLs absolutas que apontam para o MESMO domínio do site.
         if not next_page or urlsplit(next_page).netloc != '' and urlsplit(next_page).netloc != request.host:
             next_page = url_for('main.index')
 
         return redirect(next_page)
 
-    return render_template('login.html', title = 'Entrar')
+    return render_template('login.html', title='Entrar')
 
 
+# --- NOVO CÓDIGO: ROTA DE CADASTRO ---
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """Lida com o cadastro de novos usuários."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        password2 = request.form.get('password2')
+
+        # Validações
+        if password != password2:
+            flash('As senhas não coincidem.', 'danger')
+            return redirect(url_for('auth.register'))
+
+        if User.query.filter_by(username=username).first():
+            flash('Este nome de usuário já está em uso.', 'danger')
+            return redirect(url_for('auth.register'))
+
+        if User.query.filter_by(email=email).first():
+            flash('Este e-mail já foi cadastrado.', 'danger')
+            return redirect(url_for('auth.register'))
+
+        # Cria o novo usuário
+        new_user = User(username=username, email=email, is_admin=False)
+        new_user.set_password(password)
+
+        # Cria um perfil de advogado padrão para o novo usuário
+        # Isso é crucial para que as outras ferramentas funcionem
+        default_advogado = Advogado(
+            nome=username.upper(),
+            estado_civil="não informado",
+            cpf=f"000.000.000-00-{username}", # CPF único para evitar conflitos
+            endereco_profissional="Endereço não informado",
+            is_principal=True # É o principal para ESTA conta
+        )
+        new_user.advogados.append(default_advogado)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Conta criada com sucesso! Por favor, faça o login.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('register.html', title='Criar Conta')
+
+
+# Rota de logout (sem alterações)
 @auth_bp.route('/logout')
 @login_required
 def logout():

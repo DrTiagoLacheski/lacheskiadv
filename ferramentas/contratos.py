@@ -1,6 +1,6 @@
 # ferramentas/contratos.py
 # Contém a lógica de negócio para a geração de CONTRATOS DE HONORÁRIOS.
-# REFATORADO para usar a biblioteca ReportLab para formatação avançada.
+# CORRIGIDO para usar o 'current_user' e garantir a separação de dados.
 
 import os
 from datetime import datetime
@@ -17,21 +17,23 @@ from reportlab.lib.units import cm
 # Importação da Pillow para ler as dimensões da imagem
 from PIL import Image as PILImage
 
-# Importa a função auxiliar de formatação de CPF/CNPJ
+# Importa as funções auxiliares reutilizadas do módulo de procuração
 from .procuracao import _formatar_cpf_cnpj, _get_qualificacao_advogado_parts
 
-def gerar_contrato_honorarios_pdf(dados):
+# ALTERAÇÃO 1: A função agora recebe 'current_user'
+def gerar_contrato_honorarios_pdf(dados, current_user):
     """
     Gera o ficheiro PDF do Contrato de Honorários usando ReportLab.
+    Recebe 'current_user' para garantir que apenas os advogados corretos sejam usados.
     Retorna o caminho do ficheiro gerado.
     """
-    # 1. Definição do nome e caminho do arquivo de saída
+    # 1. Definição do nome e caminho do arquivo de saída (sem alterações)
     nome_arquivo_base = dados.get('nome_completo') or "contrato_honorarios"
     nome_arquivo_seguro = "".join(c for c in nome_arquivo_base.replace(' ', '_') if c.isalnum() or c in ('_')).rstrip()
     nome_arquivo = f"Contrato_Honorarios_{nome_arquivo_seguro}.pdf"
     caminho_arquivo = os.path.join('static/temp', nome_arquivo)
 
-    # 2. Configuração do Documento e Estilos
+    # 2. Configuração do Documento e Estilos (sem alterações)
     doc = SimpleDocTemplate(
         caminho_arquivo,
         leftMargin=2.5 * cm,
@@ -67,7 +69,7 @@ def gerar_contrato_honorarios_pdf(dados):
     # 3. Construção do Conteúdo (A "Story" do ReportLab)
     story = []
 
-    # --- LÓGICA DA LOGO ---
+    # --- LÓGICA DA LOGO (sem alterações) ---
     logo_path = 'static/images/logolacheski.png'
     if os.path.exists(logo_path):
         try:
@@ -84,7 +86,7 @@ def gerar_contrato_honorarios_pdf(dados):
             print(f"Erro ao processar a imagem da logo: {e}")
 
 
-    # --- Seção do contratante(Cliente) ---
+    # --- Seção do contratante(Cliente) (sem alterações) ---
     texto_rg = f", portador(a) do RG n.º {dados['rg']}" if dados.get('rg') else ""
     texto_contratante= (
         f"CONTRATANTE: <b>{dados['nome_completo'].upper()}</b>, brasileiro(a), {dados['estado_civil']}, "
@@ -94,16 +96,21 @@ def gerar_contrato_honorarios_pdf(dados):
     story.append(Paragraph(texto_contratante, style_justified_no_indent))
     story.append(Spacer(1, 0.5 * cm))
 
-    # --- Seção do contratado(Advogados) ---
-    advogado_principal = Advogado.query.filter_by(is_principal=True).first()
+    # --- ALTERAÇÃO 2: Seção do contratado(Advogados) com LÓGICA CORRIGIDA ---
+    # Busca o advogado principal QUE PERTENCE AO USUÁRIO LOGADO
+    advogado_principal = current_user.advogados.filter_by(is_principal=True).first()
     if not advogado_principal:
-        raise ValueError("Nenhum advogado principal (is_principal=True) encontrado no banco de dados.")
+        raise ValueError(f"Nenhum advogado principal encontrado para o usuário '{current_user.username}'.")
 
+    # Busca o advogado colaborador, garantindo que ele também pertença ao usuário logado
     colaborador_id = dados.get('colaborador_id')
-    advogado_colaborador = Advogado.query.get(colaborador_id) if colaborador_id else None
+    advogado_colaborador = None
+    if colaborador_id:
+        advogado_colaborador = current_user.advogados.filter_by(id=colaborador_id).first()
 
+    # O resto da lógica para montar o texto permanece a mesma
     texto_contratado= ""
-    if not advogado_colaborador:
+    if not advogado_colaborador or advogado_colaborador.id == advogado_principal.id:
         p_qual_core, p_endereco = _get_qualificacao_advogado_parts(advogado_principal)
         texto_contratado= f"<b>{advogado_principal.nome.upper()}</b>{p_qual_core}, com endereço profissional situado na {p_endereco}."
     else:
@@ -125,10 +132,9 @@ def gerar_contrato_honorarios_pdf(dados):
     story.append(Paragraph(texto_final_contratado, style_justified_no_indent))
     story.append(Spacer(1, 0.5 * cm))
 
-    # --- Cláusulas ---
-    # CORREÇÃO: O texto das cláusulas foi atualizado conforme solicitado.
+    # --- Cláusulas (sem alterações na lógica) ---
     # Variáveis dinâmicas para singular/plural
-    if advogado_colaborador:
+    if advogado_colaborador and advogado_colaborador.id != advogado_principal.id:
         contratado_com_artigo = "do(s) contratado(s)"
         contratado_sem_artigo = "O(s) contratado(s)"
         contratado_sem_artigo_ao = "ao(s) contratado(s)"
@@ -157,13 +163,13 @@ def gerar_contrato_honorarios_pdf(dados):
         story.append(Paragraph(clausula, style_justified_no_indent))
         story.append(Spacer(1, 0.5 * cm))
 
-    # Parágrafo de fechamento
+    # Parágrafo de fechamento (sem alterações)
     texto_fechamento = "E, por assim estarem justos e contratados, assinam o presente em 02 (duas) vias, para um só efeito, na presença das testemunhas abaixo, elegendo o foro da Comarca de Machadinho D'Oeste/RO para dirimir quaisquer dúvidas resultantes deste contrato."
     story.append(Paragraph(texto_fechamento, style_justified_no_indent))
     story.append(Spacer(1, 0.5 * cm))
 
 
-    # --- Data e Assinatura ---
+    # --- Data e Assinatura (sem alterações) ---
     data_atual = datetime.now().strftime("%d de %B de %Y").lower()
     meses = { "january": "janeiro", "february": "fevereiro", "march": "março", "april": "abril", "may": "maio", "june": "junho", "july": "julho", "august": "agosto", "september": "setembro", "october": "outubro", "november": "novembro", "december": "dezembro" }
     for eng, pt in meses.items():
