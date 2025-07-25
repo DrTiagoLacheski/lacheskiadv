@@ -30,6 +30,7 @@ class User(UserMixin, db.Model):
 
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    ticket_code = db.Column(db.String(30), unique=True)
     title = db.Column(db.String(140))
     description = db.Column(db.Text)
     case_number = db.Column(db.String(50))

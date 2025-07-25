@@ -23,12 +23,21 @@
     text-decoration: underline;
     color: #0d6efd; /* Azul primário do Bootstrap */
 }
-.btn-xs {
-        --bs-btn-padding-y: .1rem;
-        --bs-btn-padding-x: .1rem;
-        --bs-btn-font-size: .5rem;
-        line-height: 1.2;
-    }
+
+
+.btn-edit-report {
+    /* Define o tamanho da fonte para ser legível, mas ainda pequeno */
+    font-size: 1rem;
+
+    /* Controla o preenchimento: pouco na vertical, um pouco mais na horizontal */
+    padding: 0.1rem 0.1rem;
+
+    /* Alinha perfeitamente o ícone e o texto */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem; /* Pequeno espaço entre o ícone e o texto "Editar" */
+}
+
 
 .rename-form {
     flex-grow: 1;

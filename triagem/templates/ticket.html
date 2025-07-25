@@ -98,11 +98,13 @@
                 <div id="reportView" class="border p-3 bg-light text-justify" style="white-space: pre-wrap; text-align: justify; min-height: 200px; position: relative;">
                     {{ ticket.description }}
                     {% if current_user.is_admin or ticket.user_id == current_user.id %}
+
                     <div class="position-absolute bottom-0 end-0 m-2">
-                        <button class="btn btn-xs btn-outline-primary btn-edit-report" onclick="enableEdit()">
+                        <button class="btn btn-outline-primary btn-edit-report" onclick="enableEdit()">
                             <i class="bi bi-pencil"></i> Editar
                         </button>
                     </div>
+
                     {% endif %}
                 </div>
                 <form id="reportEditForm" method="POST" action="{{ url_for('ticket.update_report', ticket_id=ticket.id) }}" class="d-none">
