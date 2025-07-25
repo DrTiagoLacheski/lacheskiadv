@@ -1,6 +1,6 @@
 # ferramentas/substabelecimento.py
 # Contém a lógica de negócio para a geração de SUBSTABELECIMENTOS.
-# REFATORADO para usar a biblioteca ReportLab para formatação avançada.
+# CORRIGIDO para usar 'current_user' e garantir a separação de dados.
 
 import os
 from datetime import datetime
@@ -19,9 +19,11 @@ from reportlab.lib.units import cm
 from PIL import Image as PILImage
 
 
-def gerar_substabelecimento_pdf(dados):
+# ALTERAÇÃO 1: A função agora aceita 'current_user' como argumento.
+def gerar_substabelecimento_pdf(dados, current_user):
     """
     Gera o ficheiro PDF do Substabelecimento usando ReportLab.
+    Recebe 'current_user' para garantir que o advogado principal correto seja usado.
     Retorna o caminho do ficheiro gerado.
     """
     # 1. Definição do nome e caminho do arquivo de saída
@@ -29,7 +31,7 @@ def gerar_substabelecimento_pdf(dados):
     nome_arquivo = f"Substabelecimento_{nome_outorgante_seguro}.pdf"
     caminho_arquivo = os.path.join('static/temp', nome_arquivo)
 
-    # 2. Configuração do Documento e Estilos
+    # 2. Configuração do Documento e Estilos (sem alterações)
     doc = SimpleDocTemplate(
         caminho_arquivo,
         leftMargin=2.5 * cm,
@@ -81,8 +83,10 @@ def gerar_substabelecimento_pdf(dados):
         except Exception as e:
             print(f"AVISO: Ficheiro de logo não encontrado ou erro ao processar: {e}")
 
-    # --- Título e Texto dos Poderes (definidos com base no tipo) ---
+    # ALTERAÇÃO 2: Extrai 'tipo_reserva' dos dados recebidos.
     tipo_reserva = dados.get('tipo_reserva')
+
+    # --- Título e Texto dos Poderes (definidos com base no tipo) ---
     if tipo_reserva == 'com_reserva':
         titulo = "SUBSTABELECIMENTO COM RESERVAS DE PODERES"
         texto_poderes = "O substabelecente, já qualificado, vem através deste instrumento, SUBSTABELECER COM RESERVA DE PODERES na pessoa do substabelecido, já qualificado, absolutamente todos os poderes conferidos pelo outorgante, já qualificado, para que o substabelecido possa cumprir e atuar como advogado inerentes da cláusula ad judicia et extra para o foro em geral e praticar todos os demais atos necessários ao fiel desempenho deste mandato."
@@ -92,10 +96,11 @@ def gerar_substabelecimento_pdf(dados):
 
     story.append(Paragraph(titulo, style_titulo_sub))
 
-    # --- Seção do Substabelecente (Advogado Principal do Sistema) ---
-    advogado_principal = Advogado.query.filter_by(is_principal=True).first()
+    # ALTERAÇÃO 3: Busca o advogado principal DENTRO dos perfis do usuário logado.
+    advogado_principal = current_user.advogados.filter_by(is_principal=True).first()
     if not advogado_principal:
-        raise ValueError("Nenhum advogado principal (is_principal=True) encontrado no banco de dados para ser o substabelecente.")
+        # A mensagem de erro agora é específica para o usuário.
+        raise ValueError(f"Nenhum advogado principal (substabelecente) encontrado para o usuário '{current_user.username}'.")
 
     # Reutiliza a função de qualificação para montar o texto
     qual_core, endereco_prof = _get_qualificacao_advogado_parts(advogado_principal)
