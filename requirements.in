@@ -1,4 +1,7 @@
-# requirements.in
+# requirements.in (Versão Corrigida e Completa)
+
+# WSGI HTTP Server para produção
+gunicorn
 
 # Framework principal
 flask
@@ -6,10 +9,14 @@ flask
 # Gerenciamento de login e usuários
 flask-login
 flask-sqlalchemy
-werkzeug
 
 # Agendador de tarefas em segundo plano
 apscheduler
 
-#Para pdf
+# Para geração e manipulação de PDF
 reportlab
+pypdf
+fpdf2  # Sucessor moderno e recomendado do fpdf
+
+# Para carregar variáveis de ambiente do arquivo .env
+python-dotenv
