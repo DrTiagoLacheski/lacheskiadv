@@ -19,7 +19,7 @@ def senha_forte(password):
         return False
     return True
 
-# Rota de login (sem alterações)
+# Rota de login
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])
 def login():
@@ -103,7 +103,7 @@ def register():
     return render_template('register.html', title='Criar Conta')
 
 
-# Rota de logout (sem alterações)
+# Rota de logout
 @auth_bp.route('/logout')
 @login_required
 def logout():
