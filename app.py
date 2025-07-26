@@ -4,6 +4,8 @@ import os
 import logging
 from flask import Flask
 from flask_login import LoginManager
+from extensions.extensions import limiter
+
 from models import db, User
 from config import Config
 from core.utils import clean_temp_folder
@@ -15,7 +17,8 @@ def create_app():
     Padrão recomendado para criação flexível da aplicação.
     """
     app = Flask(__name__)
-
+    #Proteção contra DDOS
+    limiter.init_app(app)
     # --- CONFIGURAÇÕES INICIAIS ---
     app.config.from_object(Config)
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

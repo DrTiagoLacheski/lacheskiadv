@@ -20,3 +20,6 @@ fpdf2  # Sucessor moderno e recomendado do fpdf
 
 # Para carregar variáveis de ambiente do arquivo .env
 python-dotenv
+
+# Proteção contra DDOS
+Flask-Limiter

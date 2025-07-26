@@ -2,15 +2,26 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
-# ALTERAÇÃO 1: Importar o 'db' e os modelos 'User' e 'Advogado'
+from extensions.extensions import limiter
 from models import db, User, Advogado
 from urllib.parse import urlsplit
+import re
 
 auth_bp = Blueprint('auth', __name__, template_folder='../../../templates')
 
+def senha_forte(password):
+    # Pelo menos 8 caracteres, uma maiúscula, uma minúscula, um número e um caractere especial
+    if (len(password) < 8 or
+        not re.search(r'[A-Z]', password) or
+        not re.search(r'[a-z]', password) or
+        not re.search(r'\d', password) or
+        not re.search(r'[!@#$%^&*(),.?":{}|<>]', password)):
+        return False
+    return True
 
 # Rota de login (sem alterações)
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
@@ -37,7 +48,9 @@ def login():
 
 # --- NOVO CÓDIGO: ROTA DE CADASTRO ---
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def register():
+
     """Lida com o cadastro de novos usuários."""
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
@@ -49,6 +62,10 @@ def register():
         password2 = request.form.get('password2')
 
         # Validações
+        if not senha_forte(password):
+            flash('A senha deve ter pelo menos 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial.', 'danger')
+            return redirect(url_for('auth.register'))
+
         if password != password2:
             flash('As senhas não coincidem.', 'danger')
             return redirect(url_for('auth.register'))
@@ -78,9 +95,10 @@ def register():
 
         db.session.add(new_user)
         db.session.commit()
+        login_user(new_user)
 
         flash('Conta criada com sucesso! Por favor, faça o login.', 'success')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('main.index'))
 
     return render_template('register.html', title='Criar Conta')
 
