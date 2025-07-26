@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusMessage.textContent = 'Arquivo dividido com sucesso!';
                 statusMessage.className = 'status-message success';
                 showDownloadModal(result.filename, result.download_url);
+                showPreviewCard(result.preview_url); // <-- Chamada do preview
             } else {
                 statusMessage.textContent = result.error || 'Ocorreu um erro desconhecido.';
                 statusMessage.className = 'status-message error';
@@ -74,6 +75,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         modal.style.display = 'block';
     }
+
+    function showPreviewCard(previewUrl) {
+    const card = document.querySelector('.preview-card');
+    const iframe = card.querySelector('iframe');
+    card.style.display = 'block';
+    iframe.src = previewUrl;
+    // Opcional: adicionar um botão de fechar
+    card.querySelector('.close-card').onclick = () => {
+        card.style.display = 'none';
+        iframe.src = '';
+    };
+}
 
     if (closeModalButton) {
         closeModalButton.onclick = () => { modal.style.display = 'none'; };

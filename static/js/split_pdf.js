@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * VERSÃO FINAL: Permite interação com o card.
+     * Configura a lógica de hover para mostrar um card de pré-visualização interativo.
      * @param {HTMLElement} icon - O elemento do ícone que dispara o evento.
      * @param {HTMLElement} card - O card de preview a ser mostrado/escondido.
      * @param {HTMLElement} frame - O iframe dentro do card.
@@ -39,26 +39,32 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupPreviewHover(icon, card, frame, getUrlCallback) {
         if (!icon || !card || !frame) return;
 
-        let hideTimeoutId; // Variável para guardar o ID do timer
+        // --- NOVO: Seleciona os controles dentro do card ---
+        const closeButton = card.querySelector('.close-card');
+        const openNewTabLink = card.querySelector('.open-in-new');
 
-        // Função para esconder o card
+        let hideTimeoutId;
+
         const hideCard = () => {
             card.style.display = 'none';
             card.style.visibility = 'hidden';
-            frame.src = '';
+            frame.src = 'about:blank'; // Limpa o iframe para parar o carregamento
         };
 
-        // Função para mostrar o card
         const showCard = (event) => {
-            clearTimeout(hideTimeoutId); // Cancela qualquer timer de esconder que esteja ativo
+            clearTimeout(hideTimeoutId);
 
             const url = getUrlCallback();
             if (!url) return;
 
-            // Posiciona e mostra o card (se já não estiver visível)
+            // --- NOVO: Atualiza o link de "abrir em nova aba" ---
+            if (openNewTabLink) {
+                openNewTabLink.href = url;
+            }
+
             if (card.style.display !== 'block') {
                 card.style.visibility = 'hidden';
-                card.style.display = 'block';
+                card.style.display = 'flex'; // Usar flex para o layout interno
                 card.style.left = '-9999px';
                 frame.src = `${url}#view=FitH&toolbar=0&navpanes=0`;
 
@@ -91,19 +97,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Eventos para o ÍCONE
         icon.addEventListener('mouseenter', showCard);
         icon.addEventListener('mouseleave', () => {
-            // Inicia um timer para esconder o card
-            hideTimeoutId = setTimeout(hideCard, 300); // 300ms de tolerância
+            hideTimeoutId = setTimeout(hideCard, 300);
         });
 
         // Eventos para o CARD
-        card.addEventListener('mouseenter', () => {
-            // Se o mouse entrar no card, cancela o timer de esconder
-            clearTimeout(hideTimeoutId);
-        });
+        card.addEventListener('mouseenter', () => clearTimeout(hideTimeoutId));
         card.addEventListener('mouseleave', () => {
-            // Se o mouse sair do card, inicia o timer para esconder
             hideTimeoutId = setTimeout(hideCard, 300);
         });
+
+        // --- NOVO: Evento para o botão de fechar ---
+        if (closeButton) {
+            closeButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Impede que o evento se propague
+                hideCard();
+            });
+        }
     }
 
     // --- Lógica de Eventos da UI ---
@@ -172,7 +181,6 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
 
-        // --- Validações ---
         if (fileInput.files.length === 0) {
             setStatus('Erro: Por favor, selecione um arquivo PDF.', 'danger');
             return;
@@ -183,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // --- Processamento ---
         submitButton.disabled = true;
         setStatus('Dividindo o arquivo PDF, por favor aguarde...', 'info');
 
@@ -198,7 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Inicia o download automaticamente
                 const downloadLink = document.createElement('a');
                 downloadLink.href = result.download_url;
                 downloadLink.download = result.filename;
@@ -206,20 +212,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
 
-                // Define a mensagem de sucesso
                 setTimeout(() => {
                     setStatus(`PDF <strong>"${escapeHTML(result.filename)}"</strong> dividido com sucesso! O download foi iniciado.`, 'success');
                 }, 500);
 
             } else {
-                // Usa o erro retornado pelo backend
                 throw new Error(result.error || 'Ocorreu um erro desconhecido no servidor.');
             }
         } catch (error) {
             console.error('Erro na submissão:', error);
             setStatus(`Erro: ${error.message}`, 'danger');
         } finally {
-            // Reabilita o botão no final
             submitButton.disabled = false;
         }
     });

@@ -357,7 +357,8 @@ def split_pdf_route():
             return jsonify({
                 'success': True,
                 'filename': os.path.basename(pdf_path),
-                'download_url': url_for('ferramentas.download_file', filename=os.path.basename(pdf_path))
+                'download_url': url_for('ferramentas.download_file', filename=os.path.basename(pdf_path)),
+                'preview_url': url_for('ferramentas.view_pdf', filename=os.path.basename(pdf_path)) # Nova linha
             })
         else:
             return jsonify({'error': 'Nenhuma página válida foi encontrada para extrair.'}), 400

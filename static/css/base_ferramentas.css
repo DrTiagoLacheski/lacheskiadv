@@ -202,3 +202,11 @@ body {
     margin-top: 1.5rem;
     justify-content: center;
 }
+@media (max-width: 500px) {
+    .preview-card {
+        width: 95vw;
+        height: 60vw;
+        left: 2vw;
+        right: 2vw;
+    }
+}

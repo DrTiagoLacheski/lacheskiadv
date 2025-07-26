@@ -6,7 +6,6 @@
     {{ super() }}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* --- Estilos do seletor de arquivo (sem alterações) --- */
         .file-input-wrapper {
             border: 2px dashed #ddd;
             border-radius: 8px;
@@ -30,15 +29,15 @@
         .file-input-wrapper .file-name {
             font-weight: 500;
             color: var(--primary-color);
-            padding-right: 40px;
+            padding-right: 40px; /* Espaço para o ícone */
         }
         .info-text {
             font-size: 0.9rem;
             color: #666;
-            margin-top: -10px;
+            margin-top: 8px;
             margin-bottom: 15px;
         }
-        #original-preview-icon {
+        .preview-icon {
             position: absolute;
             top: 50%;
             right: 20px;
@@ -49,25 +48,21 @@
             display: none;
             cursor: pointer;
         }
-        #original-preview-icon:hover {
+        .preview-icon:hover {
             color: var(--primary-color);
             transform: translateY(-50%) scale(1.1);
         }
-
-        /* --- CORREÇÃO: Container para input com ícone --- */
         .input-with-icon {
-            position: relative; /* Define o contexto para o ícone */
+            position: relative;
             display: flex;
             align-items: center;
         }
-
         .input-with-icon input {
-            padding-right: 40px; /* Cria espaço para o ícone dentro do input */
+            padding-right: 40px; /* Espaço para o ícone */
         }
-
         #result-preview-icon {
             position: absolute;
-            right: 10px; /* Posição do ícone dentro do container */
+            right: 10px;
             font-size: 1.5rem;
             color: var(--secondary-color);
             display: none;
@@ -77,24 +72,50 @@
         #result-preview-icon:hover {
             transform: scale(1.1);
         }
-
-        /* --- Estilos dos cards de preview (sem alterações) --- */
         .preview-card {
             position: fixed;
             display: none;
-            width: 350px;
-            height: 450px;
-            border: 1px solid #ccc;
+            visibility: hidden;
+            width: 380px;
+            height: 500px;
             background-color: white;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             border-radius: 8px;
             z-index: 1050;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .preview-card iframe {
-            width: 100%;
-            height: 100%;
+            flex-grow: 1;
             border: none;
+        }
+        .preview-card .card-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #f1f1f1;
+            border-top: 1px solid #ddd;
+        }
+        .preview-card .close-card {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            color: #888;
+        }
+        .preview-card .close-card:hover {
+            color: #333;
+        }
+        .preview-card .open-in-new {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+        .preview-card .open-in-new:hover {
+            text-decoration: underline;
         }
     </style>
 {% endblock %}
@@ -118,15 +139,16 @@
         <h2 class="section-title">2. Indique as páginas para extrair</h2>
         <div class="form-group">
             <label for="page_ranges">Páginas ou intervalos</label>
-            <!-- CORREÇÃO: Adicionado o novo container aqui -->
             <div class="input-with-icon">
-                <input type="text" id="page_ranges" name="page_ranges" placeholder="Ex: 1, 3-5, 8" required>
+                {# ALTERAÇÃO AQUI: Placeholder atualizado com o novo exemplo #}
+                <input type="text" id="page_ranges" name="page_ranges" placeholder="Ex: 1, 3-5, 8, 10-" required>
                 <a id="result-preview-icon" title="Pré-visualizar resultado">
                     <i class="bi bi-eye-fill"></i>
                 </a>
             </div>
+            {# ALTERAÇÃO AQUI: Texto de ajuda atualizado #}
             <p class="info-text">
-                Use vírgulas para separar páginas ou intervalos. Use um hífen para definir um intervalo.
+                Use vírgulas para separar. Use hífen para intervalos (ex: 3-5) ou para ir até o final (ex: 10-).
             </p>
         </div>
 
@@ -146,12 +168,26 @@
         <div id="statusMessage" class="status-message"></div>
     </form>
 
-    <!-- Cards de Pré-visualização -->
+    <!-- Card de Pré-visualização do PDF ORIGINAL -->
     <div id="original-preview-card" class="preview-card">
         <iframe id="original-preview-frame" src=""></iframe>
+        <div class="card-controls">
+            <a class="open-in-new" href="#" target="_blank" title="Abrir em nova aba">
+                <i class="bi bi-box-arrow-up-right"></i> Abrir em nova aba
+            </a>
+            <button type="button" class="close-card" title="Fechar">&times;</button>
+        </div>
     </div>
+
+    <!-- Card de Pré-visualização do PDF RESULTADO -->
     <div id="result-preview-card" class="preview-card">
         <iframe id="result-preview-frame" src=""></iframe>
+        <div class="card-controls">
+            <a class="open-in-new" href="#" target="_blank" title="Abrir em nova aba">
+                <i class="bi bi-box-arrow-up-right"></i> Abrir em nova aba
+            </a>
+            <button type="button" class="close-card" title="Fechar">&times;</button>
+        </div>
     </div>
 {% endblock %}
 

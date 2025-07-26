@@ -1,40 +1,64 @@
-# pdf_tools.py
-# Contém a lógica para manipular arquivos PDF.
+# ferramentas/pdf_tools.py (Versão com a nova funcionalidade)
 
 import os
 import re
 from pypdf import PdfReader, PdfWriter
 from fpdf import FPDF
-from PIL import Image  # <--- IMPORTANTE: Adicionado para ler as dimensões da imagem
+from PIL import Image
 
 
-# --- FUNÇÃO AUXILIAR PARA INTERPRETAR PÁGINAS ---
+# --- FUNÇÃO AUXILIAR PARA INTERPRETAR PÁGINAS (COM LÓGICA MELHORADA) ---
 def parse_page_ranges(page_string, max_pages):
-    """Interpreta uma string de páginas (ex: '1, 3-5, 8') e retorna uma lista de índices (base 0)."""
+    """
+    Interpreta uma string de páginas (ex: '1, 3-5, 8, 10-') e retorna uma lista de índices (base 0).
+    Suporta intervalos abertos como '10-' (da página 10 até o final) e '-5' (do início até a página 5).
+    """
     pages_to_extract = set()
+    # Remove espaços e divide a string por vírgulas
     parts = page_string.replace(" ", "").split(',')
+
     for part in parts:
         if not part:
             continue
+
+        # Se a parte contém um hífen, é um intervalo
         if '-' in part:
             try:
-                start, end = map(int, part.split('-'))
+                range_parts = part.split('-')
+                start_str = range_parts[0]
+                end_str = range_parts[1]
+
+                # Define o início: se vazio (ex: '-5'), começa em 1. Senão, converte para int.
+                start = int(start_str) if start_str else 1
+                # Define o fim: se vazio (ex: '10-'), vai até a última página. Senão, converte para int.
+                end = int(end_str) if end_str else max_pages
+
+                # Garante que o intervalo seja válido (start <= end)
                 if start > end:
-                    start, end = end, start  # Inverte se estiver fora de ordem
+                    start, end = end, start
+
+                # Adiciona todas as páginas do intervalo ao conjunto
                 for i in range(start, end + 1):
                     if 1 <= i <= max_pages:
-                        pages_to_extract.add(i - 1)
-            except ValueError:
+                        pages_to_extract.add(i - 1)  # Converte para índice base 0
+
+            except (ValueError, IndexError):
+                # Captura erros de formatação como '3-a' ou '-'
                 raise ValueError(f"Intervalo inválido: '{part}'")
         else:
+            # Se não for um intervalo, é uma página única
             try:
                 page_num = int(part)
                 if 1 <= page_num <= max_pages:
-                    pages_to_extract.add(page_num - 1)
+                    pages_to_extract.add(page_num - 1) # Converte para índice base 0
             except ValueError:
                 raise ValueError(f"Número de página inválido: '{part}'")
+
+    # Retorna a lista de índices, ordenada
     return sorted(list(pages_to_extract))
 
+
+# --- O RESTANTE DO ARQUIVO pdf_tools.py PERMANECE IGUAL ---
 
 # --- FUNÇÃO PRINCIPAL PARA DIVIDIR PDF ---
 def split_pdf(pdf_path, page_string, output_dir, output_filename_user):
