@@ -5,40 +5,34 @@
 {% block content %}
 <div class="card mb-4">
     <div class="card-header">
-        <h2>Editar Caso #{{ ticket.id }}</h2>
+        <h2>Editar Detalhes do Caso #{{ ticket.id }}</h2>
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('ticket.edit_ticket', ticket_id=ticket.id) }}">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Título</label>
-                        <input type="text" class="form-control" id="title" name="title" value="{{ ticket.title }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="case_number" class="form-label">Tipo de Caso</label>
-                        <input type="text" class="form-control" id="case_number" name="case_number" value="{{ ticket.case_number }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="delegado" class="form-label">Delegado</label>
-                        <input type="text" class="form-control" id="delegado" name="delegado" value="{{ ticket.delegado }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="priority" class="form-label">Prioridade</label>
-                        <select name="priority" id="priority" class="form-select">
-                            <option value="Alta" {% if ticket.priority == 'Alta' %}selected{% endif %}>Alta</option>
-                            <option value="Média" {% if ticket.priority == 'Média' %}selected{% endif %}>Média</option>
-                            <option value="Baixa" {% if ticket.priority == 'Baixa' %}selected{% endif %}>Baixa</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Relatório do Caso</label>
-                        <textarea class="form-control" id="description" name="description" rows="10">{{ ticket.description }}</textarea>
-                    </div>
-                </div>
+            {# O layout de duas colunas foi removido para uma única coluna mais limpa #}
+            <div class="mb-3">
+                <label for="title" class="form-label">Título</label>
+                <input type="text" class="form-control" id="title" name="title" value="{{ ticket.title }}" required>
             </div>
+            <div class="mb-3">
+                <label for="case_number" class="form-label">Tipo de Caso</label>
+                <input type="text" class="form-control" id="case_number" name="case_number" value="{{ ticket.case_number }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="delegado" class="form-label">Delegado</label>
+                <input type="text" class="form-control" id="delegado" name="delegado" value="{{ ticket.delegado }}">
+            </div>
+            <div class="mb-3">
+                <label for="priority" class="form-label">Prioridade</label>
+                <select name="priority" id="priority" class="form-select">
+                    <option value="Alta" {% if ticket.priority == 'Alta' %}selected{% endif %}>Alta</option>
+                    <option value="Média" {% if ticket.priority == 'Média' %}selected{% endif %}>Média</option>
+                    <option value="Baixa" {% if ticket.priority == 'Baixa' %}selected{% endif %}>Baixa</option>
+                </select>
+            </div>
+
+            {# O campo de textarea para o relatório foi removido daqui #}
+
             <div class="d-flex justify-content-end gap-2 mt-3">
                 <a href="{{ url_for('ticket.view_ticket', ticket_id=ticket.id) }}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">Salvar Alterações</button>

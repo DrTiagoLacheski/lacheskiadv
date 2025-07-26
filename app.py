@@ -60,7 +60,6 @@ def create_app():
         clean_temp_folder(app)
 
         # Cria as tabelas do banco de dados (se não existirem)
-        db.create_all()
         app.logger.info('Tabelas do banco de dados verificadas/criadas.')
 
     app.logger.info('Aplicação Flask configurada com sucesso')
