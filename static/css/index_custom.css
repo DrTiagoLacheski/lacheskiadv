@@ -54,7 +54,7 @@
   Isso resolve todos os conflitos visuais com marcadores recorrentes e cores de compromissos.
 */
 .calendar-days .today {
-    border-color: rgb(11, 117, 5);           /* Laranja para maior contraste */
+    border-color: rgb(9, 101, 193);           /* Laranja para maior contraste */
     background-color: transparent;       /* Fundo laranja claro */
     font-weight: 600;
     color: #555;
