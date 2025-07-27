@@ -1,0 +1,962 @@
+/* Melhorias para o Card de Preview do PDF */
+
+/* Reset e configurações base */
+.file-input-wrapper input[type="file"] {
+    display: none;
+}
+
+.file-input-wrapper .file-name {
+    font-weight: 500;
+    color: #007bff;
+    padding-right: 40px;
+    display: block;
+}
+
+.info-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 8px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+/* Animações suaves */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    50% {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    100% {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+}
+
+/* Card de Preview Principal */
+.preview-card {
+    position: fixed;
+    display: none;
+    visibility: hidden;
+    width: 300px; /* Reduzido de 380px */
+    height: 400px; /* Reduzido de 500px */
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 
+        0 15px 35px rgba(0,0,0,0.15),
+        0 5px 15px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    border-radius: 12px; /* Reduzido de 16px */
+    z-index: 1050;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: scale(0.8);
+    opacity: 0.9; /* Reduzida para ser menos intrusivo */
+    pointer-events: auto;
+    /* Posicionamento padrão para preview automático */
+    bottom: 20px;
+    right: 20px;
+    /* Torna o card minimizável */
+    resize: both;
+    min-width: 250px;
+    min-height: 300px;
+    max-width: 500px;
+    max-height: 600px;
+}
+
+.preview-card.show {
+    display: flex;
+    visibility: visible;
+    flex-direction: column;
+    transform: scale(1);
+    opacity: 0.95; /* Ligeiramente transparente */
+    pointer-events: auto;
+}
+
+/* Estado minimizado do card */
+.preview-card.minimized {
+    height: 40px;
+    width: 200px;
+    overflow: hidden;
+}
+
+.preview-card.minimized iframe {
+    display: none;
+}
+
+.preview-card.minimized .card-controls {
+    padding: 8px 12px;
+}
+
+/* Card de resultado posicionado à esquerda */
+#result-preview-card {
+    left: 20px;
+    right: auto;
+}
+
+/* Botão para minimizar/maximizar */
+.preview-card .minimize-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f1f3f4 100%);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+}
+
+.preview-card .minimize-card:hover {
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #007bff;
+    transform: scale(1.05);
+}
+
+/* Card Title/Header melhorado */
+.preview-card .card-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 6px 12px; /* Reduzido */
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    backdrop-filter: blur(5px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    z-index: 5;
+    font-size: 12px; /* Reduzido */
+    font-weight: 600;
+    color: #495057;
+    text-align: center;
+    border-radius: 12px 12px 0 0;
+    cursor: move; /* Indica que pode ser arrastado */
+}
+
+/* Header do Card */
+.preview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #6f42c1, #e83e8c);
+    z-index: 1;
+}
+
+/* Iframe do PDF */
+.preview-card iframe {
+    flex-grow: 1;
+    border: none;
+    border-radius: 0 0 12px 12px;
+    background-color: #f8f9fa;
+    transition: opacity 0.3s ease;
+}
+
+.preview-card iframe:not([src]), 
+.preview-card iframe[src=""], 
+.preview-card iframe[src="about:blank"] {
+    opacity: 0.7;
+    background: linear-gradient(45deg, #f1f3f4 25%, transparent 25%), 
+                linear-gradient(-45deg, #f1f3f4 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f1f3f4 75%), 
+                linear-gradient(-45deg, transparent 75%, #f1f3f4 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Controles do Card */
+.preview-card .card-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    border-top: 1px solid rgba(0,0,0,0.08);
+    min-height: 48px;
+    backdrop-filter: blur(5px);
+}
+
+/* Botão de Fechar */
+.preview-card .close-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f1f3f4 100%);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.preview-card .close-card:hover {
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #dc3545;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.preview-card .close-card:active {
+    transform: scale(0.98);
+}
+
+/* Link Nova Aba */
+.preview-card .open-in-new {
+    font-size: 13px;
+    font-weight: 500;
+    color: #007bff;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: rgba(0, 123, 255, 0.1);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 123, 255, 0.2);
+}
+
+.preview-card .open-in-new:hover {
+    background: rgba(0, 123, 255, 0.15);
+    text-decoration: none;
+    color: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Estados de Loading */
+.preview-card .loading-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #6c757d;
+    z-index: 2;
+}
+
+.preview-card .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f1f3f4;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+
+.preview-card .loading-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ícones de Preview */
+.preview-icon {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    font-size: 24px;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    display: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1060; /* Maior que o card para sempre ficar acessível */
+}
+
+/* Ícone específico do documento original - posicionado no canto superior direito */
+#original-preview-icon {
+    top: 12px;
+    right: 12px;
+    transform: none; /* Remove o translateY para posicionamento fixo */
+    font-size: 20px;
+}
+
+#original-preview-icon:hover {
+    transform: scale(1.1); /* Apenas scale no hover, sem translateY */
+}
+
+.preview-icon:hover {
+    color: #007bff;
+    transform: translateY(-50%) scale(1.1);
+    background: rgba(0, 123, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.preview-icon.active {
+    color: #28a745;
+    animation: pulse 2s infinite;
+}
+
+#result-preview-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: #6c757d;
+    display: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    z-index: 1060; /* Maior que o card para sempre ficar acessível */
+}
+
+#result-preview-icon:hover {
+    color: #007bff;
+    transform: translateY(-50%) scale(1.1);
+    background: rgba(0, 123, 255, 0.1);
+}
+
+/* Melhorias para o Container de Input */
+.file-input-wrapper {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.file-input-wrapper:hover {
+    border-color: #007bff;
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.file-input-wrapper.has-file {
+    border-color: #28a745;
+    background: linear-gradient(145deg, #f8fff9 0%, #e8f5e8 100%);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .preview-card {
+        width: 90vw;
+        height: 60vh;
+        max-width: 350px;
+        max-height: 450px;
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    #result-preview-card {
+        left: 10px;
+        bottom: 10px;
+        /* Em mobile, posiciona um acima do outro */
+        bottom: calc(60vh + 20px);
+    }
+    
+    .preview-icon {
+        font-size: 20px;
+        right: 15px;
+    }
+    
+    #original-preview-icon {
+        top: 8px;
+        right: 8px;
+        font-size: 18px;
+    }
+    
+    #result-preview-icon {
+        font-size: 18px;
+        right: 10px;
+    }
+}
+
+/* Estados de Erro */
+.preview-card.error {
+    border: 2px solid #dc3545;
+    box-shadow: 0 15px 35px rgba(220, 53, 69, 0.2);
+}
+
+.preview-card .error-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #dc3545;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 16px;
+    background: rgba(220, 53, 69, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Transições suaves para mostrar/esconder */
+.preview-card.hiding {
+    transform: scale(0.9);
+    opacity: 0;
+    transition: all 0.3s ease-out;
+}
+
+/* Overlay de fundo quando card está aberto */
+.preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.preview-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Indicador de carregamento melhorado */
+.pdf-loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: #6c757d;
+    z-index: 10;
+}
+
+.pdf-loading-indicator .spinner {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.pdf-loading-indicator .spinner::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #e9ecef;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.pdf-loading-indicator .spinner::after {
+    content: '📄';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+.pdf-loading-indicator .loading-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Barra de progresso */
+.pdf-progress-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(0, 123, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.pdf-progress-bar .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border-radius: 2px;
+    transform: translateX(-100%);
+    animation: progressLoad 2s ease-out forwards;
+}
+
+@keyframes progressLoad {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(0%); }
+}
+
+/* Card Title/Header melhorado */
+.preview-card .card-header {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    right: 0;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    z-index: 5;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+    text-align: center;
+}
+
+/* Tooltip para ícones */
+.preview-icon[title] {
+    position: relative;
+}
+
+.preview-icon[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: fadeInUp 0.2s ease-out;
+}
+
+/* Status visual para diferentes estados */
+.preview-card.loading iframe {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.preview-card.loaded iframe {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Melhorias para Dark Mode (caso seja implementado) */
+@media (prefers-color-scheme: dark) {
+    .preview-card {
+        background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+    }
+    
+    .preview-card .card-controls {
+        background: linear-gradient(145deg, #1a202c 0%, #2d3748 100%);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .preview-card .close-card {
+        background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .preview-card .close-card:hover {
+        color: #fc8181;
+    }
+}
+
+/* Melhorias específicas para os spinners do Bootstrap */
+.spinner-border-sm {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+/* Estilos para ícones de status */
+.bi-eye-fill {
+    color: #28a745;
+}
+
+.bi-exclamation-triangle-fill {
+    color: #dc3545;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Animação de carregamento para o ícone */
+@keyframes iconPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+.preview-icon.loading {
+    animation: iconPulse 1.5s ease-in-out infinite;
+}
+
+/* Estados especiais do iframe */
+.preview-card iframe[src*="about:blank"] {
+    background: 
+        linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+        linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+        linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Micro-interações para melhor UX */
+.preview-card .close-card {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.preview-card .open-in-new {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Feedback visual ao carregar PDF no iframe */
+.preview-card iframe {
+    background-image: 
+        radial-gradient(circle at 25% 25%, rgba(0, 123, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(108, 117, 125, 0.1) 0%, transparent 50%);
+    background-size: 100px 100px;
+    background-position: 0 0, 50px 50px;
+}
+
+/* Sombras mais sofisticadas baseadas na elevação */
+.preview-card {
+    box-shadow: 
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.preview-card:hover {
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Performance: will-change para elementos animados */
+.preview-card,
+.preview-icon,
+.preview-card .close-card,
+.preview-card .open-in-new {
+    will-change: transform, opacity;
+}
+
+/* Acessibilidade: indicadores de foco */
+.preview-card .close-card:focus,
+.preview-card .open-in-new:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Estilos para telas com DPI alto */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .preview-card {
+        border-width: 0.5px;
+    }
+    
+    .preview-card .close-card {
+        border-width: 0.5px;
+    }
+}
+
+/* Melhorias específicas para o botão de voltar */
+.btn-outline-secondary {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Estilos para o botão principal */
+.btn-primary {
+    background: linear-gradient(145deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(145deg, #0056b3 0%, #004494 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0, 123, 255, 0.4);
+}
+
+.btn-primary:disabled {
+    background: linear-gradient(145deg, #6c757d 0%, #5a6268 100%);
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Melhoria na mensagem de status */
+.status-message {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.status-message.alert-success {
+    background: linear-gradient(145deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.status-message.alert-danger {
+    background: linear-gradient(145deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.status-message.alert-info {
+    background: linear-gradient(145deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Indicador de carregamento no input de páginas */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-right: 50px;
+}
+
+.input-with-icon #result-preview-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.input-with-icon #result-preview-icon:hover {
+    color: #007bff;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Overlay suave quando cards estão abertos - DESABILITADO para evitar interferência */
+body.preview-active::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(1px);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none; /* IMPORTANTE: Evita interceptar eventos do mouse */
+}
+
+body.preview-active.overlay-visible::before {
+    opacity: 0; /* Mantém invisível para evitar interferência */
+    visibility: hidden;
+}
+
+/* Estados de hover melhorados para elementos interativos */
+.form-group label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-group input[type="text"] {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+}
+
+.form-group input[type="text"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+/* Melhorias nos ícones Bootstrap */
+.bi {
+    vertical-align: -0.125em;
+}
+
+.bi-eye-fill {
+    transition: all 0.2s ease;
+}
+
+.bi-box-arrow-up-right {
+    margin-right: 4px;
+}
+
+/* Animação sutil de entrada para os elementos */
+.form, .header {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Adiciona um pequeno indicador de interatividade */
+.preview-icon::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: #007bff;
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s ease;
+}
+
+.preview-icon.has-content::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Performance e suavidade */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Melhoria para acessibilidade com foco visível */
+*:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Estilos específicos para integração com o template base */
+.header {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+}
+
+.form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 2rem;
+    justify-content: center;
+}
+
+/* Correção para botões Bootstrap */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn:hover {
+    text-decoration: none;
+}
+
+/* Melhoria específica para inputs de texto */
+input[type="text"] {
+    width: 100%;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+    background: #ffffff;
+}
+
+input[type="text"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+/* Garantir que os ícones Bootstrap funcionem corretamente */
+.bi::before {
+    display: inline-block;
+    content: "";
+    vertical-align: -0.125em;
+    background-image: var(--bs-icon);
+    background-repeat: no-repeat;
+    background-size: 1rem 1rem;
+}
