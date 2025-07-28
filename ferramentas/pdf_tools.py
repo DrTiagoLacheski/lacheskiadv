@@ -3,8 +3,9 @@
 import os
 import re
 from pypdf import PdfReader, PdfWriter
-from fpdf import FPDF
-from PIL import Image
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
 
 
 # --- FUNÇÃO AUXILIAR PARA INTERPRETAR PÁGINAS (COM LÓGICA MELHORADA) ---
@@ -145,7 +146,10 @@ def convert_images_to_pdf(image_paths, output_dir, output_filename_user):
     if not image_paths:
         return None
     try:
-        # Lógica para nome do arquivo (sem alterações)
+        from PIL import Image
+        import os
+        import re
+
         base_name = re.sub(r'[^a-zA-Z0-9_\- ]', '_',
                            output_filename_user) if output_filename_user else "Documento_Convertido"
         output_filename = f"{base_name}.pdf" if not base_name.lower().endswith('.pdf') else base_name
@@ -157,54 +161,48 @@ def convert_images_to_pdf(image_paths, output_dir, output_filename_user):
             output_path = f"{name}_{counter}{ext}"
             counter += 1
 
-        pdf = FPDF(orientation='P', unit='mm', format='A4')
-
-        # Dimensões úteis da página A4 (210x297mm) com margens de 10mm de cada lado
-        page_width_mm = 210 - 20
-        page_height_mm = 297 - 20
+        page_width, page_height = A4
+        c = canvas.Canvas(output_path, pagesize=A4)
 
         for image_path in image_paths:
             if not os.path.exists(image_path):
                 continue
 
-            # Usa Pillow para obter as dimensões da imagem em pixels
             with Image.open(image_path) as img:
                 img_width_px, img_height_px = img.size
+                aspect_ratio = img_width_px / img_height_px
 
-            # Calcula a proporção da imagem
-            aspect_ratio = img_width_px / img_height_px
+            # Calcula as dimensões para caber na página A4 (em pontos)
+            margin = 28.35  # 10mm em pontos
+            max_width = page_width - 2 * margin
+            max_height = page_height - 2 * margin
 
-            # Determina as novas dimensões em mm para caber na página, mantendo a proporção
-            if aspect_ratio > 1:  # Imagem é paisagem (mais larga que alta)
-                new_width = page_width_mm
+            if aspect_ratio > 1:
+                new_width = max_width
                 new_height = new_width / aspect_ratio
-                # Se, mesmo assim, a altura for maior que a da página, recalcula com base na altura
-                if new_height > page_height_mm:
-                    new_height = page_height_mm
+                if new_height > max_height:
+                    new_height = max_height
                     new_width = new_height * aspect_ratio
-            else:  # Imagem é retrato (mais alta que larga) ou quadrada
-                new_height = page_height_mm
+            else:
+                new_height = max_height
                 new_width = new_height * aspect_ratio
-                # Se, mesmo assim, a largura for maior que a da página, recalcula com base na largura
-                if new_width > page_width_mm:
-                    new_width = page_width_mm
+                if new_width > max_width:
+                    new_width = max_width
                     new_height = new_width / aspect_ratio
 
-            # Calcula a posição para centralizar a imagem na página
-            x_pos = (210 - new_width) / 2
-            y_pos = (297 - new_height) / 2
+            x_pos = (page_width - new_width) / 2
+            y_pos = (page_height - new_height) / 2
 
-            pdf.add_page()
-            pdf.image(image_path, x=x_pos, y=y_pos, w=new_width, h=new_height)
+            c.drawImage(ImageReader(image_path), x_pos, y_pos, width=new_width, height=new_height)
+            c.showPage()
 
-        if not pdf.pages:
+        if c.getPageNumber() == 1 and not os.path.exists(image_paths[0]):
             return None
 
-        pdf.output(output_path)
+        c.save()
         return output_path
     except Exception as e:
         print(f"Ocorreu um erro durante a conversão das imagens para PDF: {e}")
-        # Lança a exceção para que a rota possa capturá-la e informar o usuário
         raise e
 
 
