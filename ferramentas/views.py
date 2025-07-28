@@ -187,6 +187,10 @@ def gerar_calculo_trabalhista_route():
     """Endpoint da API para gerar o relatório trabalhista."""
     try:
         data = request.json
+        dias_hora_extra = request.form.getlist('dias_hora_extra')
+
+        session['calctrabalhista_dados']['dias_hora_extra'] = dias_hora_extra
+        session['calctrabalhista_dados'] = data
         required_fields = [
             'data_inicio', 'data_termino', 'funcao_exercida', 'remuneracao',
             'nome_empresa', 'cnpj_empresa', 'regime_jornada', 'clausula_compensacao',

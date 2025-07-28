@@ -5,8 +5,16 @@ import os
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from datetime import datetime
+from flask import Blueprint, render_template, request, session, redirect, url_for
 
-def _header(pdf):
+def _header(pdf, dados):
+    adicionar_secao("DADOS DO RECLAMANTE", {
+        "Nome": dados.get('nome_reclamante', 'Não informado'),
+        "CPF": dados.get('cpf_reclamante', 'Não informado'),
+        "RG": dados.get('rg_reclamante', 'Não informado'),
+        "Estado civil": dados.get('estado_civil', 'Não informado'),
+        "Endereço": dados.get('endereco_reclamante', 'Não informado')
+    })
     """Função auxiliar para adicionar o cabeçalho com a logo ao PDF."""
     logo_width = 60
     page_width = pdf.w
@@ -43,7 +51,7 @@ def gerar_relatorio_trabalhista_pdf(dados):
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
-    _header(pdf)
+    _header(pdf, dados)
     
     pdf.set_margins(left=25, top=20, right=25)
     pdf.set_font("Times", size=11)

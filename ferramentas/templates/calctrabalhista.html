@@ -4,6 +4,7 @@
 
 {% block styles %}
     {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('ferramentas.static', filename='css/calctrabalhinha.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 {% endblock %}
 
@@ -13,43 +14,131 @@
         <p class="subtitle">Preencha os dados para gerar um relatório preliminar:</p>
     </header>
 
-    <form id="calcTrabalhistaForm" class="form" data-action="{{ url_for('ferramentas.gerar_calculo_trabalhista_route') }}">
+    <form id="calcTrabalhistaForm" class="form"
+          data-action="{{ url_for('ferramentas.gerar_calculo_trabalhista_route') }}">
         <section class="form-section">
-            <h2 class="section-title">1. Informações básicas do vínculo</h2>
+            <h2 class="section-title">1. Dados do Reclamante (opcional)</h2>
+            <div class="form-group">
+                <label for="nome_reclamante">Nome do Reclamante</label>
+                <input type="text" id="nome_reclamante" name="nome_reclamante">
+            </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="data_inicio">Data de início do vínculo</label>
-                    <input type="date" id="data_inicio" name="data_inicio" required>
+                    <label for="cpf_reclamante">CPF</label>
+                    <input type="text" id="cpf_reclamante" name="cpf_reclamante" placeholder="000.000.000-00">
                 </div>
                 <div class="form-group">
-                    <label for="data_termino">Data de término do vínculo</label>
-                    <input type="date" id="data_termino" name="data_termino" required>
+                    <label for="rg_reclamante">RG</label>
+                    <input type="text" id="rg_reclamante" name="rg_reclamante">
+                </div>
+                <div class="form-group">
+                    <label for="estado_civil">Estado civil</label>
+                    <input type="text" id="estado_civil" name="estado_civil">
                 </div>
             </div>
             <div class="form-group">
-                <label for="funcao_exercida">Função exercida</label>
-                <input type="text" id="funcao_exercida" name="funcao_exercida" required>
-            </div>
-            <div class="form-group">
-                <label for="remuneracao">Remuneração percebida (R$)</label>
-                <input type="number" id="remuneracao" name="remuneracao" step="0.01" min="0" required>
+                <label for="endereco_reclamante">Endereço completo</label>
+                <input type="text" id="endereco_reclamante" name="endereco_reclamante">
             </div>
         </section>
 
         <section class="form-section">
-            <h2 class="section-title">2. Empresa reclamada</h2>
+            <h2 class="section-title">2. Informações da Empresa</h2>
             <div class="form-group">
                 <label for="nome_empresa">Nome da empresa</label>
                 <input type="text" id="nome_empresa" name="nome_empresa" required>
             </div>
             <div class="form-group">
                 <label for="cnpj_empresa">CNPJ da empresa</label>
-                <input type="text" id="cnpj_empresa" name="cnpj_empresa" class="cpf-mask" placeholder="00.000.000/0000-00" required>
+                <input type="text" id="cnpj_empresa" name="cnpj_empresa" class="cpf-mask"
+                       placeholder="00.000.000/0000-00" required>
             </div>
         </section>
 
         <section class="form-section">
-            <h2 class="section-title">3. Regime da jornada de trabalho</h2>
+            <h2 class="section-title">3. Natureza da demissão</h2>
+            <div class="form-group">
+                <select id="natureza_demissao" name="natureza_demissao" required>
+                    <option value="rescisao_indireta" selected>Rescisão indireta</option>
+                    <option value="demissao_sem_justa_causa">Demissão sem justa causa</option>
+                    <option value="demissao_por_justa_causa">Demissão por justa causa</option>
+                    <option value="pedido_de_demissao">Pedido de demissão</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">4. Depósito de FGTS</h2>
+            <div class="form-group">
+                <select id="depositos_fgts" name="depositos_fgts" required>
+                    <option value="nao" selected>Não houve depósito</option>
+                    <option value="sim">Houve depósito</option>
+                    <option value="parcial">Depósito parcial</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">5. Registro em CTPS</h2>
+            <div class="form-group">
+                <select id="registro_ctps" name="registro_ctps" required>
+                    <option value="sim" selected>Houve Registro</option>
+                    <option value="nao">Não Houve Registro</option>
+                    <option value="parcial">Registro Parcial</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">6. Função exercida</h2>
+            <div class="form-group">
+                <label for="funcao_exercida">Função exercida</label>
+                <input type="text" id="funcao_exercida" name="funcao_exercida" required>
+            </div>
+            <div class="form-group">
+                <label for="insalubridade">Insalubridade</label>
+                <select id="insalubridade" name="insalubridade" required>
+                    <option value="nao" selected>Não se aplica</option>
+                    <option value="10%">Sim - Grau mínimo (10%)</option>
+                    <option value="20%">Sim - Grau médio (20%)</option>
+                    <option value="40%">Sim - Grau máximo (40%)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="periculosidade">Periculosidade</label>
+                <select id="periculosidade" name="periculosidade" required>
+                    <option value="nao" selected>Não se aplica</option>
+                    <option value="30%">Sim (30%)</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">7. Remuneração formal</h2>
+            <div class="form-group">
+                <label for="remuneracao">Remuneração formal (R$)</label>
+                <input type="text" id="remuneracao" name="remuneracao" required>
+            </div>
+            <div class="form-group">
+                <label for="remuneracao_informal">Houve remuneração informal?</label>
+                <select id="remuneracao_informal" name="remuneracao_informal" required>
+                    <option value="nao" selected>Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+            </div>
+            <div class="form-group" id="remuneracao_informal_detalhes" style="display:none;">
+                <label for="remuneracao_informal_tipo">Qual o tipo de remuneração informal?</label>
+                <input type="text" id="remuneracao_informal_tipo" name="remuneracao_informal_tipo"
+                       placeholder="Ex: Comissão, Bonificação, Por fora, etc...">
+                <label for="remuneracao_informal_valor" style="margin-top:8px;">Qual o valor da remuneração
+                    informal?</label>
+                <input type="text" id="remuneracao_informal_valor" name="remuneracao_informal_valor"
+                       placeholder="Ex: 500,00">
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">8. Regime da jornada de trabalho</h2>
             <div class="form-group">
                 <select id="regime_jornada" name="regime_jornada" required>
                     <option value="6x1_44h" selected>6x1 - 44h (Jornada semanal)</option>
@@ -64,101 +153,131 @@
         </section>
 
         <section class="form-section">
-            <h2 class="section-title">4. Cláusula de compensação</h2>
-            <p>Existe cláusula de compensação de horas no contrato?</p>
+            <h2 class="section-title">9. Horas extras</h2>
             <div class="form-group">
-                <select name="clausula_compensacao" required>
+                <label for="hora_extra">Foram realizadas Horas extras?</label>
+                <select id="hora_extra" name="hora_extra" required>
                     <option value="nao" selected>Não</option>
                     <option value="sim">Sim</option>
                 </select>
             </div>
         </section>
 
-        <section class="form-section">
-            <h2 class="section-title">5. Insalubridade</h2>
-            <div class="form-group">
-                 <select id="insalubridade" name="insalubridade" required>
-                    <option value="nao" selected>Não se aplica</option>
-                    <option value="10%">Sim - Grau mínimo (10%)</option>
-                    <option value="20%">Sim - Grau médio (20%)</option>
-                    <option value="40%">Sim - Grau máximo (40%)</option>
-                </select>
-            </div>
-        </section>
+        <div id="item_10" style="display:none;">
+            <section class="form-section">
+                <h2 class="section-title">10. Detalhamento da Jornada e Horas Extras</h2>
+                <p class="subtitle" style="margin-bottom: 15px;">
+                    Preencha os horários de trabalho nos dias ativos. As horas extras serão pré-calculadas com base no
+                    regime de jornada informado na seção 8 e podem ser ajustadas manualmente.
+                </p>
 
-        <section class="form-section">
-            <h2 class="section-title">6. Depósitos FGTS</h2>
-            <p>Houve depósitos FGTS durante o vínculo?</p>
-            <div class="form-group">
-                 <select name="depositos_fgts" required>
-                    <option value="nao" selected>Não</option>
-                    <option value="sim">Sim</option>
-                </select>
-            </div>
-        </section>
-
-        <section class="form-section">
-            <h2 class="section-title">7. Hora extra</h2>
-            <p>São realizadas horas extras regularmente?</p>
-             <div class="form-group">
-                <select name="hora_extra" required>
-                    <option value="nao" selected>Não</option>
-                    <option value="sim">Sim</option>
-                </select>
-            </div>
-        </section>
-
-        <section class="form-section">
-            <h2 class="section-title">8. Horário de trabalho</h2>
-            <div class="form-row">
                 <div class="form-group">
-                    <label for="inicio_expediente">Início do expediente</label>
-                    <input type="time" id="inicio_expediente" name="inicio_expediente" required>
+                    <button type="button" id="aplicarParaTodos" class="btn btn-secondary btn-sm">
+                        Copiar horários do primeiro dia para os demais dias ativos
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label for="inicio_intervalo">Início do intervalo</label>
-                    <input type="time" id="inicio_intervalo" name="inicio_intervalo" required>
-                </div>
-                <div class="form-group">
-                    <label for="fim_intervalo">Fim do intervalo</label>
-                    <input type="time" id="fim_intervalo" name="fim_intervalo" required>
-                </div>
-                <div class="form-group">
-                    <label for="fim_expediente">Fim do expediente</label>
-                    <input type="time" id="fim_expediente" name="fim_expediente" required>
-                </div>
-            </div>
-        </section>
 
-        <section class="form-section">
-            <h2 class="section-title">9. Natureza da demissão</h2>
-            <div class="form-group">
-                <select id="natureza_demissao" name="natureza_demissao" required>
-                    <option value="rescisao_indireta" selected>Rescisão indireta</option>
-                    <option value="demissao_sem_justa_causa">Demissão sem justa causa</option>
-                    <option value="demissao_por_justa_causa">Demissão por justa causa</option>
-                    <option value="pedido_de_demissao">Pedido de demissão</option>
-                </select>
-            </div>
-        </section>
+                <div class="jornada-grid">
+                    <div class="jornada-header">
+                        <div class="jornada-cell header-cell">Dia</div>
+                        <div class="jornada-cell header-cell">Ativo</div>
+                        <div class="jornada-cell header-cell">Início Expediente</div>
+                        <div class="jornada-cell header-cell">Início Pausa (Opcional)</div>
+                        <div class="jornada-cell header-cell">Fim Pausa (Opcional)</div>
+                        <div class="jornada-cell header-cell">Fim Expediente</div>
+                        <div class="jornada-cell header-cell">Horas Extras (editável)</div>
+                    </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Gerar Relatório</button>
-            <button type="button" id="limparCampos" class="btn btn-secondary">Limpar Campos</button>
-            <a href="{{ url_for('ferramentas.index') }}" class="btn btn-outline-secondary d-flex align-items-center">
-                <i class="bi bi-arrow-left-circle me-2"></i>Voltar
-            </a>
+                    {% for dia in ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'] %}
+                        {% set dia_display = {'segunda':'Segunda', 'terca':'Terça', 'quarta':'Quarta', 'quinta':'Quinta', 'sexta':'Sexta', 'sabado':'Sábado', 'domingo':'Domingo'}[dia] %}
+                        <div class="jornada-row" data-day="{{ dia }}">
+                            <div class="jornada-cell day-label"><strong>{{ dia_display }}</strong></div>
+                            <div class="jornada-cell">
+                                <input type="checkbox" name="dia_ativo_{{ dia }}" class="dia-ativo">
+                            </div>
+                            <div class="jornada-cell"><input type="time" name="inicio_expediente_{{ dia }}"
+                                                             class="time-input" disabled></div>
+                            <div class="jornada-cell"><input type="time" name="inicio_intervalo_{{ dia }}"
+                                                             class="time-input" disabled></div>
+                            <div class="jornada-cell"><input type="time" name="fim_intervalo_{{ dia }}"
+                                                             class="time-input" disabled></div>
+                            <div class="jornada-cell"><input type="time" name="fim_expediente_{{ dia }}"
+                                                             class="time-input" disabled></div>
+                            <div class="jornada-cell">
+                                <<input type="time" name="horas_extra_{{ dia }}" id="horas_extra_{{ dia }}"
+                                        step="1" value="00:00:00" style="width:120px; margin-left:8px;">
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label for="clausula_compensacao">Tem Cláusula de compensação de horas?</label>
+                    <select id="clausula_compensacao" name="clausula_compensacao" required>
+                        <option value="nao" selected>Não</option>
+                        <option value="sim">Sim</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="feriados_domingos">Tem feriados ou domingos trabalhados?</label>
+                    <select id="feriados_domingos" name="feriados_domingos" required>
+                        <option value="nao" selected>Não</option>
+                        <option value="sim">Sim</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="feriados_domingos_data_group" style="display:none;">
+                    <label>Informe as datas dos feriados ou domingos trabalhados</label>
+                    <div id="datas_feriados_domingos_lista"></div>
+                    <button type="button" id="adicionarDataFeriadoDomingo" class="btn btn-secondary btn-sm"
+                            style="margin-top:8px;">
+                        Adicionar Data
+                    </button>
+                </div>
+
+
+            </section>
         </div>
 
-        <div id="statusMessage" class="status-message">
-            Preencha os dados e clique em 'Gerar Relatório'
-        </div>
+        <section class="form-section">
+            <h2 class="section-title">11. Férias vencidas</h2>
+            <div class="form-group">
+                <label for="ferias_vencidas">Há férias vencidas?</label>
+                <select id="ferias_vencidas" name="ferias_vencidas" required>
+                    <option value="nao" selected>Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+            </div>
+            <div class="form-group" id="detalhe_ferias_vencidas" style="display:none;">
+                <label for="periodo_ferias_vencidas">Detalhe o período ou quantidade de férias vencidas</label>
+                <input type="text" id="periodo_ferias_vencidas" name="periodo_ferias_vencidas"
+                       placeholder="Ex: 1 período de 30 dias (2021/2022)">
+            </div>
+        </section>
+
+
+        <section class="form-section">
+            <h2 class="section-title">12. Aplicação do art. 477 da CLT</h2>
+            <div class="form-group">
+                <label for="aplica_art_477">Será aplicado o art. 477 da CLT?</label>
+                <select id="aplica_art_477" name="aplica_art_477" required>
+                    <option value="nao" selected>sim, pois não foi pago na data correta</option>
+                    <option value="sim">sim, pois não houve acerto algum</option>
+                    <option value="sim">não</option>
+                </select>
+            </div>
+        </section>
+
+
+
+
+
     </form>
-
-
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/script_download.js') }}"></script>
+    <script src="{{ url_for('ferramentas.static', filename='js/calctrabalhista.js') }}"></script>
+
 {% endblock %}
