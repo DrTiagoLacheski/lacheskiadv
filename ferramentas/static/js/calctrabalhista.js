@@ -38,16 +38,27 @@ function aplicarMascaraRg(input) {
 }
 
 function getHorasPadrao(regime) {
-    switch (regime) {
-        case '5x2_40h': return 8;
-        case '6x1_44h': return 7.33; // 44 / 6
-        case '12x36': return 12;
-        case '36h': return 6; // 36 / 6
-        case '30h': return 5; // 30 / 6
-        case '25h': return 4.16; // 25 / 6
-        case '20h': return 3.33; // 20 / 6
-        default: return 8;
+    // Para 6x1 pode haver duas formas de distribuição
+    if (regime === '6x1_44h') {
+        const opcao = document.getElementById('opcao_6x1')?.value || 'igual';
+        // segunda a sábado (domingo=0h)
+        if (opcao === '8x5_4x1') {
+            return [8, 8, 8, 8, 8, 4, 0]; // segunda a sexta=8h, sábado=4h, domingo=0h
+        } else {
+            return [7.33, 7.33, 7.33, 7.33, 7.33, 7.33, 0]; // 7h20min em 6 dias, domingo=0h
+        }
     }
+    // Outros regimes: retorna igual para segunda a sábado (domingo=0h)
+    let h = 8;
+    switch (regime) {
+        case '5x2_40h': h = 8; break;
+        case '12x36': h = 12; break;
+        case '36h': h = 6; break;
+        case '30h': h = 5; break;
+        case '25h': h = 4.16; break;
+        case '20h': h = 3.33; break;
+    }
+    return [h, h, h, h, h, h, 0];
 }
 
 // --- LÓGICA PRINCIPAL DO FORMULÁRIO ---
@@ -63,6 +74,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const dataGroup = document.getElementById('feriados_domingos_data_group');
     const listaDatas = document.getElementById('datas_feriados_domingos_lista');
     const btnAdicionarData = document.getElementById('adicionarDataFeriadoDomingo');
+    const selectFeriasVencidas = document.getElementById('ferias_vencidas');
+    const detalheFerias = document.getElementById('detalhe_ferias_vencidas');
+    // 6x1 distribuição
+    const div6x1Opcao = document.getElementById('div_6x1_opcao');
+    const opcao6x1 = document.getElementById('opcao_6x1');
 
     // Máscaras
     aplicarMascaraCpfCnpj(document.getElementById('cpf_reclamante'), 'cpf');
@@ -82,15 +98,43 @@ document.addEventListener('DOMContentLoaded', function () {
     function toggleFeriadosDomingos() {
         dataGroup.style.display = feriadosDomingosSelect.value === 'sim' ? 'block' : 'none';
     }
+    function toggleDetalheFerias() {
+        detalheFerias.style.display = selectFeriasVencidas.value === 'Possui' ? 'block' : 'none';
+    }
+    function toggle6x1Opcao() {
+        if (regimeJornadaSelect.value === '6x1_44h') {
+            div6x1Opcao.style.display = 'block';
+        } else {
+            div6x1Opcao.style.display = 'none';
+        }
+    }
 
     selectInformal.addEventListener('change', toggleDetalhesInformal);
     selectHoraExtra.addEventListener('change', toggleItem10);
+    selectFeriasVencidas.addEventListener('change', toggleDetalheFerias);
     feriadosDomingosSelect.addEventListener('change', toggleFeriadosDomingos);
+    regimeJornadaSelect.addEventListener('change', function() {
+        toggle6x1Opcao();
+        // Recalcular horas extras pois pode ter mudado distribuição
+        document.querySelectorAll('.jornada-row').forEach(row => {
+            calcularHorasExtras(row);
+        });
+    });
+    if(opcao6x1){
+        opcao6x1.addEventListener('change', function() {
+            // Recalcular horas extras pois pode ter mudado distribuição
+            document.querySelectorAll('.jornada-row').forEach(row => {
+                calcularHorasExtras(row);
+            });
+        });
+    }
 
     // Inicial
     toggleDetalhesInformal();
     toggleItem10();
     toggleFeriadosDomingos();
+    toggleDetalheFerias();
+    toggle6x1Opcao();
 
     // Adição de datas de feriados/domingos
     if (btnAdicionarData) {
@@ -137,21 +181,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             setTipoInfo();
 
-            input.addEventListener('change', function () {
-                const data = new Date(this.value + 'T00:00:00');
-                const tipo = data.getDay() === 0 ? 'Domingo' : 'Feriado';
-                info.textContent = tipo;
-                inputTipo.value = tipo;
-            });
-
-            input.addEventListener('input', function () {
-                if (this.value) {
-                    const data = new Date(this.value + 'T00:00:00');
-                    const tipo = data.getDay() === 0 ? 'Domingo' : 'Feriado';
-                    info.textContent = tipo;
-                    inputTipo.value = tipo;
-                }
-            });
+            input.addEventListener('change', setTipoInfo);
+            input.addEventListener('input', setTipoInfo);
 
             const btnRemover = document.createElement('button');
             btnRemover.type = 'button';
@@ -173,12 +204,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const inicioExpediente = row.querySelector('[name^="inicio_expediente_"]').value;
         const fimExpediente = row.querySelector('[name^="fim_expediente_"]').value;
         const resultadoInput = row.querySelector('[name^="horas_extra_"]');
-
         if (!inicioExpediente || !fimExpediente) {
             resultadoInput.value = "00:00:00";
             return;
         }
-
         function decimalParaHoraMinSeg(decimal) {
             const totalSegundos = Math.round(decimal * 3600);
             const horas = Math.floor(totalSegundos / 3600);
@@ -190,12 +219,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 String(segundos).padStart(2, '0')
             );
         }
-
         const inicio = new Date(`1970-01-01T${inicioExpediente}`);
         const fim = new Date(`1970-01-01T${fimExpediente}`);
         let diffHoras = (fim - inicio) / (1000 * 60 * 60);
         if (diffHoras < 0) diffHoras += 24;
-
         const inicioPausa = row.querySelector('[name^="inicio_intervalo_"]').value;
         const fimPausa = row.querySelector('[name^="fim_intervalo_"]').value;
         let pausaHoras = 0;
@@ -205,11 +232,14 @@ document.addEventListener('DOMContentLoaded', function () {
             pausaHoras = (pausaFim - pausaInicio) / (1000 * 60 * 60);
             if (pausaHoras < 0) pausaHoras = 0;
         }
-
         const horasTrabalhadas = diffHoras - pausaHoras;
-        const horasPadrao = getHorasPadrao(regimeJornadaSelect.value);
+        // Busca o dia da semana da linha
+        const diasSemana = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+        const dia = row.getAttribute('data-day');
+        const idx = diasSemana.indexOf(dia);
+        const horasPadraoArray = getHorasPadrao(regimeJornadaSelect.value);
+        const horasPadrao = (idx >= 0 && horasPadraoArray[idx] !== undefined) ? horasPadraoArray[idx] : 8;
         const horasExtras = Math.max(0, horasTrabalhadas - horasPadrao);
-
         resultadoInput.value = decimalParaHoraMinSeg(horasExtras);
     }
 
@@ -232,13 +262,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Calcula horas extras ao alterar horários
         inputs.forEach(input => {
             input.addEventListener('change', () => calcularHorasExtras(row));
-        });
-    });
-
-    // Recalcula tudo se regime de jornada mudar
-    regimeJornadaSelect.addEventListener('change', function () {
-        document.querySelectorAll('.jornada-row').forEach(row => {
-            calcularHorasExtras(row);
         });
     });
 
@@ -274,19 +297,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Botão Limpar
     if (btnLimpar) {
-        btnLimpar.addEventListener('click', function () {
-            form.reset();
-            toggleDetalhesInformal();
-            toggleItem10();
-            toggleFeriadosDomingos();
-            document.querySelectorAll('.jornada-row').forEach(row => {
-                row.querySelectorAll('input').forEach(input => {
-                    if (input.type !== 'checkbox') input.value = '';
-                    input.disabled = true;
-                });
+    btnLimpar.addEventListener('click', function () {
+        form.reset();
+        toggleDetalhesInformal();
+        toggleItem10();
+        toggleFeriadosDomingos();
+        toggleDetalheFerias();
+        toggle6x1Opcao();
+        // Limpa e desabilita todos os horários
+        document.querySelectorAll('.jornada-row').forEach(row => {
+            row.querySelectorAll('input').forEach(input => {
+                if (input.type !== 'checkbox') input.value = '';
+                input.disabled = true;
             });
         });
-    }
+        // Dispara change para reabilitar os listeners dos checkboxes
+        document.querySelectorAll('.jornada-row .dia-ativo').forEach(cb => {
+            cb.dispatchEvent(new Event('change'));
+        });
+    });
+}
 });
 
 // Submit do formulário
@@ -294,7 +324,18 @@ document.getElementById('calcTrabalhistaForm').addEventListener('submit', functi
     e.preventDefault();
     const form = e.target;
     const dados = {};
-    new FormData(form).forEach((v, k) => { dados[k] = v; });
+    const formData = new FormData(form);
+    for (const [k, v] of formData.entries()) {
+        if (dados[k]) {
+            // Se já existe, transforma em array ou adiciona ao array
+            if (!Array.isArray(dados[k])) {
+                dados[k] = [dados[k]];
+            }
+            dados[k].push(v);
+        } else {
+            dados[k] = v;
+        }
+    }
 
     fetch('/ferramentas/gerar-calculo-trabalhista', {
         method: 'POST',

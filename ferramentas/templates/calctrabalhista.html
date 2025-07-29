@@ -33,7 +33,16 @@
                 </div>
                 <div class="form-group">
                     <label for="estado_civil">Estado civil</label>
-                    <input type="text" id="estado_civil" name="estado_civil">
+                    <select id="estado_civil" name="estado_civil">
+
+                        <option value="Solteiro(a)"selected>Solteiro(a)</option>
+                        <option value="Casado(a)">Casado(a)</option>
+                        <option value="Divorciado(a)">Divorciado(a)</option>
+                        <option value="Viúvo(a)">Viúvo(a)</option>
+                        <option value="Separado(a)">Separado(a)</option>
+                        <option value="União Estável">União Estável</option>
+                        <option value="Outro">Outro</option>
+                    </select>
                 </div>
             </div>
             <div class="form-group">
@@ -71,9 +80,9 @@
             <h2 class="section-title">4. Depósito de FGTS</h2>
             <div class="form-group">
                 <select id="depositos_fgts" name="depositos_fgts" required>
-                    <option value="nao" selected>Não houve depósito</option>
-                    <option value="sim">Houve depósito</option>
-                    <option value="parcial">Depósito parcial</option>
+                    <option value="Não houve depósito" selected>Não houve depósito</option>
+                    <option value="Houve depósito">Houve depósito</option>
+                    <option value="Houve Depósito parcial">Depósito parcial</option>
                 </select>
             </div>
         </section>
@@ -158,6 +167,13 @@
                     <option value="30h">30h (Jornada semanal)</option>
                     <option value="25h">25h (Jornada semanal)</option>
                     <option value="20h">20h (Jornada semanal)</option>
+                </select>
+            </div>
+            <div class="form-group" id="div_6x1_opcao" style="display:none;">
+                <label for="opcao_6x1">Como deseja distribuir as 44h semanais?</label>
+                <select id="opcao_6x1" name="opcao_6x1">
+                    <option value="igual">7h20min por dia (6 dias)</option>
+                    <option value="8x5_4x1">8h em 5 dias + 4h no 6º dia</option>
                 </select>
             </div>
         </section>
@@ -255,14 +271,21 @@
             <div class="form-group">
                 <label for="ferias_vencidas">Há férias vencidas?</label>
                 <select id="ferias_vencidas" name="ferias_vencidas" required>
-                    <option value="nao" selected>Não</option>
-                    <option value="sim">Sim</option>
+                    <option value="Não há" selected>Não</option>
+                    <option value="Possui">Sim</option>
                 </select>
             </div>
             <div class="form-group" id="detalhe_ferias_vencidas" style="display:none;">
-                <label for="periodo_ferias_vencidas">Detalhe o período ou quantidade de férias vencidas</label>
-                <input type="text" id="periodo_ferias_vencidas" name="periodo_ferias_vencidas"
-                       placeholder="Ex: 1 período de 30 dias (2021/2022)">
+        <span style="display:block; margin-bottom:4px; color:#555;">
+            <em>* As férias proporcionais serão calculadas automaticamente pelo programa.</em><br>
+            <em>* Caso não possua férias atrasadas ou vencidas, basta deixar os campos em branco.</em>
+        </span>
+                <label for="qtd_ferias_vencidas" style="margin-top:8px;">Quantidade de férias vencidas</label>
+                <input type="number" id="qtd_ferias_vencidas" name="qtd_ferias_vencidas" min="0" step="1"
+                       placeholder="Ex: 1">
+                <label for="qtd_ferias_atrasadas" style="margin-top:8px;">Quantidade de férias atrasadas</label>
+                <input type="number" id="qtd_ferias_atrasadas" name="qtd_ferias_atrasadas" min="0" step="1"
+                       placeholder="Ex: 1">
             </div>
         </section>
 
@@ -280,6 +303,7 @@
         </section>
 
         <div class="form-group" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+            <button type="button" class="btn btn-outline-secondary" id="limparCampos">Limpar Campos</button>
             <button type="button" class="btn btn-secondary" onclick="window.history.back();">Voltar</button>
             <button type="submit" class="btn btn-primary">Gerar Relatório</button>
         </div>

@@ -186,7 +186,7 @@ def pagina_calculo_trabalhista():
 def gerar_calculo_trabalhista_route():
     """Endpoint da API para gerar o relatório trabalhista."""
     try:
-        data = request.json
+        data = request.get_json()
 
         required_fields = [
             'data_inicio', 'data_termino', 'funcao_exercida', 'remuneracao',

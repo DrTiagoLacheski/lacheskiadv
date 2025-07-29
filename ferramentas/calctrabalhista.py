@@ -2,15 +2,18 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import Paragraph, Frame, Table, TableStyle
-from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import Paragraph, Table, TableStyle
+from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib import colors
 import os
 from datetime import datetime
 import locale
 from PIL import Image
 from flask import current_app
+
+# Importa nova função para o parágrafo do reclamante
+from .escrever_relatorio import paragrafo_reclamante, paragrafo_reclamada, paragrafo_contrato
 
 # --- CONFIGURAÇÕES GLOBAIS ---
 try:
@@ -20,7 +23,6 @@ except locale.Error:
 
 FOOTER_MARGIN = 30 * mm
 
-
 # --- FUNÇÕES AUXILIARES DE FORMATAÇÃO ---
 def _formatar_data(data_str):
     if not data_str: return "Não informado"
@@ -28,7 +30,6 @@ def _formatar_data(data_str):
         return datetime.strptime(data_str, '%Y-%m-%d').strftime('%d/%m/%Y')
     except (ValueError, TypeError):
         return data_str
-
 
 def _formatar_moeda(valor_str):
     if not valor_str: return "Não informado"
@@ -38,14 +39,14 @@ def _formatar_moeda(valor_str):
     except (ValueError, TypeError):
         return valor_str
 
-
 def _formatar_texto(texto):
     if not texto: return "Não informado"
     return str(texto).replace('_', ' ').capitalize()
 
+def _horario_ou_vazio(val):
+    return val if val and str(val).strip() else "--:--"
 
 # --- FUNÇÕES DE DESENHO NO PDF ---
-
 def _draw_header(c, width, height):
     logo_margin_top = 15 * mm
     logo_path = os.path.join(current_app.root_path, 'static', 'images', 'logolacheski.png')
@@ -75,8 +76,6 @@ def _draw_header(c, width, height):
     c.line(20 * mm, height - logo_height - 5 * mm, width - 20 * mm, height - logo_height - 5 * mm)
     return logo_height + 10 * mm  # altura total ocupada pelo cabeçalho
 
-
-
 def _draw_footer(c, width):
     data_geracao = datetime.now().strftime("Gerado em %d de %B de %Y")
     c.saveState()
@@ -86,14 +85,12 @@ def _draw_footer(c, width):
     c.drawCentredString(width / 2, 15 * mm, "Este é um documento preliminar e confidencial.")
     c.restoreState()
 
-
 def _handle_page_break(c, y_pos, required_height):
     if y_pos - required_height < FOOTER_MARGIN:
         c.showPage()
         _draw_header(c, c._pagesize[0], c._pagesize[1])
         return c._pagesize[1] - 50 * mm
     return y_pos
-
 
 def _adicionar_secao_rl(c, titulo, conteudo_dict, y_start):
     width = 170 * mm
@@ -134,7 +131,6 @@ def _adicionar_secao_rl(c, titulo, conteudo_dict, y_start):
 
     return y_pos - (6 * mm)
 
-
 def _adicionar_secao_jornada_completa_rl(c, dados, y_start):
     width = 170 * mm
     x_pos = 20 * mm
@@ -145,11 +141,22 @@ def _adicionar_secao_jornada_completa_rl(c, dados, y_start):
     style_subtitle = ParagraphStyle('subtitle', fontName='Times-Roman', fontSize=10, spaceAfter=8,
                                     textColor=colors.HexColor('#333'))
 
+    # Exibe a opção de distribuição do 6x1 (se selecionada)
+    regime_contratado = _formatar_texto(dados.get('regime_jornada'))
+    opcao_6x1 = dados.get('opcao_6x1')
+    txt_opcao = ""
+    if dados.get('regime_jornada') == '6x1_44h':
+        if opcao_6x1 == "igual":
+            txt_opcao = " (Distribuição: 7h20min por dia em 6 dias)"
+        elif opcao_6x1 == "8x5_4x1":
+            txt_opcao = " (Distribuição: 8h em 5 dias + 4h em 1 dia)"
+        else:
+            txt_opcao = " (Distribuição: 7h20min por dia em 6 dias)"
+
     p_title = Paragraph("7. JORNADA DE TRABALHO E HORAS EXTRAS", style_title)
     w_title, h_title = p_title.wrapOn(c, width, y_start)
 
-    regime_contratado = _formatar_texto(dados.get('regime_jornada'))
-    p_regime = Paragraph(f"<b>Regime Contratado:</b> {regime_contratado}", style_subtitle)
+    p_regime = Paragraph(f"<b>Regime Contratado:</b> {regime_contratado}{txt_opcao}", style_subtitle)
     w_regime, h_regime = p_regime.wrapOn(c, width, y_start)
 
     h_conteudo = h_regime
@@ -163,11 +170,14 @@ def _adicionar_secao_jornada_completa_rl(c, dados, y_start):
         dados_jornada = []
         for dia in dias_semana:
             if dados.get(f'dia_ativo_{dia}'):
-                dados_jornada.append([dia_map[dia], dados.get(f'inicio_expediente_{dia}', '---'),
-                                      dados.get(f'inicio_intervalo_{dia}', '---'),
-                                      dados.get(f'fim_intervalo_{dia}', '---'),
-                                      dados.get(f'fim_expediente_{dia}', '---'),
-                                      dados.get(f'horas_extra_{dia}', '0.00')])
+                dados_jornada.append([
+                    dia_map[dia],
+                    _horario_ou_vazio(dados.get(f'inicio_expediente_{dia}')),
+                    _horario_ou_vazio(dados.get(f'inicio_intervalo_{dia}')),
+                    _horario_ou_vazio(dados.get(f'fim_intervalo_{dia}')),
+                    _horario_ou_vazio(dados.get(f'fim_expediente_{dia}')),
+                    dados.get(f'horas_extra_{dia}', '0.00')
+                ])
 
         if dados_jornada:
             header = [['Dia', 'Início', 'Pausa In.', 'Pausa Fim', 'Fim Exp.', 'H. Extras']]
@@ -209,7 +219,6 @@ def _adicionar_secao_jornada_completa_rl(c, dados, y_start):
 
     return y_pos - (6 * mm)
 
-
 def _adicionar_aviso_legal(c, y_start):
     width = 170 * mm
     x_pos = 20 * mm
@@ -228,7 +237,6 @@ def _adicionar_aviso_legal(c, y_start):
     p_aviso.drawOn(c, x_pos, y_pos - h)
 
     return y_pos - h - (8 * mm)
-
 
 def _adicionar_secao_feriados_domingos(c, dados, y_start):
     width = 170 * mm
@@ -258,7 +266,13 @@ def _adicionar_secao_feriados_domingos(c, dados, y_start):
     data = []
     for i, data_feriado in enumerate(datas):
         hora = horas[i] if i < len(horas) else ''
-        tipo = tipos[i] if i < len(tipos) else ''
+        tipo = tipos[i] if i < len(tipos) and tipos[i] else ''
+        if not tipo and data_feriado:
+            try:
+                dia = datetime.strptime(data_feriado, "%Y-%m-%d").weekday()
+                tipo = "Domingo" if dia == 6 else "Feriado"
+            except Exception:
+                tipo = ""
         label = f"Data: {_formatar_data(data_feriado)} ({tipo})"
         value = f"Horas: {hora}"
         data.append([Paragraph(label, style_label), Paragraph(value, style_value)])
@@ -281,7 +295,6 @@ def _adicionar_secao_feriados_domingos(c, dados, y_start):
 
     return y_pos - (6 * mm)
 
-
 # --- FUNÇÃO PRINCIPAL ---
 def gerar_relatorio_trabalhista_pdf(dados):
     os.makedirs('static/temp', exist_ok=True)
@@ -292,56 +305,66 @@ def gerar_relatorio_trabalhista_pdf(dados):
     width, height = A4
 
     header_height = _draw_header(c, width, height)
-    y = height - header_height  # agora o conteúdo começa após a logo
+    y = height - header_height  # conteúdo após a logo
 
     c.setFont("Times-Bold", 16)
     c.drawCentredString(width / 2, y, "RELATÓRIO TRABALHISTA PRELIMINAR")
     y -= (5 * mm)
 
-    y = _adicionar_secao_rl(c, "1. DADOS DO RECLAMANTE", {
-        "Nome": dados.get('nome_reclamante'), "CPF": dados.get('cpf_reclamante'),
-        "RG": dados.get('rg_reclamante'), "Estado Civil": dados.get('estado_civil'),
-        "Endereço": dados.get('endereco_reclamante')
-    }, y)
+    # --- Seção 1: Parágrafo do Reclamante ---
+    style_paragrafo = ParagraphStyle(
+        'paragrafo_reclamante',
+        fontName='Times-Roman',
+        fontSize=10,
+        leading=13,
+        alignment=0,  # Justificado
+        spaceAfter=8
+    )
+    p_reclamante = Paragraph(paragrafo_reclamante(dados), style_paragrafo)
+    w, h = p_reclamante.wrapOn(c, 170 * mm, y)
+    y = _handle_page_break(c, y, h + 8 * mm)
+    p_reclamante.drawOn(c, 20 * mm, y - h)
+    y = y - h - 6 * mm
 
-    y = _adicionar_secao_rl(c, "2. EMPRESA RECLAMADA", {
-        "Nome da Empresa": dados.get('nome_empresa'), "CNPJ": dados.get('cnpj_empresa')
-    }, y)
+    # --- Seção 2: Parágrafo da Reclamada ---
+    style_paragrafo2 = ParagraphStyle(
+        'paragrafo_reclamada',
+        fontName='Times-Roman',
+        fontSize=10,
+        leading=13,
+        alignment=0,
+        spaceAfter=8
+    )
+    p_reclamada = Paragraph(paragrafo_reclamada(dados), style_paragrafo2)
+    w2, h2 = p_reclamada.wrapOn(c, 170 * mm, y)
+    y = _handle_page_break(c, y, h2 + 8 * mm)
+    p_reclamada.drawOn(c, 20 * mm, y - h2)
+    y = y - h2 - 6 * mm
 
-    y = _adicionar_secao_rl(c, "3. DETALHES DO CONTRATO", {
-        "Função Exercida": dados.get('funcao_exercida'),
-        "Data de Início": _formatar_data(dados.get('data_inicio')),
-        "Data de Término": _formatar_data(dados.get('data_termino')),
-        "Registro em CTPS": _formatar_texto(dados.get('registro_ctps')),
-        "Insalubridade": dados.get('insalubridade'), "Periculosidade": dados.get('periculosidade')
-    }, y)
+    # --- Seção 3: Parágrafo Detalhes do Contrato ---
+    style_paragrafo3 = ParagraphStyle(
+        'paragrafo_contrato',
+        fontName='Times-Roman',
+        fontSize=10,
+        leading=13,
+        alignment=0,
+        spaceAfter=8
+    )
+    p_contrato = Paragraph(paragrafo_contrato(dados), style_paragrafo3)
+    w3, h3 = p_contrato.wrapOn(c, 170 * mm, y)
+    y = _handle_page_break(c, y, h3 + 8 * mm)
+    p_contrato.drawOn(c, 20 * mm, y - h3)
+    y = y - h3 - 6 * mm
 
-    y = _adicionar_secao_rl(c, "4. REMUNERAÇÃO", {
-        "Remuneração Formal": _formatar_moeda(dados.get('remuneracao')),
-        "Recebia Remuneração Informal?": _formatar_texto(dados.get('remuneracao_informal')),
-        "Tipo de Remuneração Informal": dados.get('remuneracao_informal_tipo'),
-        "Valor da Remuneração Informal": _formatar_moeda(dados.get('remuneracao_informal_valor'))
-    }, y)
-
-    y = _adicionar_secao_rl(c, "5. MOTIVO DA RESCISÃO", {
-        "Natureza da Demissão": _formatar_texto(dados.get('natureza_demissao')),
-        "Aplicação do Art. 477 da CLT": _formatar_texto(dados.get('aplica_art_477'))
-    }, y)
-
-    y = _adicionar_secao_rl(c, "6. VERBAS TRABALHISTAS", {
-        "Depósitos de FGTS": _formatar_texto(dados.get('depositos_fgts')),
-        "Férias Vencidas": _formatar_texto(dados.get('ferias_vencidas')),
-        "Período de Férias Vencidas": dados.get('periodo_ferias_vencidas', '---')
-    }, y)
-
-    y = _adicionar_secao_jornada_completa_rl(c, dados, y)
-
-    if dados.get('feriados_domingos') == 'sim':
-        y = _adicionar_secao_feriados_domingos(c, dados, y)
-
-    y = _adicionar_aviso_legal(c, y)
+    # --- Continuação do relatório: as próximas seções permanecem para futura adaptação ---
+    # y = _adicionar_secao_rl(c, "4. REMUNERAÇÃO", { ... }, y)
+    # y = _adicionar_secao_rl(c, "5. MOTIVO DA RESCISÃO", { ... }, y)
+    # y = _adicionar_secao_rl(c, "6. VERBAS TRABALHISTAS", { ... }, y)
+    # y = _adicionar_secao_jornada_completa_rl(c, dados, y)
+    # if dados.get('feriados_domingos') == 'sim':
+    #     y = _adicionar_secao_feriados_domingos(c, dados, y)
+    # y = _adicionar_aviso_legal(c, y)
 
     _draw_footer(c, width)
-
     c.save()
     return caminho_arquivo
