@@ -2,7 +2,7 @@
 
 import os
 import uuid
-from flask import Blueprint, render_template, request, jsonify, url_for, current_app, send_from_directory, redirect
+from flask import Blueprint, render_template, request, jsonify, url_for, current_app, send_from_directory, redirect, session
 # ALTERAÇÃO 1: Importar 'current_user' para saber quem está logado
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -187,15 +187,12 @@ def gerar_calculo_trabalhista_route():
     """Endpoint da API para gerar o relatório trabalhista."""
     try:
         data = request.json
-        dias_hora_extra = request.form.getlist('dias_hora_extra')
 
-        session['calctrabalhista_dados']['dias_hora_extra'] = dias_hora_extra
-        session['calctrabalhista_dados'] = data
         required_fields = [
             'data_inicio', 'data_termino', 'funcao_exercida', 'remuneracao',
             'nome_empresa', 'cnpj_empresa', 'regime_jornada', 'clausula_compensacao',
-            'insalubridade', 'depositos_fgts', 'hora_extra', 'inicio_expediente',
-            'inicio_intervalo', 'fim_intervalo', 'fim_expediente', 'natureza_demissao'
+            'insalubridade', 'depositos_fgts', 'hora_extra',
+            'natureza_demissao'
         ]
         for field in required_fields:
             if not data.get(field):

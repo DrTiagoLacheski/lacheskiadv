@@ -37,34 +37,18 @@ function aplicarMascaraRg(input) {
     });
 }
 
-/**
- * Retorna a jornada de trabalho padrão em horas com base no regime selecionado.
- * @param {string} regime O valor do select 'regime_jornada'.
- * @returns {number} As horas diárias padrão.
- */
 function getHorasPadrao(regime) {
-    // Nota: 44h semanais em 6 dias são 7.33h (7h20min).
-    // Para 12x36, a hora extra é o que excede a 12ª hora no dia de trabalho.
     switch (regime) {
-        case '5x2_40h':
-            return 8;
-        case '6x1_44h':
-            return 7.33; // 44 / 6
-        case '12x36':
-            return 12;
-        case '36h':
-            return 6; // 36 / 6
-        case '30h':
-            return 5; // 30 / 6
-        case '25h':
-            return 4.16; // 25 / 6
-        case '20h':
-            return 3.33; // 20 / 6
-        default:
-            return 8; // Padrão
+        case '5x2_40h': return 8;
+        case '6x1_44h': return 7.33; // 44 / 6
+        case '12x36': return 12;
+        case '36h': return 6; // 36 / 6
+        case '30h': return 5; // 30 / 6
+        case '25h': return 4.16; // 25 / 6
+        case '20h': return 3.33; // 20 / 6
+        default: return 8;
     }
 }
-
 
 // --- LÓGICA PRINCIPAL DO FORMULÁRIO ---
 document.addEventListener('DOMContentLoaded', function () {
@@ -80,11 +64,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const listaDatas = document.getElementById('datas_feriados_domingos_lista');
     const btnAdicionarData = document.getElementById('adicionarDataFeriadoDomingo');
 
-    if (feriadosDomingosSelect && dataGroup && listaDatas && btnAdicionarData) {
-        feriadosDomingosSelect.addEventListener('change', function () {
-            dataGroup.style.display = this.value === 'sim' ? 'block' : 'none';
-        });
+    // Máscaras
+    aplicarMascaraCpfCnpj(document.getElementById('cpf_reclamante'), 'cpf');
+    aplicarMascaraCpfCnpj(document.getElementById('cnpj_empresa'), 'cnpj');
+    aplicarMascaraRg(document.getElementById('rg_reclamante'));
+    document.getElementById('remuneracao').addEventListener('input', aplicarMascaraMoeda);
+    document.getElementById('remuneracao_informal_valor').addEventListener('input', aplicarMascaraMoeda);
 
+    // Seções dinâmicas
+    function toggleDetalhesInformal() {
+        const detalhes = document.getElementById('remuneracao_informal_detalhes');
+        detalhes.style.display = selectInformal.value === 'sim' ? 'block' : 'none';
+    }
+    function toggleItem10() {
+        item10.style.display = selectHoraExtra.value === 'sim' ? 'block' : 'none';
+    }
+    function toggleFeriadosDomingos() {
+        dataGroup.style.display = feriadosDomingosSelect.value === 'sim' ? 'block' : 'none';
+    }
+
+    selectInformal.addEventListener('change', toggleDetalhesInformal);
+    selectHoraExtra.addEventListener('change', toggleItem10);
+    feriadosDomingosSelect.addEventListener('change', toggleFeriadosDomingos);
+
+    // Inicial
+    toggleDetalhesInformal();
+    toggleItem10();
+    toggleFeriadosDomingos();
+
+    // Adição de datas de feriados/domingos
+    if (btnAdicionarData) {
         btnAdicionarData.addEventListener('click', function () {
             const div = document.createElement('div');
             div.className = 'data-feriado-domingo-item';
@@ -97,26 +106,50 @@ document.addEventListener('DOMContentLoaded', function () {
             input.name = 'datas_feriados_domingos[]';
             input.required = true;
 
+            const inputTipo = document.createElement('input');
+            inputTipo.type = 'hidden';
+            inputTipo.name = 'tipo_feriado_domingo[]';
+
             const info = document.createElement('span');
             info.style.fontSize = '0.95em';
 
+            const setTipoInfo = () => {
+                if (input.value) {
+                    const data = new Date(input.value + 'T00:00:00');
+                    const tipo = data.getDay() === 0 ? 'Domingo' : 'Feriado'; // 0 = Domingo
+                    info.textContent = tipo;
+                    inputTipo.value = tipo;
+                } else {
+                    info.textContent = '';
+                    inputTipo.value = '';
+                }
+            };
+
             const inputHoras = document.createElement('input');
-                inputHoras.type = 'number';
-                inputHoras.name = 'horas_feriado_domingo[]';
-                inputHoras.min = '0';
-                inputHoras.max = '24';
-                inputHoras.step = '0.25';
-                inputHoras.placeholder = 'Horas';
-                inputHoras.required = true;
-                inputHoras.style.width = '70px';
+            inputHoras.type = 'number';
+            inputHoras.name = 'horas_feriado_domingo[]';
+            inputHoras.min = '0';
+            inputHoras.max = '24';
+            inputHoras.step = '0.25';
+            inputHoras.placeholder = 'Horas';
+            inputHoras.required = true;
+            inputHoras.style.width = '70px';
+
+            setTipoInfo();
 
             input.addEventListener('change', function () {
                 const data = new Date(this.value + 'T00:00:00');
-                const diaSemana = data.getDay();
-                if (diaSemana === 0) {
-                    info.textContent = 'Domingo';
-                } else {
-                    info.textContent = 'Feriado';
+                const tipo = data.getDay() === 0 ? 'Domingo' : 'Feriado';
+                info.textContent = tipo;
+                inputTipo.value = tipo;
+            });
+
+            input.addEventListener('input', function () {
+                if (this.value) {
+                    const data = new Date(this.value + 'T00:00:00');
+                    const tipo = data.getDay() === 0 ? 'Domingo' : 'Feriado';
+                    info.textContent = tipo;
+                    inputTipo.value = tipo;
                 }
             });
 
@@ -129,126 +162,91 @@ document.addEventListener('DOMContentLoaded', function () {
             div.appendChild(input);
             div.appendChild(inputHoras);
             div.appendChild(info);
+            div.appendChild(inputTipo);
             div.appendChild(btnRemover);
             listaDatas.appendChild(div);
         });
     }
 
+    // Cálculo de horas extras
+    function calcularHorasExtras(row) {
+        const inicioExpediente = row.querySelector('[name^="inicio_expediente_"]').value;
+        const fimExpediente = row.querySelector('[name^="fim_expediente_"]').value;
+        const resultadoInput = row.querySelector('[name^="horas_extra_"]');
 
-        // Aplicar máscaras
-        aplicarMascaraCpfCnpj(document.getElementById('cpf_reclamante'), 'cpf');
-        aplicarMascaraCpfCnpj(document.getElementById('cnpj_empresa'), 'cnpj');
-        aplicarMascaraRg(document.getElementById('rg_reclamante'));
-        document.getElementById('remuneracao').addEventListener('input', aplicarMascaraMoeda);
-        document.getElementById('remuneracao_informal_valor').addEventListener('input', aplicarMascaraMoeda);
-        document.getElementById('ferias_vencidas').dispatchEvent(new Event('change'));
-        document.getElementById('remuneracao_informal').dispatchEvent(new Event('change'));
-        document.getElementById('hora_extra').dispatchEvent(new Event('change'));
-        document.getElementById('feriados_domingos').dispatchEvent(new Event('change'));
-
-        // Lógica da Remuneração Informal
-        selectInformal.addEventListener('change', function () {
-            const detalhes = document.getElementById('remuneracao_informal_detalhes');
-            detalhes.style.display = this.value === 'sim' ? 'block' : 'none';
-        });
-
-        // Lógica para mostrar/esconder a seção de horas extras
-        selectHoraExtra.addEventListener('change', function () {
-            item10.style.display = this.value === 'sim' ? 'block' : 'none';
-        });
-
-        /**
-         * Calcula as horas extras para uma linha específica da grade de jornada.
-         * @param {HTMLElement} row O elemento da linha (.jornada-row).
-         */
-        function calcularHorasExtras(row) {
-            const inicioExpediente = row.querySelector('[name^="inicio_expediente_"]').value;
-            const fimExpediente = row.querySelector('[name^="fim_expediente_"]').value;
-            const resultadoInput = row.querySelector('[name^="horas_extra_"]'); // Corrigido
-
-            if (!inicioExpediente || !fimExpediente) {
-                resultadoInput.value = "00:00:00";
-                return;
-            }
-
-            function decimalParaHoraMinSeg(decimal) {
-                const totalSegundos = Math.round(decimal * 3600);
-                const horas = Math.floor(totalSegundos / 3600);
-                const minutos = Math.floor((totalSegundos % 3600) / 60);
-                const segundos = totalSegundos % 60;
-                return (
-                    String(horas).padStart(2, '0') + ':' +
-                    String(minutos).padStart(2, '0') + ':' +
-                    String(segundos).padStart(2, '0')
-                );
-            }
-
-            const inicio = new Date(`1970-01-01T${inicioExpediente}`);
-            const fim = new Date(`1970-01-01T${fimExpediente}`);
-
-            let diffHoras = (fim - inicio) / (1000 * 60 * 60);
-            if (diffHoras < 0) diffHoras += 24;
-
-            const inicioPausa = row.querySelector('[name^="inicio_intervalo_"]').value;
-            const fimPausa = row.querySelector('[name^="fim_intervalo_"]').value;
-            let pausaHoras = 0;
-            if (inicioPausa && fimPausa) {
-                const pausaInicio = new Date(`1970-01-01T${inicioPausa}`);
-                const pausaFim = new Date(`1970-01-01T${fimPausa}`);
-                pausaHoras = (pausaFim - pausaInicio) / (1000 * 60 * 60);
-                if (pausaHoras < 0) pausaHoras = 0;
-            }
-
-            const horasTrabalhadas = diffHoras - pausaHoras;
-            const horasPadrao = getHorasPadrao(regimeJornadaSelect.value);
-            const horasExtras = Math.max(0, horasTrabalhadas - horasPadrao);
-
-            resultadoInput.value = decimalParaHoraMinSeg(horasExtras);
+        if (!inicioExpediente || !fimExpediente) {
+            resultadoInput.value = "00:00:00";
+            return;
         }
 
-        // Adiciona listeners para cada linha da grade de jornada
-        document.querySelectorAll('.jornada-row').forEach(row => {
-            const inputs = row.querySelectorAll('.time-input, .he-resultado');
-            const checkbox = row.querySelector('.dia-ativo');
+        function decimalParaHoraMinSeg(decimal) {
+            const totalSegundos = Math.round(decimal * 3600);
+            const horas = Math.floor(totalSegundos / 3600);
+            const minutos = Math.floor((totalSegundos % 3600) / 60);
+            const segundos = totalSegundos % 60;
+            return (
+                String(horas).padStart(2, '0') + ':' +
+                String(minutos).padStart(2, '0') + ':' +
+                String(segundos).padStart(2, '0')
+            );
+        }
 
-            // Habilita/desabilita a linha com base no checkbox
-            checkbox.addEventListener('change', function () {
+        const inicio = new Date(`1970-01-01T${inicioExpediente}`);
+        const fim = new Date(`1970-01-01T${fimExpediente}`);
+        let diffHoras = (fim - inicio) / (1000 * 60 * 60);
+        if (diffHoras < 0) diffHoras += 24;
+
+        const inicioPausa = row.querySelector('[name^="inicio_intervalo_"]').value;
+        const fimPausa = row.querySelector('[name^="fim_intervalo_"]').value;
+        let pausaHoras = 0;
+        if (inicioPausa && fimPausa) {
+            const pausaInicio = new Date(`1970-01-01T${inicioPausa}`);
+            const pausaFim = new Date(`1970-01-01T${fimPausa}`);
+            pausaHoras = (pausaFim - pausaInicio) / (1000 * 60 * 60);
+            if (pausaHoras < 0) pausaHoras = 0;
+        }
+
+        const horasTrabalhadas = diffHoras - pausaHoras;
+        const horasPadrao = getHorasPadrao(regimeJornadaSelect.value);
+        const horasExtras = Math.max(0, horasTrabalhadas - horasPadrao);
+
+        resultadoInput.value = decimalParaHoraMinSeg(horasExtras);
+    }
+
+    // Configura grade de jornada
+    document.querySelectorAll('.jornada-row').forEach(row => {
+        const checkbox = row.querySelector('.dia-ativo');
+        const inputs = row.querySelectorAll('.time-input');
+        // Ativa/desativa inputs
+        checkbox.addEventListener('change', function () {
+            if (this.checked) {
+                inputs.forEach(input => input.disabled = false);
+            } else {
                 inputs.forEach(input => {
-                    input.disabled = !this.checked;
+                    input.disabled = true;
+                    input.value = '';
                 });
-                if (!this.checked) {
-                    inputs.forEach(input => input.value = '');
-                } else {
-                    calcularHorasExtras(row);
-                }
-            });
-
-            // Recalcula ao alterar qualquer horário
-            row.querySelectorAll('.time-input').forEach(input => {
-                input.addEventListener('change', () => calcularHorasExtras(row));
-            });
+            }
+            calcularHorasExtras(row);
         });
-
-        // Recalcula tudo se o regime de jornada for alterado
-        regimeJornadaSelect.addEventListener('change', function () {
-            document.querySelectorAll('.jornada-row').forEach(row => {
-                if (row.querySelector('.dia-ativo').checked) {
-                    calcularHorasExtras(row);
-                }
-            });
+        // Calcula horas extras ao alterar horários
+        inputs.forEach(input => {
+            input.addEventListener('change', () => calcularHorasExtras(row));
         });
+    });
 
-        // Lógica do botão "Copiar para todos"
+    // Recalcula tudo se regime de jornada mudar
+    regimeJornadaSelect.addEventListener('change', function () {
+        document.querySelectorAll('.jornada-row').forEach(row => {
+            calcularHorasExtras(row);
+        });
+    });
+
+    // Botão "Aplicar para todos"
+    if (btnAplicarParaTodos) {
         btnAplicarParaTodos.addEventListener('click', function () {
             const todasAsLinhas = Array.from(document.querySelectorAll('.jornada-row'));
-            let primeiraLinhaAtiva = null;
-
-            for (const linha of todasAsLinhas) {
-                if (linha.querySelector('.dia-ativo').checked) {
-                    primeiraLinhaAtiva = linha;
-                    break;
-                }
-            }
+            let primeiraLinhaAtiva = todasAsLinhas.find(linha => linha.querySelector('.dia-ativo').checked);
 
             if (!primeiraLinhaAtiva) {
                 alert('Por favor, ative e preencha os horários do primeiro dia de trabalho.');
@@ -263,24 +261,24 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             todasAsLinhas.forEach(linhaDestino => {
-                // Aplica somente para as outras linhas que também estiverem ativas
                 if (linhaDestino !== primeiraLinhaAtiva && linhaDestino.querySelector('.dia-ativo').checked) {
                     linhaDestino.querySelector('[name^="inicio_expediente_"]').value = valoresFonte.inicioExp;
                     linhaDestino.querySelector('[name^="inicio_intervalo_"]').value = valoresFonte.inicioPausa;
                     linhaDestino.querySelector('[name^="fim_intervalo_"]').value = valoresFonte.fimPausa;
                     linhaDestino.querySelector('[name^="fim_expediente_"]').value = valoresFonte.fimExp;
-                    calcularHorasExtras(linhaDestino); // Recalcula para a linha atualizada
+                    calcularHorasExtras(linhaDestino);
                 }
             });
         });
+    }
 
-        // Lógica do Botão de Limpar
+    // Botão Limpar
+    if (btnLimpar) {
         btnLimpar.addEventListener('click', function () {
             form.reset();
-            // Dispara eventos para garantir que as seções colapsem
-            selectInformal.dispatchEvent(new Event('change'));
-            selectHoraExtra.dispatchEvent(new Event('change'));
-            // Reseta o estado dos checkboxes e campos da jornada
+            toggleDetalhesInformal();
+            toggleItem10();
+            toggleFeriadosDomingos();
             document.querySelectorAll('.jornada-row').forEach(row => {
                 row.querySelectorAll('input').forEach(input => {
                     if (input.type !== 'checkbox') input.value = '';
@@ -288,15 +286,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
         });
-
-        // Define o estado inicial da página ao carregar
-        selectInformal.dispatchEvent(new Event('change'));
-        selectHoraExtra.dispatchEvent(new Event('change'));
     }
-)
-    ;
+});
 
-    document.getElementById('feriados_domingos').addEventListener('change', function () {
-        const dataGroup = document.getElementById('feriados_domingos_data_group');
-        dataGroup.style.display = this.value === 'sim' ? 'block' : 'none';
-    });
+// Submit do formulário
+document.getElementById('calcTrabalhistaForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const dados = {};
+    new FormData(form).forEach((v, k) => { dados[k] = v; });
+
+    fetch('/ferramentas/gerar-calculo-trabalhista', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.success && res.download_url) {
+            const a = document.createElement('a');
+            a.href = res.download_url;
+            a.download = res.filename || 'relatorio.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } else {
+            alert(res.error || 'Erro ao gerar relatório.');
+        }
+    })
+    .catch(() => alert('Erro ao gerar relatório.'));
+});
