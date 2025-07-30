@@ -2,7 +2,7 @@
 
 import os
 import uuid
-from flask import Blueprint, render_template, request, jsonify, url_for, current_app, send_from_directory, redirect, session
+from flask import Blueprint, render_template, request, jsonify, url_for, current_app, send_from_directory, redirect, session, flash
 # ALTERAÇÃO 1: Importar 'current_user' para saber quem está logado
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -466,4 +466,69 @@ def download_file(filename):
         directory=directory,
         path=filename,
         as_attachment=True
+    )
+
+# --- Rotas para Gerenciamento de Arquivos (Guidelines) ---
+@ferramentas_bp.route('/upload_arquivo', methods=['POST'])
+@login_required
+def upload_arquivo():
+    """Upload de arquivos para guidelines/materiais"""
+    from models import Arquivo, db
+    import os
+    from werkzeug.utils import secure_filename
+    
+    if 'arquivo' not in request.files:
+        flash('Nenhum arquivo selecionado', 'error')
+        return redirect(url_for('main.painel_gerenciador'))
+    
+    arquivo = request.files['arquivo']
+    descricao = request.form.get('descricao', '')
+    
+    if arquivo.filename == '':
+        flash('Nenhum arquivo selecionado', 'error')
+        return redirect(url_for('main.painel_gerenciador'))
+    
+    if arquivo:
+        # Garante nome seguro do arquivo
+        filename = secure_filename(arquivo.filename)
+        
+        # Cria diretório de uploads se não existir
+        upload_dir = os.path.join(current_app.root_path, 'static', 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Salva arquivo
+        filepath = os.path.join(upload_dir, filename)
+        arquivo.save(filepath)
+        
+        # Cria registro no banco
+        novo_arquivo = Arquivo(
+            nome=arquivo.filename,
+            filename=filename,
+            descricao=descricao,
+            path=filepath,
+            tamanho=os.path.getsize(filepath),
+            tipo_mime=arquivo.content_type,
+            user_id=current_user.id
+        )
+        
+        db.session.add(novo_arquivo)
+        db.session.commit()
+        
+        flash('Arquivo enviado com sucesso!', 'success')
+    
+    return redirect(url_for('main.painel_gerenciador'))
+
+@ferramentas_bp.route('/download_arquivo/<int:arquivo_id>')
+@login_required
+def download_arquivo(arquivo_id):
+    """Download de arquivo por ID"""
+    from models import Arquivo
+    
+    arquivo = Arquivo.query.get_or_404(arquivo_id)
+    
+    return send_from_directory(
+        directory=os.path.dirname(arquivo.path),
+        path=os.path.basename(arquivo.path),
+        as_attachment=True,
+        download_name=arquivo.nome
     )

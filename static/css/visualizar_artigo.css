@@ -1,0 +1,182 @@
+/* Adicionar em /static/css/artigos.css */
+
+/* --- Estrutura Geral e Cabeçalho --- */
+.article-page {
+    background-color: #fff;
+}
+
+.article-header {
+    background-color: #f8f9fa;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.header-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.article-category {
+    background-color: #3498db;
+    color: white;
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.article-main-title {
+    font-size: 3rem;
+    color: #2c3e50;
+    line-height: 1.2;
+    margin: 0 0 24px 0;
+}
+
+.article-meta-detailed {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.author-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* --- Imagem de Capa --- */
+.article-cover-figure {
+    width: 100%;
+    max-height: 500px;
+    margin: 0 0 40px 0;
+    overflow: hidden;
+}
+
+.article-cover-figure img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- Corpo do Artigo (Tipografia) --- */
+.article-body-wrapper {
+    max-width: 800px; /* Largura otimizada para leitura */
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.article-body {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #34495e;
+}
+
+.article-body h2 {
+    font-size: 1.8rem;
+    margin: 40px 0 20px 0;
+    line-height: 1.3;
+    color: #2c3e50;
+}
+
+.article-body h3 {
+    font-size: 1.5rem;
+    margin: 30px 0 15px 0;
+    color: #2c3e50;
+}
+
+.article-body p {
+    margin-bottom: 20px;
+}
+
+.article-body a {
+    color: #3498db;
+    text-decoration: underline;
+}
+
+.article-body blockquote {
+    border-left: 4px solid #3498db;
+    padding-left: 20px;
+    margin: 30px 0;
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+/* --- Compartilhamento e Biografia --- */
+.article-share {
+    margin: 40px 0;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.share-buttons a {
+    display: inline-block;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    color: white;
+    text-align: center;
+    line-height: 30px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-right: 5px;
+}
+.whatsapp { background-color: #25D366; }
+.linkedin { background-color: #0A66C2; }
+.twitter  { background-color: #1DA1F2; }
+.facebook { background-color: #1877F2; }
+
+
+.author-bio-box {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 30px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.author-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* --- Artigos Relacionados --- */
+.related-articles-section {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding-top: 40px;
+    border-top: 1px solid #e0e0e0;
+}
+.related-articles-section h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 40px;
+    color: #2c3e50;
+}
+
+/* Ajuste no card para artigos relacionados */
+.related-articles-section .article-card a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

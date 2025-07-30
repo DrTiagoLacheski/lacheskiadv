@@ -1,0 +1,159 @@
+/* --- Estrutura Principal --- */
+.guideline-container {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.repository-header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.repository-header h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.repository-header p {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* --- Grid de Arquivos --- */
+.repository-grid {
+    display: grid;
+    /* Cria colunas que se ajustam automaticamente ao tamanho da tela */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.file-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start; /* Alinha no topo */
+    gap: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.file-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Ícone do Arquivo --- */
+.file-icon {
+    background-color: #ecf0f1;
+    color: #3498db;
+    border-radius: 50%;
+    min-width: 48px;
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- Informações do Arquivo --- */
+.file-info {
+    flex: 1; /* Ocupa o espaço restante */
+}
+
+.file-name {
+    font-size: 1.2rem;
+    color: #34495e;
+    margin: 0 0 8px 0;
+}
+
+.file-description {
+    font-size: 0.95rem;
+    color: #555;
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
+.file-meta {
+    font-size: 0.8rem;
+    color: #95a5a6;
+}
+
+.file-meta span {
+    margin-right: 12px;
+}
+
+/* --- Ações e Botão de Download --- */
+.file-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+}
+
+/* --- Painel de Admin --- */
+.admin-panel {
+    margin-top: 64px;
+    padding: 24px;
+    background-color: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.admin-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #34495e;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 16px;
+}
+
+.admin-panel form h4 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.admin-panel .form-group {
+    margin-bottom: 16px;
+}
+.admin-panel .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Estado Vazio --- */
+.empty-state {
+    grid-column: 1 / -1; /* Ocupa todas as colunas do grid */
+    text-align: center;
+    padding: 48px;
+    background-color: #fafafa;
+    border-radius: 8px;
+    color: #7f8c8d;
+}
+
+/* --- Responsividade para Telas Menores --- */
+@media (max-width: 768px) {
+    .repository-header h1 {
+        font-size: 2rem;
+    }
+    .file-card {
+        flex-direction: column; /* Empilha os itens verticalmente */
+        align-items: flex-start;
+    }
+    .file-actions {
+        width: 100%;
+        margin-top: 16px;
+    }
+    .file-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

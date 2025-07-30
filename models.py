@@ -142,3 +142,32 @@ class Advogado(db.Model):
 
     def __repr__(self):
         return f'<Advogado {self.nome}>'
+
+class Artigo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    conteudo = db.Column(db.Text, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    imagem_capa = db.Column(db.String(255))
+    autor = db.relationship('User', backref='artigos')
+    anexos = db.relationship('Arquivo', backref='artigo', lazy='dynamic', cascade="all, delete-orphan")
+
+class Arquivo(db.Model):
+    """Modelo para armazenar arquivos de guidelines/materiais"""
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(200), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)  # Nome do arquivo no disco
+    descricao = db.Column(db.String(300), nullable=True)
+    path = db.Column(db.String(500), nullable=False)      # Caminho completo do arquivo
+    tamanho = db.Column(db.Integer, nullable=True)        # Tamanho em bytes
+    tipo_mime = db.Column(db.String(100), nullable=True)  # Tipo MIME do arquivo
+    data_upload = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    artigo_id = db.Column(db.Integer, db.ForeignKey('artigo.id'), nullable=True)
+    
+    # Relacionamento com o usuário que fez upload
+    uploader = db.relationship('User', backref='arquivos_uploaded')
+    
+    def __repr__(self):
+        return f'<Arquivo {self.nome}>'

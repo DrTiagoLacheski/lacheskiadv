@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    {# Sugestão: Crie um CSS específico para os artigos para não misturar com o de guidelines #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/artigos.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="articles-container">
+    <div class="back-button-container">
+        <a href="{{ url_for('main.painel_gerenciador') }}" class="btn btn-secondary btn-back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"></path>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Voltar ao Painel</span>
+        </a>
+    </div>
+
+    <header class="articles-header">
+        <h1>Gerenciador de Artigos</h1>
+        <p>Crie, edite e gerencie todo o conteúdo publicado no blog ou na área de notícias.</p>
+        <div class="header-actions">
+            <a href="{{ url_for('main.criar_artigo') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Novo Artigo</span>
+            </a>
+            <div class="search-bar">
+                <input type="search" placeholder="Buscar artigos por título...">
+                <button class="btn">Buscar</button>
+            </div>
+        </div>
+    </header>
+
+    <section class="articles-grid">
+        {% if artigos and artigos|length > 0 %}
+            {% for artigo in artigos %}
+            <a href="{{ url_for('main.visualizar_artigo', artigo_id=artigo.id) }}" class="article-card-link">
+                <div class="article-card">
+                    {% if artigo.imagem_capa %}
+                        <img src="{{ url_for('static', filename='uploads/' + artigo.imagem_capa) }}" alt="Capa do artigo {{ artigo.titulo }}" class="article-cover-image">
+                    {% endif %}
+                    <div class="article-content">
+                        <h3 class="article-title">{{ artigo.titulo }}</h3>
+                        <div class="article-meta">
+                            <span>Por <strong>{{ artigo.autor.username }}</strong></span>
+                            <span>Em {{ artigo.criado_em.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <p class="article-snippet">{{ artigo.conteudo|striptags|truncate(150) }}</p>
+                        <div class="article-actions">
+                            {% if artigo.user_id == current_user.id %}
+                                <a href="{{ url_for('main.editar_artigo', artigo_id=artigo.id) }}"
+                                   class="btn btn-secondary">Editar</a>
+                                <a href="{{ url_for('main.excluir_artigo', artigo_id=artigo.id) }}" class="btn btn-danger"
+                                   onclick="return confirm('Tem certeza que deseja excluir este artigo?');">Excluir</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>Nenhum artigo publicado ainda. <a href="{{ url_for('main.criar_artigo') }}">Crie o primeiro!</a></p>
+            </div>
+        {% endif %}
+    </section>
+</main>
+
+<style>
+/* Deixe o card inteiro clicável sem afetar os botões de ação */
+.article-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: box-shadow 0.2s;
+}
+.article-card-link:hover .article-card {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    cursor: pointer;
+}
+.article-card .article-actions a.btn {
+    pointer-events: auto;
+    z-index: 2;
+    position: relative;
+}
+.article-card .article-actions {
+    display: flex;
+    gap: 8px;
+}
+.article-card {
+    position: relative;
+}
+/* Garante que os botões dentro do card ainda possam ser clicados normalmente */
+.article-card .article-actions a {
+    pointer-events: auto;
+}
+</style>
+{% endblock %}

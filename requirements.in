@@ -24,3 +24,6 @@ python-dotenv
 # Proteção contra DDOS
 Flask-Limiter
 redis
+
+
+Flask-Migrate

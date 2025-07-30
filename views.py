@@ -1,13 +1,15 @@
 # views.py
-from flask import Blueprint, render_template
-from flask_login import login_required
-
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
+from models import Artigo, Arquivo, db
+from flask import current_app
 
 main_bp = Blueprint('main', __name__)
 
 
 
 @main_bp.route('/ferramentas-juridicas')
+@login_required
 def ferramentas_juridicas():
     """Página de ferramentas jurídicas (a página atual que você já tem)"""
     return render_template('ferramentas_juridicas.html')
@@ -23,11 +25,132 @@ def index():
     return render_template('index.html')
 
 
-@main_bp.route('/contrato-honorarios')
-def pagina_contrato_honorarios():
-    return render_template('contrato_honorarios.html')
+@main_bp.route('/guidelines')
+@login_required
+def pagina_guidelines():
+    artigos = Artigo.query.order_by(Artigo.criado_em.desc()).all()
+    return render_template('guidelines.html')
 
 @main_bp.route('/substabelecimento')
 def pagina_substabelecimento():
     return render_template('substabelecimento.html')
 
+from flask import request, redirect, url_for, flash
+from flask_login import current_user
+
+@main_bp.route('/artigos/novo', methods=['GET', 'POST'])
+@login_required
+def criar_artigo():
+    if request.method == 'POST':
+        titulo = request.form['titulo']
+        conteudo = request.form['conteudo']
+        imagem = request.files.get('imagem_capa')
+        imagem_existente = request.form.get('imagem_existente')
+
+        artigo = Artigo(
+            titulo=titulo,
+            conteudo=conteudo,
+            user_id=current_user.id
+        )
+
+        # Imagem de capa (opcional)
+        if imagem and imagem.filename:
+            from werkzeug.utils import secure_filename
+            import os
+            filename = secure_filename(imagem.filename)
+            caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            imagem.save(caminho)
+            artigo.imagem_capa = filename
+        elif imagem_existente:
+            artigo.imagem_capa = imagem_existente
+
+        db.session.add(artigo)
+        db.session.commit()  # Agora artigo.id está disponível
+
+        # Processar anexos
+        anexos = request.files.getlist('anexos')
+        for anexo in anexos:
+            if anexo and anexo.filename:
+                from werkzeug.utils import secure_filename
+                import os
+                filename = secure_filename(anexo.filename)
+                caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                anexo.save(caminho)
+                arquivo = Arquivo(
+                    nome=filename,
+                    filename=filename,
+                    path=caminho,
+                    user_id=current_user.id,
+                    artigo_id=artigo.id
+                )
+                db.session.add(arquivo)
+        db.session.commit()
+        flash('Artigo criado com sucesso!')
+        return redirect(url_for('main.listar_artigos'))
+    return render_template('criar_artigo.html')
+
+@main_bp.route('/artigos')
+@login_required
+def listar_artigos():
+    artigos = Artigo.query.filter_by(user_id=current_user.id).order_by(Artigo.criado_em.desc()).all()
+    return render_template('listar_artigos.html', artigos=artigos)
+
+
+@main_bp.route('/gerenciador')
+@login_required # Adicione autenticação
+def painel_gerenciador():
+    # Busca os dados de ambas as tabelas
+    arquivos = Arquivo.query.order_by(Arquivo.id.desc()).all()
+    artigos = Artigo.query.order_by(Artigo.criado_em.desc()).all()
+
+    # Renderiza o novo template unificado, passando ambos os contextos
+    return render_template(
+        'gerenciador.html',
+        arquivos=arquivos,
+        artigos=artigos,
+        # Você ainda precisa da lógica para 'usuario_admin'
+        usuario_admin=current_user.is_admin
+    )
+
+@main_bp.route('/artigos/<int:artigo_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_artigo(artigo_id):
+    artigo = Artigo.query.get_or_404(artigo_id)
+    if artigo.user_id != current_user.id:
+        flash('Você não tem permissão para editar este artigo.', 'danger')
+        return redirect(url_for('main.listar_artigos'))
+
+    if request.method == 'POST':
+        artigo.titulo = request.form['titulo']
+        artigo.conteudo = request.form['conteudo']
+        imagem = request.files.get('imagem_capa')
+        if imagem and imagem.filename:
+            from werkzeug.utils import secure_filename
+            import os
+            filename = secure_filename(imagem.filename)
+            caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            imagem.save(caminho)
+            artigo.imagem_capa = filename
+        db.session.commit()
+        flash('Artigo atualizado com sucesso!')
+        return redirect(url_for('main.listar_artigos'))
+    return render_template('criar_artigo.html', artigo=artigo)
+
+@main_bp.route('/artigos/<int:artigo_id>/excluir', methods=['POST', 'GET'])
+@login_required
+def excluir_artigo(artigo_id):
+    artigo = Artigo.query.get_or_404(artigo_id)
+    if artigo.user_id != current_user.id:
+        flash('Você não tem permissão para excluir este artigo.', 'danger')
+        return redirect(url_for('main.listar_artigos'))
+
+    db.session.delete(artigo)
+    db.session.commit()
+    flash('Artigo excluído com sucesso!')
+    return redirect(url_for('main.listar_artigos'))
+
+@main_bp.route('/artigos/<int:artigo_id>')
+@login_required
+def visualizar_artigo(artigo_id):
+    artigo = Artigo.query.get_or_404(artigo_id)
+    return render_template('visualizar_artigo.html', artigo=artigo)

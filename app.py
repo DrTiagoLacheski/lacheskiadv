@@ -5,7 +5,7 @@ import logging
 from flask import Flask
 from flask_login import LoginManager
 from extensions.extensions import limiter
-
+from flask_migrate import Migrate, upgrade
 from models import db, User
 from config import Config
 from core.utils import clean_temp_folder
@@ -32,6 +32,9 @@ def create_app():
 
     # --- INICIALIZAÇÃO DE EXTENSÕES ---
     db.init_app(app)
+    # ---- INICIALIZAÇÃO DA MIGRAÇÃO ----
+    migrate = Migrate(app, db)   # <--- MIGRATE INICIALIZADO
+
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
@@ -63,6 +66,8 @@ def create_app():
         clean_temp_folder(app)
 
         # Cria as tabelas do banco de dados (se não existirem)
+        app.logger.info('Tabelas do banco de dados verificadas/criadas.')
+        upgrade()
         app.logger.info('Tabelas do banco de dados verificadas/criadas.')
 
     app.logger.info('Aplicação Flask configurada com sucesso')

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/artigos.css') }}">
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.3.1/classic/ckeditor.js"></script>
+    <style>
+        .imagem-preview-wrapper {
+            width: 100%;
+            max-width: 340px;
+            height: 180px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e6e6e6;
+            background: #f7f7f7;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.045);
+        }
+        .imagem-preview {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            object-position: center;
+            display: none;
+            border-radius: 10px;
+            background: #fafafa;
+            transition: border 0.2s;
+        }
+        .imagem-preview-placeholder {
+            color: #aaa;
+            text-align: center;
+            font-size: 1.07em;
+            width: 100%;
+            display: block;
+        }
+        textarea#conteudo {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0.01;
+        }
+        .remove-image-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 5;
+            background: #fff;
+            border: 1px solid #d00;
+            color: #d00;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 18px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .imagem-preview-wrapper.has-image .remove-image-btn {
+            display: flex;
+        }
+        @media (max-width: 500px) {
+            .imagem-preview-wrapper { height: 120px; }
+            .imagem-preview { height: 120px; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<main class="form-container">
+    <h2>{% if artigo %}Editar Artigo{% else %}Criar Novo Artigo{% endif %}</h2>
+
+    <form method="POST" enctype="multipart/form-data" id="form-artigo">
+        <div class="form-group">
+            <label for="titulo">Título do Artigo</label>
+            <input type="text" id="titulo" name="titulo" class="form-control" value="{{ artigo.titulo if artigo else '' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="conteudo">Conteúdo</label>
+            <textarea id="conteudo" name="conteudo" class="form-control" rows="15">{{ artigo.conteudo if artigo else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Imagem de Capa</label>
+            <div id="preview-container" class="imagem-preview-wrapper">
+                <button type="button" id="remove-image-btn" class="remove-image-btn" title="Remover imagem" aria-label="Remover imagem">&times;</button>
+                <span class="imagem-preview-placeholder" id="placeholder-text">Pré-visualização da capa do artigo</span>
+                <img id="preview-img" class="imagem-preview" src="" alt="Pré-visualização">
+            </div>
+            {% if artigo and artigo.imagem_capa %}
+                <small>Imagem atual: {{ artigo.imagem_capa }}</small>
+            {% endif %}
+
+            <input type="file" id="imagem_capa" name="imagem_capa" class="form-control" accept="image/*" style="margin-bottom:8px;">
+
+            <label for="imagem_existente" style="margin-top:10px;">Ou selecionar uma imagem já existente</label>
+            <select id="imagem_existente" name="imagem_existente" class="form-control">
+                <option value="">Nenhuma</option>
+                {% if imagens_existentes %}
+                    {% for img in imagens_existentes %}
+                        <option value="{{ img }}" {% if artigo and artigo.imagem_capa==img %}selected{% endif %}>{{ img }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+            <input type="hidden" id="remover_imagem" name="remover_imagem" value="">
+        </div>
+
+        <div class="form-group">
+            <label for="anexos">Anexar Documentos</label>
+            <input type="file" id="anexos" name="anexos" class="form-control" multiple
+                   accept=".pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .txt, .zip, .rar, .7z, .jpg, .jpeg, .png, .gif, .bmp, .svg, .mp3, .mp4, .avi, .mkv, .csv, .odt, .ods, .odp, .rtf, .xml, .json, .html">
+            <small>Você pode adicionar mais de um documento (PDF, Word, Excel, imagens, etc).</small>
+            <div id="anexos-lista" style="margin-top: 8px;"></div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('main.listar_artigos') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if artigo %}Salvar Alterações{% else %}Publicar Artigo{% endif %}
+            </button>
+        </div>
+    </form>
+</main>
+
+<script>
+    let editorInstance;
+    ClassicEditor
+        .create(document.querySelector('#conteudo'), {
+            toolbar: [
+                'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote',
+                '|', 'undo', 'redo'
+            ]
+        })
+        .then(editor => {
+            editorInstance = editor;
+            // Validação JS para garantir que o conteúdo não está vazio
+            document.getElementById('form-artigo').addEventListener('submit', function(e) {
+                const conteudo = editorInstance.getData().trim();
+                if (!conteudo) {
+                    alert('O conteúdo do artigo é obrigatório.');
+                    editorInstance.editing.view.focus();
+                    e.preventDefault();
+                    return false;
+                }
+                document.querySelector('#conteudo').value = conteudo;
+            });
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    // Preview da imagem de capa
+    const previewImg = document.getElementById('preview-img');
+    const placeholder = document.getElementById('placeholder-text');
+    const previewContainer = document.getElementById('preview-container');
+    const imagemCapaInput = document.getElementById('imagem_capa');
+    const imagemExistenteSelect = document.getElementById('imagem_existente');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    const removerImagemInput = document.getElementById('remover_imagem');
+
+    function atualizarPreviewImagem(src) {
+        if (src) {
+            previewImg.src = src;
+            previewImg.style.display = 'block';
+            placeholder.style.display = 'none';
+            previewContainer.classList.add('has-image');
+            removeImageBtn.style.display = 'flex';
+        } else {
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+            placeholder.style.display = 'block';
+            previewContainer.classList.remove('has-image');
+            removeImageBtn.style.display = 'none';
+        }
+    }
+
+    imagemCapaInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) {
+            atualizarPreviewImagem('');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            atualizarPreviewImagem(ev.target.result);
+        };
+        reader.readAsDataURL(file);
+        // Limpa seleção de imagem existente ao escolher nova imagem
+        if (imagemExistenteSelect) {
+            imagemExistenteSelect.value = '';
+        }
+        removerImagemInput.value = "";
+    });
+
+    if (imagemExistenteSelect) {
+        imagemExistenteSelect.addEventListener('change', function(e){
+            if (this.value) {
+                atualizarPreviewImagem("{{ url_for('static', filename='uploads/') }}/" + this.value);
+                imagemCapaInput.value = "";
+                removerImagemInput.value = "";
+            } else {
+                atualizarPreviewImagem('');
+                removerImagemInput.value = "";
+            }
+        });
+    }
+
+    // Remover imagem
+    removeImageBtn.addEventListener('click', function(e) {
+        atualizarPreviewImagem('');
+        imagemCapaInput.value = "";
+        if (imagemExistenteSelect) {
+            imagemExistenteSelect.value = "";
+        }
+        removerImagemInput.value = "1";
+    });
+
+    // Inicializa preview se estiver editando um artigo com capa
+    {% if artigo and artigo.imagem_capa %}
+        atualizarPreviewImagem("{{ url_for('static', filename='uploads/') }}/{{ artigo.imagem_capa }}");
+        removerImagemInput.value = "";
+    {% else %}
+        atualizarPreviewImagem('');
+    {% endif %}
+
+    // Pré-visualização dos anexos
+    const anexosInput = document.getElementById('anexos');
+    const anexosLista = document.getElementById('anexos-lista');
+    anexosInput.addEventListener('change', function(e) {
+        anexosLista.innerHTML = '';
+        for (let i = 0; i < anexosInput.files.length; i++) {
+            const file = anexosInput.files[i];
+            const item = document.createElement('div');
+            item.textContent = file.name;
+            anexosLista.appendChild(item);
+        }
+    });
+</script>
+{% endblock %}
