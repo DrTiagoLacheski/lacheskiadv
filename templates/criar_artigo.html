@@ -3,74 +3,8 @@
 {% block styles %}
     {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/artigos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/criar_artigo.css') }}">
     <script src="https://cdn.ckeditor.com/ckeditor5/41.3.1/classic/ckeditor.js"></script>
-    <style>
-        .imagem-preview-wrapper {
-            width: 100%;
-            max-width: 340px;
-            height: 180px;
-            margin-bottom: 12px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid #e6e6e6;
-            background: #f7f7f7;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.045);
-        }
-        .imagem-preview {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            object-position: center;
-            display: none;
-            border-radius: 10px;
-            background: #fafafa;
-            transition: border 0.2s;
-        }
-        .imagem-preview-placeholder {
-            color: #aaa;
-            text-align: center;
-            font-size: 1.07em;
-            width: 100%;
-            display: block;
-        }
-        textarea#conteudo {
-            position: absolute;
-            left: -9999px;
-            top: 0;
-            width: 1px;
-            height: 1px;
-            opacity: 0.01;
-        }
-        .remove-image-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 5;
-            background: #fff;
-            border: 1px solid #d00;
-            color: #d00;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-size: 18px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        }
-        .imagem-preview-wrapper.has-image .remove-image-btn {
-            display: flex;
-        }
-        @media (max-width: 500px) {
-            .imagem-preview-wrapper { height: 120px; }
-            .imagem-preview { height: 120px; }
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -115,7 +49,37 @@
 
         <div class="form-group">
             <label for="anexos">Anexar Documentos</label>
-            <input type="file" id="anexos" name="anexos" class="form-control" multiple
+
+            {# Correção: Use a variável anexos_existentes, que deve ser uma lista passada do backend #}
+            {% if anexos_existentes and anexos_existentes|length > 0 %}
+                <div>
+                    <b>Anexos já enviados:</b>
+                    <ul class="anexos-existentes-lista">
+                        {% for anexo in anexos_existentes %}
+                            <li>
+                                <a href="{{ url_for('static', filename='uploads/' + anexo.filename) }}" target="_blank" download>
+                                    {{ anexo.filename }}
+                                </a>
+                                {% if anexo.descricao %}
+                                    <small style="color:#666;">{{ anexo.descricao }}</small>
+                                {% endif %}
+                                <!-- Botão para remover anexo existente (opcional, backend precisa tratar) -->
+                                <button type="button"
+                                        class="remove-anexo-btn"
+                                        data-anexo-id="{{ anexo.id }}"
+                                        title="Remover este anexo"
+                                        aria-label="Remover este anexo">
+                                    &times;
+                                </button>
+                                <input type="hidden" name="anexos_remover[]" value="" id="anexo-remover-{{ anexo.id }}">
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <small style="color:#888;">Você pode remover anexos clicando no "x" ao lado do arquivo.</small>
+                </div>
+            {% endif %}
+
+            <input type="file" id="anexos" name="anexos[]" class="form-control" multiple
                    accept=".pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .txt, .zip, .rar, .7z, .jpg, .jpeg, .png, .gif, .bmp, .svg, .mp3, .mp4, .avi, .mkv, .csv, .odt, .ods, .odp, .rtf, .xml, .json, .html">
             <small>Você pode adicionar mais de um documento (PDF, Word, Excel, imagens, etc).</small>
             <div id="anexos-lista" style="margin-top: 8px;"></div>
@@ -231,7 +195,7 @@
         atualizarPreviewImagem('');
     {% endif %}
 
-    // Pré-visualização dos anexos
+    // Pré-visualização dos anexos novos
     const anexosInput = document.getElementById('anexos');
     const anexosLista = document.getElementById('anexos-lista');
     anexosInput.addEventListener('change', function(e) {
@@ -242,6 +206,17 @@
             item.textContent = file.name;
             anexosLista.appendChild(item);
         }
+    });
+
+    // Remover anexos existentes (marca para remoção)
+    document.querySelectorAll('.remove-anexo-btn').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+            const anexoId = btn.getAttribute('data-anexo-id');
+            // Marca o hidden input para remoção
+            document.getElementById('anexo-remover-' + anexoId).value = anexoId;
+            // Esconde visualmente o anexo
+            btn.closest('li').style.display = 'none';
+        });
     });
 </script>
 {% endblock %}

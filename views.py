@@ -1,7 +1,7 @@
 # views.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from models import Artigo, Arquivo, db
+from models import Artigo, Arquivo, db, Comentario
 from flask import current_app
 
 main_bp = Blueprint('main', __name__)
@@ -23,13 +23,6 @@ def pagina_procuracao():
 @login_required
 def index():
     return render_template('index.html')
-
-
-@main_bp.route('/guidelines')
-@login_required
-def pagina_guidelines():
-    artigos = Artigo.query.order_by(Artigo.criado_em.desc()).all()
-    return render_template('guidelines.html')
 
 @main_bp.route('/substabelecimento')
 def pagina_substabelecimento():
@@ -68,7 +61,7 @@ def criar_artigo():
         db.session.commit()  # Agora artigo.id está disponível
 
         # Processar anexos
-        anexos = request.files.getlist('anexos')
+        anexos = request.files.getlist('anexos[]')
         for anexo in anexos:
             if anexo and anexo.filename:
                 from werkzeug.utils import secure_filename
@@ -131,10 +124,39 @@ def editar_artigo(artigo_id):
             caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             imagem.save(caminho)
             artigo.imagem_capa = filename
+
+        # Remover anexos marcados para remoção
+        anexos_remover = request.form.getlist('anexos_remover[]')
+        for anexo_id in anexos_remover:
+            if anexo_id:
+                anexo = Arquivo.query.get(int(anexo_id))
+                if anexo and anexo.artigo_id == artigo.id:
+                    db.session.delete(anexo)
+
+        # Adicionar novos anexos
+        anexos = request.files.getlist('anexos[]')
+        for anexo in anexos:
+            if anexo and anexo.filename:
+                from werkzeug.utils import secure_filename
+                import os
+                filename = secure_filename(anexo.filename)
+                caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                anexo.save(caminho)
+                arquivo = Arquivo(
+                    nome=filename,
+                    filename=filename,
+                    path=caminho,
+                    user_id=current_user.id,
+                    artigo_id=artigo.id
+                )
+                db.session.add(arquivo)
+
         db.session.commit()
         flash('Artigo atualizado com sucesso!')
         return redirect(url_for('main.listar_artigos'))
-    return render_template('criar_artigo.html', artigo=artigo)
+
+    anexos_existentes = artigo.anexos.all()  # ou artigo.anexos.all()
+    return render_template('criar_artigo.html', artigo=artigo, anexos_existentes=anexos_existentes)
 
 @main_bp.route('/artigos/<int:artigo_id>/excluir', methods=['POST', 'GET'])
 @login_required
@@ -153,4 +175,54 @@ def excluir_artigo(artigo_id):
 @login_required
 def visualizar_artigo(artigo_id):
     artigo = Artigo.query.get_or_404(artigo_id)
-    return render_template('visualizar_artigo.html', artigo=artigo)
+    comentarios = Comentario.query.filter_by(artigo_id=artigo.id).order_by(Comentario.criado_em.asc()).all()
+    return render_template('visualizar_artigo.html', artigo=artigo, comentarios=comentarios)
+
+@main_bp.route('/artigos/<int:artigo_id>/comentar', methods=['POST'])
+@login_required
+def comentar_artigo(artigo_id):
+    artigo = Artigo.query.get_or_404(artigo_id)
+    texto = request.form.get("comentario", "").strip()
+    if texto:
+        comentario = Comentario(
+            texto=texto,
+            artigo_id=artigo.id,
+            user_id=current_user.id
+        )
+        db.session.add(comentario)
+        db.session.commit()
+        flash("Comentário adicionado com sucesso!", "success")
+    else:
+        flash("O comentário não pode estar em branco.", "danger")
+    # Redireciona diretamente para a seção de comentários
+    return redirect(url_for('main.visualizar_artigo', artigo_id=artigo.id) + "#comentarios")
+
+@main_bp.route('/comentarios/<int:comentario_id>/editar', methods=['POST'])
+@login_required
+def editar_comentario(comentario_id):
+    comentario = Comentario.query.get_or_404(comentario_id)
+    if comentario.user_id != current_user.id and not getattr(current_user, "is_admin", False):
+        flash("Você não tem permissão para editar este comentário.", "danger")
+        return redirect(url_for('main.visualizar_artigo', artigo_id=comentario.artigo_id) + "#comentarios")
+    texto = request.form.get("comentario", "").strip()
+    if texto:
+        comentario.texto = texto
+        db.session.commit()
+        flash("Comentário editado com sucesso!", "success")
+    else:
+        flash("O comentário não pode estar em branco.", "danger")
+    return redirect(url_for('main.visualizar_artigo', artigo_id=comentario.artigo_id) + "#comentarios")
+
+@main_bp.route('/comentarios/<int:comentario_id>/excluir', methods=['POST', 'GET'])
+@login_required
+def excluir_comentario(comentario_id):
+    comentario = Comentario.query.get_or_404(comentario_id)
+    if comentario.user_id != current_user.id and not getattr(current_user, "is_admin", False):
+        flash("Você não tem permissão para excluir este comentário.", "danger")
+        return redirect(url_for('main.visualizar_artigo', artigo_id=comentario.artigo_id) + "#comentarios")
+    artigo_id = comentario.artigo_id
+    db.session.delete(comentario)
+    db.session.commit()
+    flash("Comentário excluído com sucesso.", "success")
+    # Redireciona para a seção de comentários
+    return redirect(url_for('main.visualizar_artigo', artigo_id=artigo_id) + "#comentarios")

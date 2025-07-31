@@ -152,6 +152,7 @@ class Artigo(db.Model):
     imagem_capa = db.Column(db.String(255))
     autor = db.relationship('User', backref='artigos')
     anexos = db.relationship('Arquivo', backref='artigo', lazy='dynamic', cascade="all, delete-orphan")
+    comentarios = db.relationship('Comentario', backref='artigo', lazy='dynamic', cascade="all, delete-orphan")
 
 class Arquivo(db.Model):
     """Modelo para armazenar arquivos de guidelines/materiais"""
@@ -165,9 +166,17 @@ class Arquivo(db.Model):
     data_upload = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     artigo_id = db.Column(db.Integer, db.ForeignKey('artigo.id'), nullable=True)
-    
+
     # Relacionamento com o usuário que fez upload
     uploader = db.relationship('User', backref='arquivos_uploaded')
     
     def __repr__(self):
         return f'<Arquivo {self.nome}>'
+
+class Comentario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    texto = db.Column(db.Text, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    artigo_id = db.Column(db.Integer, db.ForeignKey('artigo.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    autor = db.relationship('User', backref='comentarios')
