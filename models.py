@@ -180,3 +180,23 @@ class Comentario(db.Model):
     artigo_id = db.Column(db.Integer, db.ForeignKey('artigo.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     autor = db.relationship('User', backref='comentarios')
+
+
+from sqlalchemy import Numeric
+
+class LancamentoFinanceiro(db.Model):
+    __tablename__ = "lancamento_financeiro"
+    id = db.Column(db.Integer, primary_key=True)
+    tipo = db.Column(db.String(10), nullable=False)  # "Entrada" ou "Saída"
+    descricao = db.Column(db.String(255), nullable=False)
+    valor = db.Column(Numeric(12, 2), nullable=False)
+    data = db.Column(db.Date, nullable=False, index=True)
+    categoria = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Opcional, se quiser quem lançou
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=True)  # Opcional, se quiser associar a ticket/caso
+    status = db.Column(db.String(20), nullable=False, default='Previsto')
+    user = db.relationship('User', backref='lancamentos_financeiros')
+    ticket = db.relationship('Ticket', backref='lancamentos_financeiros')
+
+    def __repr__(self):
+        return f"<LancamentoFinanceiro {self.id} - {self.tipo} - {self.valor}>"
