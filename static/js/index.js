@@ -278,11 +278,40 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        dom.saveBtn.addEventListener('click', async () => {
+            const id = dom.appointmentIdInput.value;
+            const body = {
+                content: dom.appointmentContentInput.value,
+                appointment_time: dom.appointmentTimeInput.value,
+                appointment_date: formatDate(state.selectedDate),
+                priority: dom.appointmentPriorityInput.value,
+                recurring: dom.appointmentRecurringInput.checked,
+            };
+
+            const url = id ? `/api/appointments/${id}` : '/api/appointments';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body),
+                });
+                if (!response.ok) throw new Error('Falha ao salvar');
+                appointmentModal.hide();
+                fetchAppointments(body.appointment_date);
+                renderCalendar();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Não foi possível salvar o compromisso.");
+            }
+        });
+
         dom.deleteModalBtn.addEventListener('click', () => {
             const id = dom.appointmentIdInput.value;
             if (!id) return;
             if (confirm('Tem certeza de que deseja excluir este compromisso?')) {
-                fetch(`/api/appointments/${id}`, { method: 'DELETE' })
+                fetch(`/api/appointments/${id}`, {method: 'DELETE'})
                     .then(response => {
                         if (!response.ok) throw new Error('Falha ao excluir');
                         appointmentModal.hide();
@@ -293,34 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        dom.saveBtn.addEventListener('click', async () => {
-            const id = dom.appointmentIdInput.value;
-            const body = {
-                content: dom.appointmentContentInput.value,
-                time: dom.appointmentTimeInput.value,
-                priority: dom.appointmentPriorityInput.value,
-                recurring: dom.appointmentRecurringInput.checked,
-                date: formatDate(state.selectedDate),
-            };
-
-            const url = id ? `/api/appointments/${id}` : '/api/appointments';
-            const method = id ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                });
-                if (!response.ok) throw new Error('Falha ao salvar');
-                appointmentModal.hide();
-                fetchAppointments(body.date);
-                renderCalendar();
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert("Não foi possível salvar o compromisso.");
-            }
-        });
+        const body = {
+            content: dom.appointmentContentInput.value,
+            appointment_time: dom.appointmentTimeInput.value,
+            appointment_date: formatDate(state.selectedDate),
+            priority: dom.appointmentPriorityInput.value,
+            recurring: dom.appointmentRecurringInput.checked,
+        };
     };
 
     // --- INICIALIZAÇÃO ---

@@ -503,7 +503,22 @@ def criar_appointment():
         )
         db.session.add(appt)
         db.session.commit()
-        return jsonify(success=True, id=appt.id)
+        return jsonify(success=True, id=appt.id, appointment=appt.to_dict())
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, error=str(e)), 400
+
+@main_bp.route('/api/appointments/<date>')
+@login_required
+def api_appointments_dia(date):
+    from models import Appointment
+    from datetime import datetime
+    try:
+        date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify([])  # Ou erro 400
+    appointments = Appointment.query.filter_by(
+        user_id=current_user.id,
+        appointment_date=date_obj
+    ).all()
+    return jsonify([a.to_dict() for a in appointments])

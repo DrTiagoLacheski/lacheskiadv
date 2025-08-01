@@ -82,14 +82,15 @@ class Appointment(db.Model):
     content = db.Column(db.Text, nullable=False)
     appointment_date = db.Column(db.Date, nullable=False, index=True)
     data_original = db.Column(db.Date, nullable=True)
-    appointment_time = db.Column(db.String(5), nullable=False)  # Formato HH:MM
+    appointment_time = db.Column(db.String(5), nullable=True)  # Formato HH:MM
     priority = db.Column(db.String(20), nullable=False, default='Normal')
     # --- NOVO CAMPO ---
     # Este campo armazenará se o compromisso é recorrente (mensal)
     is_recurring = db.Column(db.Boolean, default=False, nullable=False)
     remarcada_count = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
+    todo_id = db.Column(db.Integer, db.ForeignKey('todo_item.id'), nullable=True)
+    todo = db.relationship('TodoItem', backref='appointment', uselist=False)
 
     def to_dict(self):
         # --- ALTERAÇÃO AQUI ---
@@ -100,7 +101,9 @@ class Appointment(db.Model):
             'date': self.appointment_date.strftime('%Y-%m-%d'),
             'time': self.appointment_time,
             'priority': self.priority,
-            'recurring': self.is_recurring  # Novo campo adicionado
+            'recurring': self.is_recurring,  # Novo campo adicionado
+            'todo_id': self.todo_id,
+            'is_completed': self.todo.is_completed if self.todo_id and self.todo else False
         }
 
     # --- NOVA CLASSE ADICIONADA ---
@@ -112,9 +115,9 @@ class TodoItem(db.Model):
     content = db.Column(db.String(300), nullable=False)
     is_completed = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    date = db.Column(db.Date, nullable=True)
     position = db.Column(db.Integer, default=0, nullable=False)
-
+    was_rescheduled = db.Column(db.Boolean, default=False, nullable=False)
     # Chave estrangeira para ligar a tarefa a um ticket específico
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
 

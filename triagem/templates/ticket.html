@@ -182,6 +182,9 @@
                         <input class="form-check-input" type="checkbox" id="todo-{{ todo.id }}" {% if todo.is_completed %}checked{% endif %}>
                         <label class="form-check-label" for="todo-{{ todo.id }}">
                             {{ todo.content }}
+                            {% if todo.date %}
+                                <span class="badge bg-info text-dark ms-2">{{ todo.date.strftime("%d/%m/%Y") }}</span>
+                            {% endif %}
                         </label>
                         <button class="btn btn-xs btn-outline-danger delete-todo-btn">
                             <i class="bi bi-x-lg"></i>
@@ -193,10 +196,12 @@
                 {% endif %}
             </div>
             {% if current_user.is_admin or ticket.user_id == current_user.id %}
-            <form id="addTodoForm" class="d-flex gap-2 mt-3">
-                <input type="text" id="newTodoContent" class="form-control" placeholder="Adicionar nova tarefa..." required>
-                <button type="submit" class="btn btn-primary">Adicionar</button>
-            </form>
+                <form id="addTodoForm" class="d-flex gap-2 mt-3">
+                    <input type="text" id="newTodoContent" class="form-control" placeholder="Adicionar nova tarefa..."
+                           required>
+                    <input type="date" id="newTodoDate" class="form-control">
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </form>
             {% endif %}
         </div>
     </div>
@@ -233,5 +238,5 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/ticket.js') }}"></script>
+<script src="{{ url_for('ticket.static', filename='js/ticket.js') }}"></script>
 {% endblock %}

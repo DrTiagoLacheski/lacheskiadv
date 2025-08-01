@@ -4,7 +4,7 @@
 import os
 import shutil
 import uuid
-from datetime import datetime
+from datetime import datetime, date as dt_date
 from functools import wraps
 
 from flask import (Blueprint, render_template, request, redirect, url_for,
@@ -12,15 +12,16 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-from models import db, Ticket, Comment, Attachment, TodoItem
+from models import db, Ticket, Comment, Attachment, TodoItem, Appointment
 
 # Especificamos o caminho para a pasta de templates deste blueprint.
 ticket_bp = Blueprint(
     'ticket',
     __name__,
+    static_folder='../static',         # relativo a routes/
+    static_url_path='/ticket_static',  # URL pública será /ticket_static/...
     template_folder='../templates'
 )
-
 
 # --- DECORADOR DE AUTORIZAÇÃO (LÓGICA CENTRALIZADA E CORRIGIDA) ---
 def ticket_permission_required(f):
@@ -221,10 +222,10 @@ def delete_attachment(attachment_id):
 @login_required
 @ticket_permission_required
 def view_ticket(ticket):
+    reschedule_overdue_todos()
     comments = ticket.comments.order_by(Comment.created_at).all()
     todos = ticket.todos.order_by(TodoItem.position.asc()).all()
     return render_template('ticket.html', ticket=ticket, comments=comments, todos=todos)
-
 
 @ticket_bp.route('/<int:ticket_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -328,11 +329,36 @@ def reorder_attachments(ticket):
 def add_todo(ticket):
     data = request.get_json()
     content = data.get('content')
+    date_str = data.get('date')
     if not content:
         return jsonify({'success': False, 'error': 'Content is required'}), 400
 
-    new_todo = TodoItem(content=content, ticket_id=ticket.id)
+    todo_date = None
+    if date_str:
+        try:
+            todo_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Data inválida'}), 400
+        if todo_date < datetime.utcnow().date():
+            return jsonify({'success': False, 'error': 'A data não pode ser no passado.'}), 400
+
+    # Cria a tarefa normalmente
+    new_todo = TodoItem(content=content, ticket_id=ticket.id, date=todo_date)
     db.session.add(new_todo)
+    db.session.flush()  # Garante que new_todo.id esteja disponível
+
+    # Se a tarefa tem data, cria um compromisso no calendário
+    if todo_date:
+        appointment = Appointment(
+            content=f"Tarefa: {content} (Ticket #{ticket.id})",
+            appointment_date=todo_date,
+            appointment_time= "--:--",  # Horário não é obrigatório
+            user_id=current_user.id,
+            priority='Normal',
+            todo_id = new_todo.id
+        )
+        db.session.add(appointment)
+
     db.session.commit()
 
     return jsonify({
@@ -340,7 +366,8 @@ def add_todo(ticket):
         'todo': {
             'id': new_todo.id,
             'content': new_todo.content,
-            'is_completed': new_todo.is_completed
+            'is_completed': new_todo.is_completed,
+            'date': new_todo.date.strftime("%Y-%m-%d") if new_todo.date else None
         }
     }), 201
 
@@ -360,6 +387,21 @@ def update_todo(todo_id):
         return jsonify({'success': False, 'error': 'is_completed is required'}), 400
 
     todo.is_completed = is_completed
+
+    if todo.date:
+        appointment = Appointment.query.filter_by(
+            appointment_date=todo.date,
+            user_id=current_user.id,
+            todo_id=todo.id
+        ).first()
+        if appointment:
+            if is_completed:
+                appointment.content = f"Tarefa concluída: {todo.content} (Ticket #{ticket.id})"
+                if not appointment.appointment_time:
+                    appointment.appointment_time = "--:--"
+            else:
+                appointment.content = f"Tarefa: {todo.content} (Ticket #{ticket.id})"
+
     db.session.commit()
     return jsonify({'success': True})
 
@@ -398,3 +440,26 @@ def reorder_todos(ticket):
         db.session.rollback()
         current_app.logger.error(f"Erro ao reordenar tarefas: {e}")
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+
+def reschedule_overdue_todos():
+    today = dt_date.today()
+    # Pega todas as tarefas com data anterior a hoje, não concluídas e não remarcadas
+    overdue_todos = TodoItem.query.filter(
+        TodoItem.date < today,
+        TodoItem.is_completed == False,
+        (TodoItem.was_rescheduled == False)  # só remarca uma vez!
+    ).all()
+    for todo in overdue_todos:
+        # Remove Appointment correspondente
+        app = Appointment.query.filter_by(
+            content=f"Tarefa: {todo.content} (Ticket #{todo.ticket_id})",
+            appointment_date=todo.date
+        ).first()
+        if app:
+            db.session.delete(app)
+        # Remarca tarefa
+        todo.date = today
+        todo.was_rescheduled = True
+    if overdue_todos:
+        db.session.commit()
