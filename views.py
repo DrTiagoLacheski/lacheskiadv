@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from models import Artigo, Arquivo, db, Comentario, LancamentoFinanceiro, Ticket
 from datetime import datetime, date
 from flask import current_app
 from collections import defaultdict
+from models import Appointment
 
 main_bp = Blueprint('main', __name__)
 
@@ -19,6 +20,47 @@ def pagina_procuracao():
 @main_bp.route('/')
 @login_required
 def index():
+    hoje = date.today()
+    previstos_vencidos = LancamentoFinanceiro.query.filter(
+        LancamentoFinanceiro.user_id == current_user.id,
+        LancamentoFinanceiro.tipo == 'Entrada',
+        LancamentoFinanceiro.status == 'Previsto',
+        LancamentoFinanceiro.data < hoje
+    ).all()
+    alterou = False
+    for l in previstos_vencidos:
+        data_antiga = l.data
+        l.data = hoje
+        # Garante que data_original está preenchida
+        if not l.data_original:
+            l.data_original = data_antiga
+        # Remove o appointment antigo e cria um novo para a data remarcada
+        appt_antigo = Appointment.query.filter_by(
+            user_id=current_user.id,
+            appointment_date=data_antiga
+        ).filter(
+            Appointment.content.like(f"%{l.descricao}%")
+        ).first()
+        if appt_antigo:
+            remarcada_count = (appt_antigo.remarcada_count or 0) + 1
+            db.session.delete(appt_antigo)
+        else:
+            remarcada_count = 1
+        # Cria novo compromisso na data remarcada (hoje)
+        appt_novo = Appointment(
+            content=f"Receita prevista: {l.descricao} (R$ {l.valor}) [REMARCADA x{remarcada_count}]",
+            appointment_date=hoje,
+            data_original=l.data_original or data_antiga,
+            appointment_time="09:00",
+            priority="Normal",
+            is_recurring=False,
+            remarcada_count=remarcada_count,
+            user_id=current_user.id
+        )
+        db.session.add(appt_novo)
+        alterou = True
+    if alterou:
+        db.session.commit()
     return render_template('index.html')
 
 @main_bp.route('/substabelecimento')
@@ -249,6 +291,7 @@ def financeiro():
     total_previsto = sum(l.valor for l in lançamentos if l.tipo == 'Entrada' and l.status == 'Previsto' and l.data >= hoje)
     total_inadimplente = sum(l.valor for l in lançamentos if l.tipo == 'Entrada' and l.status == 'Inadimplente')
 
+
     # Gráfico 1: Barras empilhadas - Receitas por Status para Cada Caso
     casos_nomes = []
     recebidos_por_caso = []
@@ -288,7 +331,7 @@ def financeiro():
     inadimplentes_casos_labels = list(inadimplentes_dict.keys())
     inadimplentes_casos_data = [inadimplentes_dict[k] for k in inadimplentes_casos_labels]
 
-    # Gráfico mensal (mantido)
+    # Gráfico mensal
     receitas_recebidas_por_mes = defaultdict(float)
     receitas_previstas_por_mes = defaultdict(float)
     receitas_inadimplente_por_mes = defaultdict(float)
@@ -339,6 +382,7 @@ def financeiro():
         casos=casos
     )
 
+
 @main_bp.route('/financeiro/novo', methods=['POST'])
 @login_required
 def novo_lancamento():
@@ -348,14 +392,16 @@ def novo_lancamento():
     data_str = request.form['data']
     categoria = request.form['categoria']
     ticket_id = request.form.get('ticket_id')
-    status = request.form.get('status')  # <-- usa o valor do select do formulário!
+    status = request.form.get('status')
     data_obj = datetime.strptime(data_str, "%Y-%m-%d").date()
     try:
+        # Sempre salva data_original na criação
         lanc = LancamentoFinanceiro(
             tipo=tipo,
             descricao=descricao,
             valor=valor,
             data=data_obj,
+            data_original=data_obj,
             categoria=categoria,
             user_id=current_user.id,
             ticket_id=ticket_id if ticket_id else None,
@@ -363,11 +409,29 @@ def novo_lancamento():
         )
         db.session.add(lanc)
         db.session.commit()
+
+        # Adiciona compromisso se previsto futuro
+        if tipo == 'Entrada' and status == 'Previsto':
+            appointment = Appointment(
+                content=f"Receita prevista: {descricao} (R$ {valor})",
+                appointment_date=data_obj,
+                data_original=data_obj,
+                appointment_time="09:00",
+                priority="Normal",
+                is_recurring=False,
+                user_id=current_user.id,
+                remarcada_count=0
+            )
+            db.session.add(appointment)
+            db.session.commit()
+
         flash("Lançamento adicionado com sucesso!", "success")
     except Exception as e:
         db.session.rollback()
         flash(f"Erro ao adicionar lançamento: {e}", "danger")
     return redirect(url_for('main.financeiro'))
+
+
 
 @main_bp.route('/financeiro/<int:lancamento_id>/excluir', methods=['POST'])
 @login_required
@@ -376,12 +440,70 @@ def excluir_lancamento(lancamento_id):
     if lanc.user_id != current_user.id and not getattr(current_user, "is_admin", False):
         flash('Você não tem permissão para excluir este lançamento.', 'danger')
         return redirect(url_for('main.financeiro'))
-
-    # Se houver anexos associados, remova também (ajuste conforme seu modelo)
-    if hasattr(lanc, "anexos"):
-        for anexo in lanc.anexos:
-            db.session.delete(anexo)
     db.session.delete(lanc)
     db.session.commit()
     flash("Lançamento removido com sucesso.", "success")
     return redirect(url_for('main.financeiro'))
+
+@main_bp.route('/financeiro/atualizar-status/<int:lancamento_id>', methods=['POST'])
+@login_required
+def atualizar_status_lancamento(lancamento_id):
+    data = request.get_json()
+    novo_status = data.get('status')
+    lanc = LancamentoFinanceiro.query.get_or_404(lancamento_id)
+    if lanc.user_id != current_user.id:
+        return jsonify(success=False), 403
+    if novo_status not in ['Recebido', 'Inadimplente', 'Previsto']:
+        return jsonify(success=False), 400
+    lanc.status = novo_status
+    db.session.commit()
+    return jsonify(success=True)
+
+@main_bp.route('/api/appointments/<int:ano>/<int:mes>')
+@login_required
+def api_appointments_mes(ano, mes):
+    from models import Appointment
+    from datetime import date
+
+    # Primeiro e último dia do mês
+    d1 = date(ano, mes, 1)
+    if mes == 12:
+        d2 = date(ano + 1, 1, 1)
+    else:
+        d2 = date(ano, mes + 1, 1)
+
+    appointments = Appointment.query.filter_by(user_id=current_user.id)\
+        .filter(Appointment.appointment_date >= d1)\
+        .filter(Appointment.appointment_date < d2)\
+        .all()
+    return jsonify([a.to_dict() for a in appointments])
+
+
+@main_bp.route('/api/appointments', methods=['POST'])
+@login_required
+def criar_appointment():
+    data = request.get_json()
+    content = data.get('content')
+    appointment_date = data.get('appointment_date')
+    appointment_time = data.get('appointment_time')
+    priority = data.get('priority', 'Normal')
+    recurring = data.get('recurring', False)
+
+    from models import Appointment
+    from datetime import datetime
+
+    try:
+        appt = Appointment(
+            content=content,
+            appointment_date=datetime.strptime(appointment_date, "%Y-%m-%d").date(),
+            appointment_time=appointment_time,
+            priority=priority,
+            is_recurring=recurring,
+            user_id=current_user.id
+        )
+        db.session.add(appt)
+        db.session.commit()
+        return jsonify(success=True, id=appt.id)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, error=str(e)), 400

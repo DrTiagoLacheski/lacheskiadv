@@ -106,16 +106,17 @@
             <canvas id="receitasStatusChart"></canvas>
         </div>
         <div class="chart-container">
-            <div class="chart-title">Pagos por Caso</div>
-            <div class="chart-legend" id="pagos-legend"></div>
-            <canvas id="pagosPorCasoChart"></canvas>
+            <div class="chart-title">Receitas por Status (Empilhado por Caso)</div>
+            <div class="chart-legend">
+                <span><span class="chart-legend-dot" style="background:#28a745"></span>Recebido</span>
+                <span><span class="chart-legend-dot" style="background:#dc3545"></span>Inadimplente</span>
+                <span><span class="chart-legend-dot" style="background:#ffb347"></span>Previsto</span>
+            </div>
+            <canvas id="receitasPorCasoEmpilhadoChart"></canvas>
         </div>
         <div class="chart-container">
-            <div class="chart-title">Rentabilidade por Caso</div>
-            <div class="chart-legend">
-                <span><span class="chart-legend-dot" style="background:#28a745"></span>Lucro</span>
-            </div>
-            <canvas id="rentabilidadeChart"></canvas>
+            <div class="chart-title">Distribuição dos Inadimplentes por Caso</div>
+            <canvas id="inadimplentesPorCasoPie"></canvas>
         </div>
     </section>
 
@@ -127,11 +128,11 @@
                 <th>Tipo</th>
                 <th>Descrição</th>
                 <th>Valor</th>
-                <th>Data</th>
+                <th>Data Original</th>
+                <th>Data Remarcada</th>
                 <th>Categoria</th>
                 <th>Caso</th>
                 <th>Status</th>
-                <th>Anexos</th>
                 <th>Ações</th>
             </tr>
             </thead>
@@ -141,32 +142,49 @@
                 <td>{{ l.tipo }}</td>
                 <td>{{ l.descricao }}</td>
                 <td class="{{ 'valor-entrada' if l.tipo == 'Entrada' else 'valor-saida' }}">R$ {{ ('%.2f' % l.valor).replace('.', ',') }}</td>
-                <td>{{ l.data.strftime('%d/%m/%Y') }}</td>
-                <td>{{ l.categoria }}</td>
-                <td>{{ l.ticket.title if l.ticket else '-' }}</td>
                 <td>
-                    {% if l.status == 'Previsto' %}
-                        <span class="status status-previsto">Previsto</span>
-                    {% elif l.status == 'Recebido' %}
-                        <span class="status status-recebido">Recebido</span>
-                    {% elif l.status == 'Inadimplente' %}
-                        <span class="status status-inadimplente">Inadimplente</span>
+                    {% if l.data_original %}
+                        {{ l.data_original.strftime('%d/%m/%Y') }}
+                    {% else %}
+                        —
                     {% endif %}
                 </td>
                 <td>
-                    {% if l.anexos and l.anexos|length > 0 %}
-                        <ul class="anexos-list">
-                            {% for anexo in l.anexos %}
-                                <li>
-                                    <a href="{{ url_for('ferramentas.download_arquivo', arquivo_id=anexo.id) }}" target="_blank">
-                                        {{ anexo.filename }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    {% if l.data_original and l.data_original != l.data %}
+                        {{ l.data.strftime('%d/%m/%Y') }}
                     {% else %}
-                        <span style="color:#bbb;">—</span>
+                        —
                     {% endif %}
+                </td>
+                <td>{{ l.categoria }}</td>
+                <td>
+                    {% if l.ticket %}
+                        <a href="{{ url_for('ticket.view_ticket', ticket_id=l.ticket.id) }}"
+                           style="color:#2557a7; text-decoration:underline" title="Ver caso">
+                            {{ l.ticket.title }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td class="status-cell" data-lancamento-id="{{ l.id }}">
+    <span class="status-label">
+        {% if l.status == 'Previsto' %}
+            <span class="status status-previsto">Previsto</span>
+        {% elif l.status == 'Recebido' %}
+            <span class="status status-recebido">Recebido</span>
+        {% elif l.status == 'Inadimplente' %}
+            <span class="status status-inadimplente">Inadimplente</span>
+        {% endif %}
+    </span>
+                    <select class="status-edit" style="display:none;">
+                        <option value="Recebido" {% if l.status == 'Recebido' %}selected{% endif %}>Recebido</option>
+                        <option value="Inadimplente" {% if l.status == 'Inadimplente' %}selected{% endif %}>
+                            Inadimplente
+                        </option>
+                        <option value="Previsto" {% if l.status == 'Previsto' %}selected{% endif %}>Previsto</option>
+                    </select>
                 </td>
                 <td>
                     <form method="post" action="{{ url_for('main.excluir_lancamento', lancamento_id=l.id) }}"

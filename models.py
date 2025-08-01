@@ -81,16 +81,15 @@ class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     appointment_date = db.Column(db.Date, nullable=False, index=True)
+    data_original = db.Column(db.Date, nullable=True)
     appointment_time = db.Column(db.String(5), nullable=False)  # Formato HH:MM
     priority = db.Column(db.String(20), nullable=False, default='Normal')
     # --- NOVO CAMPO ---
     # Este campo armazenará se o compromisso é recorrente (mensal)
     is_recurring = db.Column(db.Boolean, default=False, nullable=False)
-
+    remarcada_count = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    # A relação foi movida para o modelo User para seguir a convenção
-    # author = db.relationship('User') # Removido daqui
 
     def to_dict(self):
         # --- ALTERAÇÃO AQUI ---
@@ -191,6 +190,7 @@ class LancamentoFinanceiro(db.Model):
     descricao = db.Column(db.String(255), nullable=False)
     valor = db.Column(Numeric(12, 2), nullable=False)
     data = db.Column(db.Date, nullable=False, index=True)
+    data_original = db.Column(db.Date, nullable=True)
     categoria = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Opcional, se quiser quem lançou
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=True)  # Opcional, se quiser associar a ticket/caso
@@ -200,3 +200,5 @@ class LancamentoFinanceiro(db.Model):
 
     def __repr__(self):
         return f"<LancamentoFinanceiro {self.id} - {self.tipo} - {self.valor}>"
+
+
