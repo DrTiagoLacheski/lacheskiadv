@@ -5,7 +5,7 @@ import logging
 from flask import Flask
 from flask_login import LoginManager
 from extensions.extensions import limiter
-from flask_migrate import Migrate, upgrade
+from flask_migrate import Migrate
 from models import db, User
 from config import Config
 from core.utils import clean_temp_folder
@@ -17,7 +17,7 @@ def create_app():
     Padrão recomendado para criação flexível da aplicação.
     """
     app = Flask(__name__)
-    #Proteção contra DDOS
+    # Proteção contra DDOS
     limiter.init_app(app)
     # --- CONFIGURAÇÕES INICIAIS ---
     app.config.from_object(Config)
@@ -25,7 +25,7 @@ def create_app():
 
     # --- CONFIGURAÇÃO DE LOGGING ---
     logging.basicConfig(
-        level=logging.INFO, # Recomendo INFO para produção para não poluir os logs
+        level=logging.INFO,  # Recomendo INFO para produção para não poluir os logs
         format='%(asctime)s %(levelname)s %(name)s : %(message)s'
     )
     app.logger.info('Iniciando configuração da aplicação Flask')
@@ -62,13 +62,10 @@ def create_app():
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():
         # ALTERAÇÃO: A função de limpeza é chamada aqui, antes de criar as tabelas.
-        # Este era o passo que faltava.
         clean_temp_folder(app)
 
-        # Cria as tabelas do banco de dados (se não existirem)
-        app.logger.info('Tabelas do banco de dados verificadas/criadas.')
-        upgrade()
-        app.logger.info('Tabelas do banco de dados verificadas/criadas.')
+        # Removido upgrade() automático!
+        app.logger.info('Tabelas do banco de dados NÃO serão atualizadas automaticamente.')
 
     app.logger.info('Aplicação Flask configurada com sucesso')
     return app
