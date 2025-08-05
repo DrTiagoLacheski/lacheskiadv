@@ -283,13 +283,52 @@ def update_report(ticket):
 @login_required
 @ticket_permission_required
 def delete_ticket(ticket):
+    from models import Attachment, TodoItem, Appointment, Comment
     try:
+        # 1. Remover todos os arquivos físicos dos attachments do ticket
+        for attachment in ticket.attachments:
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], attachment.path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+        # 2. Remover todos os attachments do banco (o cascade já cuida, mas por garantia):
+        for attachment in ticket.attachments:
+            db.session.delete(attachment)
+
+        # 3. Remover todos os appointments ligados às tarefas (todos)
+        for todo in ticket.todos:
+            # Remove o appointment do calendário ligado
+            appointment = Appointment.query.filter_by(todo_id=todo.id).first()
+            if appointment:
+                db.session.delete(appointment)
+
+        # 4. Remover todos os appointments "soltos", caso existam (ex: de tickets marcados diretamente)
+        # Exemplo: se você criar appointments com source 'triagem' e content com o número do ticket
+        orphan_appointments = Appointment.query.filter(
+            (Appointment.source == 'triagem') &
+            (Appointment.content.like(f"%Ticket #{ticket.id}%"))
+        ).all()
+        for app in orphan_appointments:
+            db.session.delete(app)
+
+        # 5. Comentários e attachments de comentários (cascade já cobre)
+        for comment in ticket.comments:
+            for attachment in comment.attachments:
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], attachment.path)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                db.session.delete(attachment)
+            db.session.delete(comment)
+
+        # 6. Exclui o diretório do ticket, se existir (pasta com id do ticket)
         ticket_upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], str(ticket.id))
         if os.path.isdir(ticket_upload_dir):
             shutil.rmtree(ticket_upload_dir)
+
+        # 7. Por fim, exclui o ticket (cascade cuida do resto)
         db.session.delete(ticket)
         db.session.commit()
-        flash('Caso e todos os seus anexos foram deletados com sucesso!', 'success')
+        flash('Caso e todos os seus anexos, tarefas e compromissos foram deletados com sucesso!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao deletar o caso: {e}', 'danger')
@@ -355,7 +394,8 @@ def add_todo(ticket):
             appointment_time= "--:--",  # Horário não é obrigatório
             user_id=current_user.id,
             priority='Normal',
-            todo_id = new_todo.id
+            todo_id = new_todo.id,
+            source = 'triagem'
         )
         db.session.add(appointment)
 

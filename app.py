@@ -48,13 +48,16 @@ def create_app():
     from triagem.routes.auth import auth_bp
     from triagem.routes.dashboard import dashboard_bp
     from triagem.routes.ticket import ticket_bp
+    from triagem.routes.export_import import export_import_bp
     from views import main_bp
     from ferramentas.views import ferramentas_bp
     from routes.appointment import appointment_bp
 
+
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
     app.register_blueprint(ticket_bp, url_prefix='/ticket')
+    app.register_blueprint(export_import_bp, url_prefix='/export_import')
     app.register_blueprint(main_bp)
     app.register_blueprint(ferramentas_bp, url_prefix='/ferramentas')
     app.register_blueprint(appointment_bp)

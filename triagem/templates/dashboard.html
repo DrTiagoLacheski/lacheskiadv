@@ -5,50 +5,53 @@
 {% block extra_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_specific.css') }}">
 <style>
-    /* Estilos específicos para este layout */
     .clickable-row {
         cursor: pointer;
     }
     .clickable-row:hover {
         background-color: #f1f1f1;
     }
-
-    /* Ajustes para mobile */
-    @media (max-width: 767.98px) { /* Small devices (phones, 768px and down) */
+    @media (max-width: 767.98px) {
         h1 {
-            font-size: 1.75rem; /* Reduzir tamanho do título principal */
+            font-size: 1.75rem;
             margin-bottom: 1rem;
         }
         .d-flex.justify-content-between.align-items-center.mb-4 {
-            flex-direction: column; /* Empilha título e botão "Página Inicial" */
+            flex-direction: column;
             align-items: flex-start !important;
         }
         .d-flex.justify-content-between.mb-3 {
-            flex-direction: column; /* Empilha botão "Novo Caso" e barra de busca */
-            align-items: stretch !important; /* Estica para largura total */
+            flex-direction: column;
+            align-items: stretch !important;
         }
         .d-flex.justify-content-between.mb-3 .btn-primary {
-            width: 100%; /* Botão "Novo Caso" ocupa toda a largura */
-            margin-bottom: 1rem; /* Espaço abaixo do botão */
+            width: 100%;
+            margin-bottom: 1rem;
         }
         .d-flex.justify-content-between.mb-3 form {
-            width: 100%; /* Formulário de busca ocupa toda a largura */
+            width: 100%;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap"> {# flex-wrap para quebra de linha em telas pequenas #}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
     <h1>Casos Em Fase De Triagem</h1>
-    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary btn-sm"> {# btn-sm para botão menor em mobile #}
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary btn-sm">
         <i class="bi bi-house-door"></i> Página Inicial
     </a>
 </div>
 
-<div class="d-flex justify-content-between mb-3 flex-wrap"> {# flex-wrap para empilhar em telas pequenas #}
-    <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
-    <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex ms-md-auto mt-2 mt-md-0"> {# ms-md-auto para alinhar à direita em md+, mt-2 para espaço em mobile #}
+<div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
+        <!-- Botão Importar ZIP -->
+        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#importTicketModal">
+            <i class="bi bi-upload"></i> Importar Caso (ZIP)
+        </button>
+    </div>
+    <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex ms-md-auto mt-2 mt-md-0">
         <div class="input-group">
             <input type="text" name="search" class="form-control" placeholder="Buscar casos..." value="{{ request.args.get('search', '') }}">
             <button class="btn btn-outline-secondary" type="submit">
@@ -58,9 +61,29 @@
     </form>
 </div>
 
-{# table-responsive garante rolagem horizontal em telas pequenas #}
+<!-- Modal de Importação de Ticket -->
+<div class="modal fade" id="importTicketModal" tabindex="-1" aria-labelledby="importTicketModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('ticket_export_import.import_ticket_zip') }}" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" id="importTicketModalLabel">Importar Ticket (ZIP)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <input type="file" class="form-control" name="ticket_zip" accept=".zip" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Importar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="table-responsive">
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover" id="tickets-table">
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
@@ -116,4 +139,11 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // Atualiza a dashboard automaticamente após importar (opcional, requer feedback do servidor)
+    if (window.location.hash === "#imported") {
+        window.location.hash = "";
+        window.location.reload();
+    }
+</script>
 {% endblock %}

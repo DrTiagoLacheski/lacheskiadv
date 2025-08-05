@@ -21,9 +21,13 @@
      data-reorder-todos-url="{{ url_for('ticket.reorder_todos', ticket_id=ticket.id) }}">
 
 
-    <div class="mb-3">
+    <div class="mb-3 d-flex flex-wrap gap-2">
         <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Voltar aos Casos
+        </a>
+        {# Botão de exportar ZIP #}
+        <a href="{{ url_for('ticket_export_import.export_ticket_zip', ticket_id=ticket.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> Exportar Caso (ZIP)
         </a>
     </div>
 
