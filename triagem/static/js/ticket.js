@@ -323,14 +323,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ---- FUNÇÕES PARA EDITAR O RELATÓRIO ----
-    window.enableEdit = function() {
-        document.getElementById('reportView').classList.add('d-none');
-        document.getElementById('reportEditForm').classList.remove('d-none');
-        document.getElementById('reportEdit').focus();
-    }
 
-    window.cancelEdit = function() {
-        document.getElementById('reportView').classList.remove('d-none');
-        document.getElementById('reportEditForm').classList.add('d-none');
-    }
 });
