@@ -381,6 +381,9 @@ def add_todo(ticket):
         if todo_date < datetime.utcnow().date():
             return jsonify({'success': False, 'error': 'A data não pode ser no passado.'}), 400
 
+    last_todo = TodoItem.query.filter_by(ticket_id=ticket.id).order_by(TodoItem.position.desc()).first()
+    next_position = (last_todo.position + 1) if last_todo else 0
+
     # Cria a tarefa normalmente
     new_todo = TodoItem(content=content, ticket_id=ticket.id, date=todo_date)
     db.session.add(new_todo)
@@ -389,7 +392,7 @@ def add_todo(ticket):
     # Se a tarefa tem data, cria um compromisso no calendário
     if todo_date:
         appointment = Appointment(
-            content=f"Tarefa: {content} (Ticket #{ticket.id})",
+            content=f"Tarefa: {content} (Caso #{ticket.id})",
             appointment_date=todo_date,
             appointment_time= "--:--",  # Horário não é obrigatório
             user_id=current_user.id,

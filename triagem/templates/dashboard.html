@@ -46,10 +46,13 @@
 <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex gap-2">
         <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
-        <!-- Botão Importar ZIP -->
-        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#importTicketModal">
-            <i class="bi bi-upload"></i> Importar Caso (ZIP)
-        </button>
+        <!-- Botão Importar ZIP ajustado -->
+        <form id="importZipForm" method="POST" action="{{ url_for('ticket_export_import.import_ticket_zip') }}" enctype="multipart/form-data" style="display:inline;">
+            <input type="file" id="importZipInput" name="ticket_zip" accept=".zip" style="display: none;" required>
+            <button class="btn btn-outline-secondary" type="button" id="importZipBtn">
+                <i class="bi bi-upload"></i> Importar Caso (ZIP)
+            </button>
+        </form>
     </div>
     <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex ms-md-auto mt-2 mt-md-0">
         <div class="input-group">
@@ -59,27 +62,6 @@
             </button>
         </div>
     </form>
-</div>
-
-<!-- Modal de Importação de Ticket -->
-<div class="modal fade" id="importTicketModal" tabindex="-1" aria-labelledby="importTicketModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" action="{{ url_for('ticket_export_import.import_ticket_zip') }}" enctype="multipart/form-data">
-        <div class="modal-header">
-          <h5 class="modal-title" id="importTicketModalLabel">Importar Ticket (ZIP)</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body">
-          <input type="file" class="form-control" name="ticket_zip" accept=".zip" required>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Importar</button>
-        </div>
-      </form>
-    </div>
-  </div>
 </div>
 
 <div class="table-responsive">
@@ -140,6 +122,17 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
+    // Clique no botão dispara o input file
+    document.getElementById('importZipBtn').addEventListener('click', function(e) {
+        document.getElementById('importZipInput').click();
+    });
+    // Seleção de arquivo faz submit automático
+    document.getElementById('importZipInput').addEventListener('change', function(e) {
+        if (this.files.length > 0) {
+            document.getElementById('importZipForm').submit();
+        }
+    });
+
     // Atualiza a dashboard automaticamente após importar (opcional, requer feedback do servidor)
     if (window.location.hash === "#imported") {
         window.location.hash = "";

@@ -151,7 +151,7 @@ def import_ticket_zip():
                     if new_todo.date:
                         from models import Appointment
                         appointment = Appointment(
-                            content=f"Tarefa: {new_todo.content} (Ticket #{new_ticket.id})",
+                            content=f"Tarefa: {new_todo.content} (Caso #{new_ticket.id})",
                             appointment_date=new_todo.date,
                             appointment_time="--:--",
                             user_id=current_user.id,
