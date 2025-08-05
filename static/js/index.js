@@ -127,18 +127,27 @@ document.addEventListener('DOMContentLoaded', function() {
         appointments.forEach(apt => {
             const aptEl = document.createElement('div');
             const priority = apt.priority || 'Normal';
-            aptEl.className = `appointment-item d-flex justify-content-between align-items-center priority-${priority.toLowerCase()}`;
+            let baseClass = `appointment-item d-flex justify-content-between align-items-center priority-${priority.toLowerCase()}`;
+            const sourceClass = apt.source === 'financeiro' ? 'from-financeiro' :
+                apt.source === 'triagem' ? 'from-triagem' : '';
+
+            // NOVO: Checa se é remarcado pelo conteúdo
+            const isRemarcada = apt.content && apt.content.includes('REMARCADA');
+            const remarcadaClass = isRemarcada ? 'remarcada' : '';
+
+            aptEl.className = `${baseClass} ${sourceClass} ${remarcadaClass}`.trim();
+
             const recurringIcon = apt.recurring ? '<i class="bi bi-arrow-repeat me-2" title="Repete mensalmente"></i>' : '';
             aptEl.innerHTML = `
-                <p class="mb-0">${recurringIcon}<strong>${apt.time}</strong> - ${apt.content}</p>
-                <div class="appointment-actions">
-                    <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="${apt.id}" data-time="${apt.time}" data-content="${apt.content}" data-priority="${priority}" data-recurring="${apt.recurring}" data-bs-toggle="modal" data-bs-target="#appointmentModal">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${apt.id}">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>`;
+            <p class="mb-0">${recurringIcon}<strong>${apt.time}</strong> - ${apt.content}</p>
+            <div class="appointment-actions">
+                <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="${apt.id}" data-time="${apt.time}" data-content="${apt.content}" data-priority="${priority}" data-recurring="${apt.recurring}" data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${apt.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>`;
             dom.appointmentList.appendChild(aptEl);
         });
     };

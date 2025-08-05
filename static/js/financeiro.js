@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (entryForm) {
             entryForm.addEventListener('submit', function(e) {
+                if (statusSelect) statusSelect.disabled = false;
                 let valor = valorInput.value.replace(/\./g, '').replace(',', '.');
                 valorInput.value = valor;
             });
@@ -347,27 +348,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const dataStr = dataInput ? dataInput.value : "";
             const descricao = entryForm.querySelector('#descricao') ? entryForm.querySelector('#descricao').value : "";
             const valor = valorInput ? valorInput.value : "";
-            if (
-                tipo === "Entrada" &&
-                status === "Previsto" &&
-                dataStr &&
-                new Date(dataStr) > new Date()
-            ) {
-                // Após o submit padrão, faz uma requisição para adicionar ao calendário
-                setTimeout(() => {
-                    fetch("/api/appointments", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            content: `Receita prevista: ${descricao} (R$ ${valor})`,
-                            appointment_date: dataStr,
-                            appointment_time: "09:00",
-                            priority: "Normal",
-                            recurring: false
-                        })
-                    });
-                }, 500); // pequeno delay para garantir lançamento criado
-            }
+
         });
     }
 });

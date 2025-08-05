@@ -51,7 +51,7 @@ def index():
             content=f"Receita prevista: {l.descricao} (R$ {l.valor}) [REMARCADA x{remarcada_count}]",
             appointment_date=hoje,
             data_original=l.data_original or data_antiga,
-            appointment_time="09:00",
+            appointment_time="--:--",
             priority="Normal",
             is_recurring=False,
             remarcada_count=remarcada_count,
@@ -405,22 +405,24 @@ def novo_lancamento():
             categoria=categoria,
             user_id=current_user.id,
             ticket_id=ticket_id if ticket_id else None,
-            status=status
+            status=status,
+
         )
         db.session.add(lanc)
         db.session.commit()
 
         # Adiciona compromisso se previsto futuro
-        if tipo == 'Entrada' and status == 'Previsto':
+        if (tipo or "").strip().lower() == "entrada" and (status or "").strip().lower() == "previsto":
             appointment = Appointment(
                 content=f"Receita prevista: {descricao} (R$ {valor})",
                 appointment_date=data_obj,
                 data_original=data_obj,
-                appointment_time="09:00",
+                appointment_time="--:--",
                 priority="Normal",
                 is_recurring=False,
                 user_id=current_user.id,
-                remarcada_count=0
+                remarcada_count=0,
+                source='financeiro',
             )
             db.session.add(appointment)
             db.session.commit()
@@ -459,24 +461,6 @@ def atualizar_status_lancamento(lancamento_id):
     db.session.commit()
     return jsonify(success=True)
 
-@main_bp.route('/api/appointments/<int:ano>/<int:mes>')
-@login_required
-def api_appointments_mes(ano, mes):
-    from models import Appointment
-    from datetime import date
-
-    # Primeiro e último dia do mês
-    d1 = date(ano, mes, 1)
-    if mes == 12:
-        d2 = date(ano + 1, 1, 1)
-    else:
-        d2 = date(ano, mes + 1, 1)
-
-    appointments = Appointment.query.filter_by(user_id=current_user.id)\
-        .filter(Appointment.appointment_date >= d1)\
-        .filter(Appointment.appointment_date < d2)\
-        .all()
-    return jsonify([a.to_dict() for a in appointments])
 
 
 @main_bp.route('/api/appointments', methods=['POST'])
@@ -522,3 +506,67 @@ def api_appointments_dia(date):
         appointment_date=date_obj
     ).all()
     return jsonify([a.to_dict() for a in appointments])
+
+@main_bp.route('/api/appointments/active-days/<int:ano>/<int:mes>')
+@login_required
+def api_active_days(ano, mes):
+    from models import Appointment
+    from datetime import date
+
+    # Primeiro e último dia do mês
+    d1 = date(ano, mes, 1)
+    if mes == 12:
+        d2 = date(ano + 1, 1, 1)
+    else:
+        d2 = date(ano, mes + 1, 1)
+
+    # Busca TODOS os appointments do usuário, qualquer source
+    appointments = Appointment.query.filter_by(user_id=current_user.id)\
+        .filter(Appointment.appointment_date >= d1)\
+        .filter(Appointment.appointment_date < d2)\
+        .all()
+
+    # Marca como "ativos" todos os dias que têm qualquer compromisso
+    dias = list(set(a.appointment_date.day for a in appointments))
+    return jsonify(dias)
+
+
+#Rota Debug Excluir depois
+@main_bp.route('/appointments-debug')
+@login_required
+def appointments_debug():
+    from models import Appointment, User
+    appointments = Appointment.query.order_by(Appointment.id.desc()).all()
+    rows = []
+    for a in appointments:
+        user = User.query.get(a.user_id)
+        rows.append(f"""
+        <tr>
+            <td>{a.id}</td>
+            <td>{a.content}</td>
+            <td>{a.appointment_date}</td>
+            <td>{a.appointment_time}</td>
+            <td>{a.priority}</td>
+            <td>{a.is_recurring}</td>
+            <td>{a.source}</td>
+            <td>{user.username if user else "?"}</td>
+        </tr>
+        """)
+    html = f"""
+    <h2>Appointments no Banco de Dados</h2>
+    <table border="1" cellpadding="4">
+        <tr>
+            <th>ID</th>
+            <th>Conteúdo</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Prioridade</th>
+            <th>Recorrente?</th>
+            <th>Source</th>
+            <th>Usuário</th>
+        </tr>
+        {''.join(rows)}
+    </table>
+    <p>Total: {len(rows)} compromissos.</p>
+    """
+    return html

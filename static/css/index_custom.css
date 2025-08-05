@@ -168,3 +168,21 @@
 .calendar-days div.recurring-urgente::after {
     border-color: transparent #dc3545 transparent transparent; /* Vermelho */
 }
+
+/* Compromissos vindos do FINANCEIRO: verde */
+.appointment-item.from-financeiro {
+    background-color: #e6fce4 !important;
+    border-left: 5px solid #37b24d !important;
+}
+
+/* Compromissos vindos da TRIAGEM: lilás */
+.appointment-item.from-triagem {
+    background-color: #f5e6fc !important;
+    border-left: 5px solid #a16ae8 !important;
+}
+
+/* Compromissos REMARCADOS: laranja */
+.appointment-item.remarcada {
+    background-color: #ffe4c2 !important;
+    border-left: 5px solid #d14606 !important;
+}

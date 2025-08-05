@@ -62,8 +62,6 @@ class Comment(db.Model):
     # A relação agora aponta para o modelo 'Attachment' unificado
     attachments = db.relationship('Attachment', backref='comment', lazy='dynamic', cascade="all, delete-orphan")
 
-
-# Modelo de anexo unificado. A classe CommentAttachment foi removida.
 class Attachment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(100), nullable=False)
@@ -84,17 +82,14 @@ class Appointment(db.Model):
     data_original = db.Column(db.Date, nullable=True)
     appointment_time = db.Column(db.String(5), nullable=True)  # Formato HH:MM
     priority = db.Column(db.String(20), nullable=False, default='Normal')
-    # --- NOVO CAMPO ---
-    # Este campo armazenará se o compromisso é recorrente (mensal)
     is_recurring = db.Column(db.Boolean, default=False, nullable=False)
     remarcada_count = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     todo_id = db.Column(db.Integer, db.ForeignKey('todo_item.id'), nullable=True)
     todo = db.relationship('TodoItem', backref='appointment', uselist=False)
+    source = db.Column(db.String(20), nullable=True)  # 'financeiro' ou 'triagem'
 
     def to_dict(self):
-        # --- ALTERAÇÃO AQUI ---
-        #novo campo ao dicionário que é enviado como JSON
         return {
             'id': self.id,
             'content': self.content,
@@ -103,7 +98,8 @@ class Appointment(db.Model):
             'priority': self.priority,
             'recurring': self.is_recurring,  # Novo campo adicionado
             'todo_id': self.todo_id,
-            'is_completed': self.todo.is_completed if self.todo_id and self.todo else False
+            'is_completed': self.todo.is_completed if self.todo_id and self.todo else False,
+            'source': self.source
         }
 
     # --- NOVA CLASSE ADICIONADA ---

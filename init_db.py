@@ -14,8 +14,9 @@ def initialize_database():
     """
     app = create_app()
     with app.app_context():
+        db.create_all()
         print("Iniciando script de inicialização do banco de dados...")
-
+        
         # --- 1. Criar o Usuário Dono da Conta (admin) ---
         owner_username = 'admin'
         owner_user = User.query.filter_by(username=owner_username).first()

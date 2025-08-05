@@ -259,6 +259,13 @@
                     {% endfor %}
                 </select>
             </div>
+            <!-- NOVO CAMPO: Marcar como recebido agora -->
+            <div class="form-group" id="marcar-recebido-group" style="display:none;">
+                <label>
+                    <input type="checkbox" id="marcar-recebido-checkbox" name="marcar_recebido">
+                    Marcar como recebido agora
+                </label>
+            </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-secondary close-button">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar Lançamento</button>
@@ -279,10 +286,14 @@
         document.addEventListener("DOMContentLoaded", function() {
             function toggleRecebidoCheckbox() {
                 var isReceita = document.getElementById('tipo-receita').checked;
-                document.getElementById('marcar-recebido-group').style.display = isReceita ? '' : 'none';
+                var group = document.getElementById('marcar-recebido-group');
+                if (group) group.style.display = isReceita ? '' : 'none';
             }
-            document.getElementById('tipo-receita').addEventListener('change', toggleRecebidoCheckbox);
-            toggleRecebidoCheckbox();
+            var tipoReceita = document.getElementById('tipo-receita');
+            if (tipoReceita) {
+                tipoReceita.addEventListener('change', toggleRecebidoCheckbox);
+                toggleRecebidoCheckbox();
+            }
         });
     </script>
 {% endblock %}
