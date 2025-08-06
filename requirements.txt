@@ -20,6 +20,8 @@ defusedxml==0.7.1
     # via fpdf2
 deprecated==1.2.18
     # via limits
+docopt==0.6.2
+    # via num2words
 flask==3.1.1
     # via
     #   -r requirements.in
@@ -63,6 +65,8 @@ markupsafe==3.0.2
     #   werkzeug
 mdurl==0.1.2
     # via markdown-it-py
+num2words==0.5.14
+    # via -r requirements.in
 ordered-set==4.1.0
     # via flask-limiter
 packaging==25.0

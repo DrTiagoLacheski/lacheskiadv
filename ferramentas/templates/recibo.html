@@ -1,0 +1,155 @@
+{% extends "base_ferramentas.html" %}
+
+{% block title %}Gerador de Recibo{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <style>
+        #quill-editor {
+            min-height: 100px;
+            height: 120px;
+            max-height: 300px;
+            resize: vertical;
+            overflow: auto;
+            background: #fff;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Prepara o container e o texto */
+        .form-check {
+            position: relative;
+            /* Espaço à esquerda para nosso campo customizado */
+            padding-left: 35px;
+            margin-bottom: 0;
+            cursor: pointer;
+            font-size: 0.95rem; /* Fonte um pouco menor para compactar */
+            display: inline-flex; /* Alinha o texto verticalmente com o campo */
+            align-items: center;
+            min-height: 26px; /* Altura mínima para alinhamento */
+        }
+
+        /* Esconde o input original, mas o mantém funcional */
+        .form-check .form-check-input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        /* Cria a CAIXA do nosso checkbox customizado */
+        .form-check-label::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            /* Alinha verticalmente com o texto */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            border: 2px solid #ced4da; /* Borda cinza claro */
+            border-radius: 5px; /* Cantos levemente arredondados */
+            background-color: #fff;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        /* Muda a cor da CAIXA quando o input está marcado */
+        .form-check-input:checked + .form-check-label::before {
+            background-color: #0d6efd; /* Cor de destaque (azul) */
+            border-color: #0d6efd;
+        }
+
+        /* Cria o SÍMBOLO DE "CHECK" (a marca em V) */
+        .form-check-label::after {
+            content: "";
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            /* Posição e tamanho do "V" */
+            width: 6px;
+            height: 12px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            /* Começa invisível e rotacionado */
+            transform: translateY(-50%) rotate(45deg) scale(0);
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* Mostra o "CHECK" quando o input está marcado */
+        .form-check-input:checked + .form-check-label::after {
+            transform: translateY(-50%) rotate(45deg) scale(1);
+            opacity: 1;
+        }
+
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <header class="header">
+        <h1>GERADOR DE RECIBO</h1>
+        <p>Preencha os dados para gerar seu recibo:</p>
+    </header>
+
+    <form id="reciboForm" class="form" method="POST" action="{{ url_for('recibo.gerar_recibo') }}">
+        <div class="form-group">
+            <label for="valor">Valor (R$):</label>
+            <input type="text" id="valor" name="valor" class="valor-mask" placeholder="0,00" required>
+        </div>
+        <div class="form-group">
+            <label for="data">Data:</label>
+            <input type="date" id="data" name="data" required>
+        </div>
+        <div class="form-group">
+            <label for="texto_complementar">Texto complementar:</label>
+            <!-- Quill Editor -->
+            <div id="quill-editor"></div>
+            <input type="hidden" id="texto_complementar" name="texto_complementar" required>
+        </div>
+
+        <div class="form-group mb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="isJuridica" name="isJuridica">
+                <label class="form-check-label" for="isJuridica">Recibo para Pessoa Jurídica?</label>
+            </div>
+        </div>
+
+        <div id="juridicaFields" class="hidden">
+            <div class="form-group">
+                <label for="nome_empresa">Nome da Empresa:</label>
+                <input type="text" id="nome_empresa" name="nome_empresa">
+            </div>
+            <div class="form-group">
+                <label for="cnpj">CNPJ:</label>
+                <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00">
+            </div>
+            <div class="form-group">
+                <label for="sede">Sede:</label>
+                <input type="text" id="sede" name="sede" placeholder="Endereço completo da sede">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Gerar Recibo</button>
+            <button type="reset" class="btn btn-secondary">Limpar Campos</button>
+            <a href="{{ url_for('ferramentas.index') }}" class="btn btn-outline-secondary d-flex align-items-center">
+                <i class="bi bi-arrow-left-circle me-2"></i>Voltar
+            </a>
+        </div>
+        <div id="statusMessage" class="status-message">
+            Preencha os dados e clique em 'Gerar Recibo'
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    <script src="{{ url_for('ferramentas.static', filename='js/recibo.js') }}"></script>
+{% endblock %}

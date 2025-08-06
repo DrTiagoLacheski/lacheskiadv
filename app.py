@@ -51,6 +51,7 @@ def create_app():
     from triagem.routes.export_import import export_import_bp
     from views import main_bp
     from ferramentas.views import ferramentas_bp
+    from ferramentas.routes.recibo import recibo_bp
     from routes.appointment import appointment_bp
 
 
@@ -61,6 +62,7 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(ferramentas_bp, url_prefix='/ferramentas')
     app.register_blueprint(appointment_bp)
+    app.register_blueprint(recibo_bp, url_prefix='/recibo')
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

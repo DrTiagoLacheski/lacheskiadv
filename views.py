@@ -8,6 +8,8 @@ from models import Appointment
 
 main_bp = Blueprint('main', __name__)
 
+
+
 @main_bp.route('/ferramentas-juridicas')
 @login_required
 def ferramentas_juridicas():

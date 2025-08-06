@@ -3,8 +3,57 @@
 {% block title %}Ferramentas Jurídicas Online{% endblock %}
 
 {% block styles %}
-    {{ super() }} {# Mantém os estilos do base_ferramentas.html (Bootstrap, style.css, etc.) #}
+    {{ super() }}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .tool-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1.2rem 1.3rem 1.2rem;
+            text-align: center;
+            transition: box-shadow 0.18s, transform 0.15s;
+            position: relative;
+            min-height: 210px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .tool-card:hover {
+            box-shadow: 0 1.2rem 2rem rgba(25,50,150,0.13);
+            transform: translateY(-3px) scale(1.03);
+        }
+        .tool-icon {
+            font-size: 2.3rem;
+            margin-bottom: 0.7rem;
+        }
+        .tool-card.coming-soon {
+            background: #f7f7f7;
+            color: #aaa;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .tool-card .badge {
+            position: absolute;
+            top: 12px; right: 12px;
+            font-size: 0.85rem;
+            background: #ffc107;
+            color: #333;
+        }
+        @media (max-width: 650px) {
+            .tools-grid { grid-template-columns: 1fr; }
+            .tool-card { min-height: 160px; }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -14,98 +63,85 @@
     </header>
 
     <div class="tools-grid">
-        <!-- ALTERAÇÃO: Este card agora abre um modal em vez de um link direto -->
+        <!-- Ferramentas Ativas -->
         <a href="#" class="tool-card" data-bs-toggle="modal" data-bs-target="#procuracaoTipoModal">
             <div class="tool-icon">📄</div>
             <h3>Procuração Judicial</h3>
             <p>Gerar procurações jurídicas em segundos</p>
         </a>
-
         <a href="{{ url_for('ferramentas.pagina_contrato_honorarios') }}" class="tool-card">
             <div class="tool-icon">📝</div>
             <h3>Contrato de Honorários</h3>
             <p>Gerar contrato de honorário advocatício</p>
         </a>
-
         <a href="{{ url_for('ferramentas.pagina_substabelecimento') }}" class="tool-card">
             <div class="tool-icon">📄</div>
             <h3>Substabelecimento Judicial</h3>
             <p>Gerar subs com ou sem Reservas de Poderes</p>
         </a>
-
         <a href="{{ url_for('ferramentas.pagina_calculo_trabalhista') }}" class="tool-card">
             <div class="tool-icon">🧮</div>
             <h3>Cálculo Trabalhista</h3>
             <p>Gere um relatório preliminar de verbas trabalhistas</p>
         </a>
-
-                <!-- Serviços Em Breve -->
-        <div class="tool-card coming-soon">
+        <a href="{{ url_for('recibo.gerar_recibo') }}" class="tool-card">
             <div class="tool-icon">🧾</div>
             <h3>Recibos de Pagamento</h3>
             <p>Crie recibos válidos para diversos fins jurídicos</p>
-            <span class="badge">EM BREVE</span>
-        </div>
+        </a>
 
+        <!-- Em Breve -->
         <div class="tool-card coming-soon">
             <div class="tool-icon">🧾</div>
             <h3>Habilitação Processual</h3>
             <p>Simples pedido de habilitação nos autos</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">🧾</div>
             <h3>Gerador de Declaração de Hipossuficiência</h3>
             <p>Declarações para comprovação de hipossuficiência</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">⚖️</div>
             <h3>Defesa Prévia Criminal</h3>
             <p>Defesa sem adentrar mérito processual e sem ilegalidades</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">📜</div>
             <h3>Recurso Criminal Sem Razões</h3>
             <p>Manifestação de interesse de recorrer, não admitida em juizado especiais</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">⚖️</div>
             <h3>Petição de Execução de Títulos</h3>
             <p>Modelo para execução de títulos extrajudiciais</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">📑</div>
             <h3>Petição de Execução de Contrato de Honorários</h3>
             <p>Modelo para execução de honorários advocatícios</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">👨‍⚖️</div>
             <h3>Petição Inicial Trabalhista</h3>
             <p>Modelo para ajuizamento de ação trabalhista</p>
             <span class="badge">EM BREVE</span>
         </div>
-
         <div class="tool-card coming-soon">
             <div class="tool-icon">💔</div>
             <h3>Petição de Divórcio Consensual</h3>
             <p>Modelo para divórcio de comum acordo</p>
             <span class="badge">EM BREVE</span>
         </div>
-
     </div>
 
-    <!-- NOVO: Modal para seleção do tipo de outorgante -->
+    <!-- Modal para seleção do tipo de outorgante -->
     <div class="modal fade" id="procuracaoTipoModal" tabindex="-1" aria-labelledby="procuracaoTipoModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -124,11 +160,7 @@
                 </a>
             </div>
           </div>
-...
         </div>
       </div>
     </div>
 {% endblock %}
-
-
-

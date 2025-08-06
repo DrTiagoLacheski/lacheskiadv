@@ -23,6 +23,15 @@ ferramentas_bp = Blueprint('ferramentas', __name__,
                            static_url_path='/ferramentas_static')
 
 
+
+@ferramentas_bp.route('/recibo')
+@login_required
+def recibo():
+    """Página de recibo (a página atual que você já tem)"""
+    return render_template('recibo.html')
+
+
+
 @ferramentas_bp.route('/')
 @login_required
 def index():

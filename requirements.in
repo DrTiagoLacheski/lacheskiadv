@@ -25,5 +25,8 @@ python-dotenv
 Flask-Limiter
 redis
 
-
+#Migração de banco de dados
 Flask-Migrate
+
+#Escrever por Extenso
+num2words
