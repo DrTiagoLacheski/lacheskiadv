@@ -28,7 +28,7 @@ def initialize_database():
                 email='admin@escritorio.com',
                 is_admin=True
             )
-            owner_user.set_password('102030')  # Use uma senha forte em produção
+            owner_user.set_password('asdf1234')  # Use uma senha forte em produção
             db.session.add(owner_user)
             db.session.commit()
         else:

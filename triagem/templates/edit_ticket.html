@@ -20,7 +20,20 @@
             </div>
             <div class="mb-3">
                 <label for="delegado" class="form-label">Delegado</label>
-                <input type="text" class="form-control" id="delegado" name="delegado" value="{{ ticket.delegado }}">
+                {% if current_user.is_admin %}
+                    <select class="form-select" id="delegado" name="delegado" required>
+                        <option value="">Selecione um associado</option>
+                        {% for assoc in associados %}
+                            <option value="{{ assoc.username }}"
+                                    {% if ticket.delegado == assoc.username %}selected{% endif %}>
+                                {{ assoc.username }} ({{ assoc.email }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% else %}
+                    <input type="text" class="form-control" id="delegado" name="delegado" value="{{ ticket.delegado }}"
+                           readonly>
+                {% endif %}
             </div>
             <div class="mb-3">
                 <label for="priority" class="form-label">Prioridade</label>

@@ -26,21 +26,20 @@ ticket_bp = Blueprint(
 # --- DECORADOR DE AUTORIZAÇÃO (LÓGICA CENTRALIZADA E CORRIGIDA) ---
 def ticket_permission_required(f):
     """
-    Verifica se o usuário logado tem permissão para acessar o ticket.
-    O usuário deve ser o autor do ticket ou um administrador.
-    Este decorador busca o ticket e o passa como primeiro argumento para a função da rota.
+    Permite acesso ao ticket para: admin, autor, ou usuário associado designado como delegado.
     """
     @wraps(f)
     def decorated_function(ticket_id, *args, **kwargs):
         ticket = Ticket.query.get_or_404(ticket_id)
-        if not (current_user.is_admin or ticket.user_id == current_user.id):
-            # Em vez de um erro 403 genérico, redireciona com uma mensagem clara.
+        # Checa se o user é admin, autor, ou delegado (por username)
+        if not (
+            current_user.is_admin
+            or ticket.user_id == current_user.id
+            or (ticket.delegado and ticket.delegado == current_user.username)
+        ):
             flash('Você não tem permissão para acessar este caso.', 'danger')
             return redirect(url_for('dashboard.dashboard'))
-        # Passa o objeto 'ticket' em vez de 'ticket_id' para a rota
         return f(ticket, *args, **kwargs)
-
-    # CORREÇÃO: A função do decorador deve retornar a função interna 'decorated_function'.
     return decorated_function
 
 
@@ -183,7 +182,11 @@ def download_attachment(attachment_id):
     attachment = Attachment.query.get_or_404(attachment_id)
     ticket = attachment.ticket
     # A verificação manual é mantida aqui porque a rota não tem ticket_id
-    if not (current_user.is_admin or ticket.user_id == current_user.id):
+    if not (
+            current_user.is_admin
+            or ticket.user_id == current_user.id
+            or (ticket.delegado and ticket.delegado == current_user.username)
+    ):
         flash('Você não tem permissão para acessar este anexo.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
 
@@ -236,17 +239,27 @@ def view_ticket(ticket):
 @login_required
 @ticket_permission_required
 def edit_ticket(ticket):
+    associados = []
+    # Proíbe delegado de acessar edição
+    if ticket.delegado == current_user.username and not current_user.is_admin and ticket.user_id != current_user.id:
+        flash('Delegados não podem editar o caso.', 'danger')
+        return redirect(url_for('ticket.view_ticket', ticket_id=ticket.id))
+
+    if current_user.is_admin:
+        # lista todos os usuários associados a este admin
+        associados = current_user.associados.all()
     if request.method == 'POST':
         ticket.title = request.form['title'].upper()
         ticket.case_number = request.form['case_number']
+        # NOVO: Salva username do delegado selecionado
         ticket.delegado = request.form['delegado']
-        ticket.description = request.form['description']
+        ticket.description = request.form.get('description', ticket.description)
         ticket.priority = request.form['priority']
         ticket.updated_at = datetime.utcnow()
         db.session.commit()
         flash('Caso atualizado com sucesso!', 'success')
         return redirect(url_for('ticket.view_ticket', ticket_id=ticket.id))
-    return render_template('edit_ticket.html', ticket=ticket)
+    return render_template('edit_ticket.html', ticket=ticket, associados=associados)
 
 
 @ticket_bp.route('/<int:ticket_id>/comment', methods=['POST'])
@@ -277,6 +290,10 @@ def update_status(ticket):
 @login_required
 @ticket_permission_required
 def update_report(ticket):
+    if not current_user.is_admin:
+        flash('Apenas administradores podem deletar casos.', 'danger')
+        return redirect(url_for('ticket.view_ticket', ticket_id=ticket.id))
+
     ticket.description = request.form['description']
     ticket.updated_at = datetime.utcnow()
     db.session.commit()
