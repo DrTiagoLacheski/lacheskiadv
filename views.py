@@ -270,6 +270,12 @@ def excluir_comentario(comentario_id):
 @main_bp.route('/financeiro', methods=['GET', 'POST'])
 @login_required
 def financeiro():
+    # Somente admin pode acessar
+    if not getattr(current_user, "is_admin", False):
+        # Passa uma mensagem para o template index.html
+        return render_template('index.html',
+                               mensagem_negada="Acesso negado: apenas administradores podem acessar esta página."), 403
+
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     categoria = request.args.get('categoria')

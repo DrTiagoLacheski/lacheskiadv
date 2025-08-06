@@ -23,6 +23,13 @@
 
 {% block content %}
     <div class="container">
+
+        {% if mensagem_negada %}
+            <div class="alert alert-danger" role="alert" style="margin-top:20px;">
+                {{ mensagem_negada }}
+            </div>
+        {% endif %}
+
         <header class="header">
             {# Título H1 substituído pela imagem da logo #}
             <img src="{{ url_for('static', filename='images/logolacheski.png') }}" alt="Logo Lacheski Advocacia" class="header-logo">
