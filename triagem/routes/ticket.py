@@ -201,6 +201,11 @@ def download_attachment(attachment_id):
 def delete_attachment(attachment_id):
     attachment = Attachment.query.get_or_404(attachment_id)
     ticket_id = attachment.ticket_id
+
+    if not current_user.is_admin:
+        flash('Apenas administradores podem deletar anexos.', 'danger')
+        return redirect(url_for('ticket.view_ticket', ticket_id=ticket_id))
+
     # A verificação manual é mantida aqui porque a rota não tem ticket_id
     if not (current_user.is_admin or attachment.ticket.user_id == current_user.id):
         flash('Você não tem permissão para deletar este anexo.', 'danger')
@@ -283,6 +288,11 @@ def update_report(ticket):
 @login_required
 @ticket_permission_required
 def delete_ticket(ticket):
+
+    if not current_user.is_admin:
+        flash('Apenas administradores podem deletar casos.', 'danger')
+        return redirect(url_for('ticket.view_ticket', ticket_id=ticket.id))
+
     from models import Attachment, TodoItem, Appointment, Comment
     try:
         # 1. Remover todos os arquivos físicos dos attachments do ticket
@@ -455,7 +465,7 @@ def update_todo(todo_id):
 def delete_todo(todo_id):
     todo = TodoItem.query.get_or_404(todo_id)
     ticket = todo.ticket
-    if not (current_user.is_admin or ticket.user_id == current_user.id):
+    if not (current_user.is_admin):
         return jsonify({'success': False, 'error': 'Forbidden'}), 403
 
     db.session.delete(todo)

@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket.css') }}">
 <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
 <style>
-/* Editor Quill redimensionável manualmente pelo usuário (sem botão de expandir) */
+/* Editor Quill redimensionável manualmente pelo usuário */
 #quill-editor {
     min-height: 100px;
     height: 250px;
@@ -17,7 +17,6 @@
     transition: height .2s;
     box-sizing: border-box;
 }
-
 </style>
 {% endblock %}
 
@@ -59,7 +58,7 @@
                     <span class="badge {% if ticket.status == 'Em Análise' %}bg-success{% elif ticket.status == 'Em Espera' %}bg-warning{% else %}bg-secondary{% endif %}">{{ ticket.status }}</span>
                 </div>
                 {% endif %}
-                {% if current_user.is_admin or ticket.user_id == current_user.id %}
+                {% if current_user.is_admin %}
                 <form method="POST" action="{{ url_for('ticket.delete_ticket', ticket_id=ticket.id) }}">
                     <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja deletar este Caso permanentemente?')">
                         <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Excluir Caso</span>
@@ -150,12 +149,14 @@
                 <div class="d-flex gap-2 mt-2 mt-sm-0 flex-wrap">
                     <a href="{{ url_for('ticket.download_attachment', attachment_id=attachment.id) }}"
                        class="btn btn-sm btn-outline-primary">Download</a>
+                    {% if current_user.is_admin %}
                     <form method="POST" action="{{ url_for('ticket.delete_attachment', attachment_id=attachment.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-sm btn-danger"
                                 onclick="return confirm('Tem certeza que deseja deletar este anexo?')">
                             Deletar
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -193,9 +194,11 @@
                                 <span class="badge bg-info text-dark ms-2">{{ todo.date.strftime("%d/%m/%Y") }}</span>
                             {% endif %}
                         </label>
+                        {% if current_user.is_admin %}
                         <button class="btn btn-xs btn-outline-danger delete-todo-btn">
                             <i class="bi bi-x-lg"></i>
                         </button>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 {% else %}
@@ -245,7 +248,7 @@
 {% block scripts %}
 {{ super() }}
 
-    <script src="{{ url_for('ticket.static', filename='js/ticket.js') }}"></script>
+<script src="{{ url_for('ticket.static', filename='js/ticket.js') }}"></script>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
 let quillReport = null;
