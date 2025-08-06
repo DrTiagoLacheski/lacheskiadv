@@ -53,6 +53,7 @@ def create_app():
     from ferramentas.views import ferramentas_bp
     from ferramentas.routes.recibo import recibo_bp
     from routes.appointment import appointment_bp
+    from routes.admin_associado import admin_associado_bp
 
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -63,6 +64,7 @@ def create_app():
     app.register_blueprint(ferramentas_bp, url_prefix='/ferramentas')
     app.register_blueprint(appointment_bp)
     app.register_blueprint(recibo_bp, url_prefix='/recibo')
+    app.register_blueprint(admin_associado_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

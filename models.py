@@ -14,6 +14,12 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     is_admin = db.Column(db.Boolean, default=False)
+
+    # Novo campo: cada usuário pode ser associado a um admin
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    # Relacionamento: todos associados deste admin
+    associados = db.relationship('User', backref=db.backref('admin', remote_side=[id]), lazy='dynamic')
+
     tickets = db.relationship('Ticket', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     attachments = db.relationship('Attachment', backref='author', lazy='dynamic')
