@@ -75,6 +75,10 @@ from flask_login import current_user
 @main_bp.route('/artigos/novo', methods=['GET', 'POST'])
 @login_required
 def criar_artigo():
+    if not getattr(current_user, "is_admin", False):
+        flash('Apenas administradores podem criar artigos.', 'danger')
+        return redirect(url_for('main.painel_gerenciador'))
+
     if request.method == 'POST':
         titulo = request.form['titulo']
         conteudo = request.form['conteudo']
@@ -126,6 +130,10 @@ def criar_artigo():
 @main_bp.route('/artigos')
 @login_required
 def listar_artigos():
+    if not getattr(current_user, "is_admin", False):
+        flash('Apenas administradores podem criar artigos.', 'danger')
+        return redirect(url_for('main.painel_gerenciador'))
+
     artigos = Artigo.query.filter_by(user_id=current_user.id).order_by(Artigo.criado_em.desc()).all()
     return render_template('listar_artigos.html', artigos=artigos)
 
@@ -221,6 +229,7 @@ def visualizar_artigo(artigo_id):
 @main_bp.route('/artigos/<int:artigo_id>/comentar', methods=['POST'])
 @login_required
 def comentar_artigo(artigo_id):
+
     artigo = Artigo.query.get_or_404(artigo_id)
     texto = request.form.get("comentario", "").strip()
     if texto:
