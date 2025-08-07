@@ -18,9 +18,13 @@
     </div>
 
     <div class="mb-3">
-        <label for="delegado" class="form-label">Responsável</label>
-        <input type="text" class="form-control" id="delegado" name="delegado"
-                    placeholder="Ex: joão, Tiago...">
+        <label for="delegado" class="form-label">Responsável (Delegado)</label>
+        <select class="form-select" id="delegado" name="delegado" required>
+            <option value="">Selecione um associado responsável...</option>
+            {% for associado in associados %}
+                <option value="{{ associado.id }}">{{ associado.username }} ({{ associado.email }})</option>
+            {% endfor %}
+        </select>
     </div>
 
     <div class="mb-3">
@@ -32,11 +36,6 @@
         </select>
     </div>
 
-    <div class="mb-3">
-        <label for="description" class="form-label">Relatório Do Caso</label>
-        <textarea class="form-control" id="description" name="description" rows="5"
-                  Style = "white-space: pre-wrap; text-align: justify; font-family: monospace"></textarea>
-    </div>
 
     <button type="submit" class="btn btn-primary">Cadastrar</button>
     <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Cancelar</a>

@@ -1,46 +1,42 @@
 # init_db.py
-# Este script cria usuários e associa perfis de advogado a eles.
+# Script para inicializar o banco de dados, criar usuários e perfis de advogado.
 
 from app import create_app, db
 from models import User, Advogado
-# A fonte de dados agora vem do config.py de ferramentas
 from ferramentas.config import DADOS_ADVOGADOS
-
 
 def initialize_database():
     """
-    Cria os usuários (admin e user) e popula a tabela de advogados,
-    associando os perfis corretos a cada um.
+    Cria usuários (admin e user) e perfis de advogado associados.
+    Ajustado para funcionar com relacionamento correto de Advogado <-> User.
     """
     app = create_app()
     with app.app_context():
         db.create_all()
         print("Iniciando script de inicialização do banco de dados...")
-        
-        # --- 1. Criar o Usuário Dono da Conta (admin) ---
+
+        # --- 1. Criar Usuário Admin ---
         owner_username = 'admin'
         owner_user = User.query.filter_by(username=owner_username).first()
-
         if not owner_user:
-            print(f"Criando usuário dono da conta: '{owner_username}'")
+            print(f"Criando usuário admin: '{owner_username}'")
             owner_user = User(
                 username=owner_username,
                 email='admin@escritorio.com',
                 is_admin=True
             )
-            owner_user.set_password('asdf1234')  # Use uma senha forte em produção
+            owner_user.set_password('asdf1234')
             db.session.add(owner_user)
             db.session.commit()
         else:
-            print(f"Usuário dono da conta '{owner_username}' já existe.")
+            print(f"Usuário admin '{owner_username}' já existe.")
 
-        # --- 2. Sincronizar os Perfis de Advogado para a conta 'admin' ---
+        # --- 2. Criar Perfis de Advogado para Admin ---
         for key, adv_data in DADOS_ADVOGADOS.items():
             advogado_existente = Advogado.query.filter_by(cpf=adv_data['cpf']).first()
             if advogado_existente:
                 print(f"Perfil de advogado para '{adv_data['nome']}' já existe. Pulando.")
                 continue
-
             print(f"Criando perfil de advogado para '{adv_data['nome']}' e associando a '{owner_username}'.")
             novo_advogado = Advogado(
                 user_id=owner_user.id,
@@ -58,21 +54,23 @@ def initialize_database():
             )
             db.session.add(novo_advogado)
 
-        # --- 3. Criar um Usuário Normal de Exemplo (user) com múltiplos perfis ---
+        # --- 3. Criar Usuário Normal de Exemplo ---
         normal_username = 'user'
         normal_user = User.query.filter_by(username=normal_username).first()
-
         if not normal_user:
-            print(f"Criando usuário normal de exemplo: '{normal_username}'")
+            print(f"Criando usuário normal: '{normal_username}'")
             normal_user = User(
                 username=normal_username,
                 email='user@exemplo.com',
                 is_admin=False
             )
             normal_user.set_password('user')
+            db.session.add(normal_user)
+            db.session.flush()  # Para garantir que normal_user.id está disponível
 
-            # Cria um perfil de advogado principal para este usuário
+            # Perfil principal
             default_advogado = Advogado(
+                user_id=normal_user.id,
                 nome="USUÁRIO PADRÃO",
                 estado_civil="não informado",
                 profissao="advogado",
@@ -80,29 +78,24 @@ def initialize_database():
                 endereco_profissional="Endereço Padrão do Usuário",
                 is_principal=True
             )
+            db.session.add(default_advogado)
 
-            # --- NOVO: Cria um perfil de advogado associado para este usuário ---
+            # Perfil associado (exemplo)
             associate_advogado = Advogado(
+                user_id=normal_user.id,
                 nome="ASSOCIADO PADRÃO (TESTE)",
                 estado_civil="não informado",
                 profissao="advogado",
-                cpf="888.888.888-88",  # CPF único para o associado de teste
+                cpf="888.888.888-88",
                 endereco_profissional="Endereço do Associado de Teste",
-                is_principal=False  # Importante: este não é o principal
+                is_principal=False
             )
-
-            # Associa ambos os perfis ao usuário 'user'
-            normal_user.advogados.append(default_advogado)
-            normal_user.advogados.append(associate_advogado)
-
-            db.session.add(normal_user)
+            db.session.add(associate_advogado)
         else:
-            print(f"Usuário normal de exemplo '{normal_username}' já existe.")
+            print(f"Usuário normal '{normal_username}' já existe.")
 
-        # --- 4. Salva todas as alterações no banco ---
         db.session.commit()
         print("\nOperação de inicialização concluída com sucesso!")
-
 
 if __name__ == '__main__':
     initialize_database()

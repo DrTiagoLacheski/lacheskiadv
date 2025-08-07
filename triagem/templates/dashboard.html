@@ -45,14 +45,17 @@
 
 <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex gap-2">
-        <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
-        <!-- Botão Importar ZIP ajustado -->
-        <form id="importZipForm" method="POST" action="{{ url_for('ticket_export_import.import_ticket_zip') }}" enctype="multipart/form-data" style="display:inline;">
-            <input type="file" id="importZipInput" name="ticket_zip" accept=".zip" style="display: none;" required>
-            <button class="btn btn-outline-secondary" type="button" id="importZipBtn">
-                <i class="bi bi-upload"></i> Importar Caso (ZIP)
-            </button>
-        </form>
+        {% if current_user.is_admin %}
+            <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
+            <!-- Botão Importar ZIP ajustado -->
+            <form id="importZipForm" method="POST" action="{{ url_for('ticket_export_import.import_ticket_zip') }}"
+                  enctype="multipart/form-data" style="display:inline;">
+                <input type="file" id="importZipInput" name="ticket_zip" accept=".zip" style="display: none;" required>
+                <button class="btn btn-outline-secondary" type="button" id="importZipBtn">
+                    <i class="bi bi-upload"></i> Importar Caso (ZIP)
+                </button>
+            </form>
+        {% endif %}
     </div>
     <form method="GET" action="{{ url_for('dashboard.dashboard') }}" class="d-flex ms-md-auto mt-2 mt-md-0">
         <div class="input-group">

@@ -24,7 +24,7 @@ def dashboard():
     if not current_user.is_admin:
         query = query.filter(
             (Ticket.user_id == current_user.id) |
-            (Ticket.delegado == current_user.username)
+            (Ticket.delegado_id == current_user.id)
         )
 
     # 3. FILTRO DE BUSCA

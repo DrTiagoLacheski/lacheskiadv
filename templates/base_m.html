@@ -30,22 +30,24 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
 
+                    {% if current_user.is_admin %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_associado.criar_associado') }}">
                             <i class="bi bi-person-plus"></i> Criar Associado
                         </a>
                     </li>
+                    {% endif %}
 
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="nav-link">Olá, {{ current_user.username }}</span>
+                        <a class="nav-link" href="{{ url_for('user.editar_usuario', user_id=current_user.id) }}">
+                            Olá, {{ current_user.username }}
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.logout') }}">Sair</a>
                     </li>
-                    {% if current_user.is_admin %}
 
-                    {% endif %}
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>

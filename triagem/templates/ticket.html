@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket.css') }}">
 <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
 <style>
-/* Editor Quill redimensionável manualmente pelo usuário */
 #quill-editor {
     min-height: 100px;
     height: 250px;
@@ -130,8 +129,14 @@
 
     {% if ticket.attachments.count() > 0 or current_user.is_admin or ticket.user_id == current_user.id %}
     <div class="card mb-4">
-        <div class="card-header">
-            <h4>Anexos</h4>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Anexos</h4>
+            <!-- Botão de baixar todos os anexos como ZIP -->
+            {% if ticket.attachments.count() > 0 %}
+            <a href="{{ url_for('ticket.download_ticket_zip', ticket_id=ticket.id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-download"></i> Baixar Todos os Anexos (.zip)
+            </a>
+            {% endif %}
         </div>
         <div class="card-body">
             {% if ticket.attachments.count() > 0 %}
@@ -163,7 +168,7 @@
             </div>
             {% endif %}
 
-            {% if current_user.is_admin or ticket.user_id == current_user.id or ticket.delegado == current_user.username %}
+            {% if current_user.is_admin or ticket.user_id == current_user.id or ticket.delegado.id == current_user.username.id %}
             <form id="addAttachmentForm" method="POST" action="{{ url_for('ticket.add_ticket_attachment', ticket_id=ticket.id) }}" enctype="multipart/form-data">
                 <input class="d-none" type="file" id="ticket_attachments" name="ticket_attachments" multiple>
                 <label for="ticket_attachments" class="btn btn-success">
@@ -178,34 +183,44 @@
     </div>
     {% endif %}
 
+
     <div class="card mb-4">
-        <div class="card-header">
-            <h4>Checklist de Tarefas</h4>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Checklist de Tarefas</h4>
+            {% if current_user.is_admin or ticket.user_id == current_user.id or ticket.delegado.id == current_user.username.id %}
+                <form method="POST" action="{{ url_for('ticket.sync_todo_appointments', ticket_id=ticket.id) }}"
+                      style="display:inline;">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-calendar-check"></i> Sincronizar tarefas no calendário
+                    </button>
+                </form>
+            {% endif %}
         </div>
         <div class="card-body">
             <div id="todoListContainer">
                 {% if todos %}
                     {% for todo in todos %}
-                    <div class="todo-item {% if todo.is_completed %}completed{% endif %}" data-id="{{ todo.id }}">
-                        <input class="form-check-input" type="checkbox" id="todo-{{ todo.id }}" {% if todo.is_completed %}checked{% endif %}>
-                        <label class="form-check-label" for="todo-{{ todo.id }}">
-                            {{ todo.content }}
-                            {% if todo.date %}
-                                <span class="badge bg-info text-dark ms-2">{{ todo.date.strftime("%d/%m/%Y") }}</span>
+                        <div class="todo-item {% if todo.is_completed %}completed{% endif %}" data-id="{{ todo.id }}">
+                            <input class="form-check-input" type="checkbox" id="todo-{{ todo.id }}"
+                                   {% if todo.is_completed %}checked{% endif %}>
+                            <label class="form-check-label" for="todo-{{ todo.id }}">
+                                {{ todo.content }}
+                                {% if todo.date %}
+                                    <span class="badge bg-info text-dark ms-2">{{ todo.date.strftime("%d/%m/%Y") }}</span>
+                                {% endif %}
+                            </label>
+                            {% if current_user.is_admin %}
+                                <button class="btn btn-xs btn-outline-danger delete-todo-btn">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
                             {% endif %}
-                        </label>
-                        {% if current_user.is_admin %}
-                        <button class="btn btn-xs btn-outline-danger delete-todo-btn">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                        {% endif %}
-                    </div>
+                        </div>
                     {% endfor %}
                 {% else %}
                     <p class="text-muted" id="no-todos-message">Nenhuma tarefa adicionada ainda.</p>
                 {% endif %}
             </div>
-            {% if current_user.is_admin or ticket.user_id == current_user.id or ticket.delegado == current_user.username %}
+            {% if current_user.is_admin or ticket.user_id == current_user.id or ticket.delegado.id == current_user.id %}
                 <form id="addTodoForm" class="d-flex gap-2 mt-3">
                     <input type="text" id="newTodoContent" class="form-control" placeholder="Adicionar nova tarefa..."
                            required>
@@ -215,6 +230,7 @@
             {% endif %}
         </div>
     </div>
+
 
     <div class="card mb-4">
         <div class="card-header">
@@ -274,13 +290,12 @@ function enableReportEdit() {
     }
     quillReport.root.innerHTML = {{ ticket.description|tojson|safe }};
 
-    // --- NOVO: rola até o editor automaticamente ---
     setTimeout(function() {
         const quillBox = document.getElementById('quill-editor');
         if (quillBox) {
             quillBox.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-    }, 120); // pequeno delay para garantir renderização
+    }, 120);
 }
 
 function cancelReportEdit() {

@@ -5,7 +5,7 @@ from io import BytesIO
 from flask import Blueprint, current_app, send_file, flash, redirect, url_for, request
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models import db, Ticket, TodoItem, Comment, Attachment
+from models import db, Ticket, TodoItem, Comment, Attachment, User
 from datetime import datetime
 
 export_import_bp = Blueprint(
@@ -16,38 +16,43 @@ export_import_bp = Blueprint(
 )
 
 def ticket_permission_required(f):
-    # Você deve importar e usar o decorador real do seu projeto.
-    # Aqui está como placeholder para evitar erro de importação circular.
     from functools import wraps
     @wraps(f)
     def decorated(ticket_id, *args, **kwargs):
         ticket = Ticket.query.get_or_404(ticket_id)
-        # Ajuste conforme sua lógica de permissões:
-        if not (current_user.is_admin or ticket.user_id == current_user.id):
+        if not (current_user.is_admin or ticket.user_id == current_user.id or (ticket.delegado_id and ticket.delegado_id == current_user.id)):
             flash('Você não tem permissão para acessar este caso.', 'danger')
             return redirect(url_for('dashboard.dashboard'))
         return f(ticket, *args, **kwargs)
     return decorated
 
+def serialize_ticket(ticket):
+    """
+    Serializa o ticket para exportação, incluindo apenas campos serializáveis.
+    """
+    return {
+        "id": ticket.id,
+        "ticket_code": ticket.ticket_code,
+        "title": ticket.title,
+        "description": ticket.description,
+        "case_number": ticket.case_number,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
+        "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
+        "delegado_id": ticket.delegado_id,
+        "delegado_username": ticket.delegado.username if ticket.delegado else None,
+        "author_id": ticket.user_id,
+        "author_username": ticket.author.username if ticket.author else None,
+    }
 
 @export_import_bp.route('/<int:ticket_id>/export_zip', methods=['GET'])
 @login_required
 @ticket_permission_required
 def export_ticket_zip(ticket):
-    # Exporta o ticket e anexos em um ZIP
+    # Exporta o ticket e anexos em um ZIP, modelo novo (delegado por ID e username)
     data = {
-        "ticket": {
-            "id": ticket.id,
-            "ticket_code": ticket.ticket_code,
-            "title": ticket.title,
-            "description": ticket.description,
-            "case_number": ticket.case_number,
-            "status": ticket.status,
-            "priority": ticket.priority,
-            "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
-            "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
-            "delegado": ticket.delegado,
-        },
+        "ticket": serialize_ticket(ticket),
         "todos": [
             {
                 "content": todo.content,
@@ -104,10 +109,13 @@ def export_ticket_zip(ticket):
         download_name=f"ticket_{ticket.id}.zip"
     )
 
-
 @export_import_bp.route('/import_zip', methods=['GET', 'POST'])
 @login_required
 def import_ticket_zip():
+    if not current_user.is_admin:
+        flash('Apenas administradores podem importar anexos.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
     if request.method == 'POST':
         file = request.files.get('ticket_zip')
         if not file or not file.filename.endswith('.zip'):
@@ -119,15 +127,28 @@ def import_ticket_zip():
                 json_data = zf.read('ticket.json').decode('utf-8')
                 data = json.loads(json_data)
                 t = data.get("ticket")
-                # Cria novo ticket (não importa o id original!)
-                from .ticket import _generate_ticket_code  # Importa para gerar código único
+
+                # Suporte modelo antigo: 'delegado' era uma string (nome de usuário)
+                # Suporte modelo novo: 'delegado_id' e 'delegado_username'
+                delegado_id = None
+                if t.get("delegado_id"):  # modelo novo export
+                    delegado_id = t["delegado_id"]
+                elif t.get("delegado_username"):  # modelo novo export
+                    delegado_user = User.query.filter_by(username=t["delegado_username"]).first()
+                    delegado_id = delegado_user.id if delegado_user else None
+                elif t.get("delegado"):  # modelo antigo export
+                    delegado_user = User.query.filter_by(username=t["delegado"]).first()
+                    delegado_id = delegado_user.id if delegado_user else None
+
+                # Gera código único para o ticket novo
+                from .ticket import _generate_ticket_code
                 new_ticket = Ticket(
                     title=t["title"],
                     description=t.get("description"),
                     case_number=t.get("case_number"),
                     status=t.get("status", "Em Análise"),
                     priority=t.get("priority", "Média"),
-                    delegado=t.get("delegado"),
+                    delegado_id=delegado_id,
                     user_id=current_user.id,
                     ticket_code=_generate_ticket_code(current_user)
                 )
@@ -145,9 +166,8 @@ def import_ticket_zip():
                         ticket_id=new_ticket.id
                     )
                     db.session.add(new_todo)
-                    db.session.flush()  # Garante que new_todo.id está disponível
+                    db.session.flush()
 
-                    # CRIAR O APPOINTMENT SE TIVER DATA
                     if new_todo.date:
                         from models import Appointment
                         appointment = Appointment(
@@ -160,6 +180,7 @@ def import_ticket_zip():
                             source='triagem'
                         )
                         db.session.add(appointment)
+
                 # Comentários
                 for comment in data.get("comments", []):
                     new_comment = Comment(
