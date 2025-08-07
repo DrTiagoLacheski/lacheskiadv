@@ -55,6 +55,7 @@ def create_app():
     from routes.appointment import appointment_bp
     from routes.admin_associado import admin_associado_bp
     from routes.user import user_bp
+    from routes.notificacoes import notificacoes_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -66,6 +67,7 @@ def create_app():
     app.register_blueprint(recibo_bp, url_prefix='/recibo')
     app.register_blueprint(admin_associado_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(notificacoes_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

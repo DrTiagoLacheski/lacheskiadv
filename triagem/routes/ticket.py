@@ -195,7 +195,8 @@ from flask import send_file
 @login_required
 @ticket_permission_required
 def download_ticket_zip(ticket):
-    attachments = ticket.attachments.order_by('position').all()
+    # Garante a ordem final de exibição dos anexos!
+    attachments = ticket.attachments.order_by(Attachment.position.asc()).all()
     if not attachments:
         flash('Não há anexos para baixar.', 'warning')
         return redirect(url_for('ticket.view_ticket', ticket_id=ticket.id))
@@ -520,3 +521,5 @@ def sync_todo_appointments(ticket):
     ensure_todo_appointments(ticket)
     flash("Tarefas do ticket sincronizadas no calendário!", "success")
     return redirect(url_for('ticket.view_ticket', ticket_id=ticket.id))
+
+
