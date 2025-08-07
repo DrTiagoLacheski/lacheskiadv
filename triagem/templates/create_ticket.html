@@ -19,7 +19,7 @@
 
     <div class="mb-3">
         <label for="delegado" class="form-label">Responsável (Delegado)</label>
-        <select class="form-select" id="delegado" name="delegado" required>
+        <select class="form-select" id="delegado" name="delegado" >
             <option value="">Selecione um associado responsável...</option>
             {% for associado in associados %}
                 <option value="{{ associado.id }}">{{ associado.username }} ({{ associado.email }})</option>

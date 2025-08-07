@@ -21,7 +21,7 @@
             <div class="mb-3">
                 <label for="delegado" class="form-label">Delegado</label>
                 {% if current_user.is_admin %}
-                    <select class="form-select" id="delegado" name="delegado" required>
+                    <select class="form-select" id="delegado" name="delegado" >
                         <option value="">Selecione um associado</option>
                         {% for assoc in associados %}
                             <option value="{{ assoc.username }}"
