@@ -225,6 +225,11 @@
                     <input type="text" id="newTodoContent" class="form-control" placeholder="Adicionar nova tarefa..."
                            required>
                     <input type="date" id="newTodoDate" class="form-control">
+                    <select id="newTodoPriority" class="form-select">
+                        <option value="Normal" selected>Normal</option>
+                        <option value="Importante">Importante</option>
+                        <option value="Urgente">Urgente</option>
+                    </select>
                     <button type="submit" class="btn btn-primary">Adicionar</button>
                 </form>
             {% endif %}

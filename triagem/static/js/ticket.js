@@ -130,9 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let newTodoContentInput = null;
     let newTodoDateInput = null;
 
+    let newTodoPriorityInput = null;
+
+
     if (addTodoForm) {
         newTodoContentInput = document.getElementById('newTodoContent');
         newTodoDateInput = document.getElementById('newTodoDate');
+        newTodoPriorityInput = document.getElementById('newTodoPriority');
         // Definir min para hoje no campo de data, mas não preencher valor por padrão
         if (newTodoDateInput) {
             const today = new Date();
@@ -176,8 +180,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const content = newTodoContentInput.value.trim();
             const date = newTodoDateInput ? newTodoDateInput.value : '';
+            const priority = newTodoPriorityInput ? newTodoPriorityInput.value : 'Normal'; // NOVO
+
             if (!content) return;
             // Só faz validação se o usuário preencheu a data
+
+
+
             if (date) {
                 const selected = new Date(date + 'T00:00:00');
                 const now = new Date();
@@ -188,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             // Monta o objeto só com content ou content+date
-            const body = { content };
+            const body = { content, priority };
             if (date) body.date = date;
             try {
                 const response = await fetch(addTodoUrl, {
@@ -288,15 +297,16 @@ document.addEventListener('DOMContentLoaded', function() {
         div.className = 'todo-item';
         div.dataset.id = todo.id;
         div.innerHTML = `
-            <input class="form-check-input" type="checkbox" id="todo-${todo.id}" ${todo.is_completed ? "checked" : ""}>
-            <label class="form-check-label" for="todo-${todo.id}">
-                ${escapeHTML(todo.content)}
-                ${todo.date ? `<span class="badge bg-info text-dark ms-2">${formatDateBR(todo.date)}</span>` : ""}
-            </label>
-            <button class="btn btn-xs btn-outline-danger delete-todo-btn">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        `;
+        <input class="form-check-input" type="checkbox" id="todo-${todo.id}" ${todo.is_completed ? "checked" : ""}>
+        <label class="form-check-label" for="todo-${todo.id}">
+            ${escapeHTML(todo.content)}
+            ${todo.date ? `<span class="badge bg-info text-dark ms-2">${formatDateBR(todo.date)}</span>` : ""}
+            ${todo.priority ? `<span class="badge bg-warning text-dark ms-2">${escapeHTML(todo.priority)}</span>` : ""}
+        </label>
+        <button class="btn btn-xs btn-outline-danger delete-todo-btn">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    `;
         return div;
     }
 

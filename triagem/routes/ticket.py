@@ -396,9 +396,11 @@ def reorder_attachments(ticket):
 def add_todo(ticket):
     data = request.get_json()
     content = data.get('content')
+    priority = data.get('priority', 'Normal')  # NOVO
     date_str = data.get('date')
     if not content:
         return jsonify({'success': False, 'error': 'Content is required'}), 400
+
 
     todo_date = None
     if date_str:
@@ -412,7 +414,8 @@ def add_todo(ticket):
     last_todo = TodoItem.query.filter_by(ticket_id=ticket.id).order_by(TodoItem.position.desc()).first()
     next_position = (last_todo.position + 1) if last_todo else 0
 
-    new_todo = TodoItem(content=content, ticket_id=ticket.id, date=todo_date)
+    new_todo = TodoItem(content=content, ticket_id=ticket.id, date=todo_date, priority=priority)  # NOVO
+
     db.session.add(new_todo)
     db.session.flush()
 
@@ -433,7 +436,7 @@ def add_todo(ticket):
                 appointment_date=todo_date,
                 appointment_time="--:--",
                 user_id=uid,
-                priority='Normal',
+                priority=priority,  # NOVO
                 todo_id=new_todo.id,
                 source='triagem'
             )
@@ -446,7 +449,8 @@ def add_todo(ticket):
             'id': new_todo.id,
             'content': new_todo.content,
             'is_completed': new_todo.is_completed,
-            'date': new_todo.date.strftime("%Y-%m-%d") if new_todo.date else None
+            'date': new_todo.date.strftime("%Y-%m-%d") if new_todo.date else None,
+            'priority': new_todo.priority
         }
     }), 201
 
