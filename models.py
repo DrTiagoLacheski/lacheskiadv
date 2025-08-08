@@ -100,6 +100,12 @@ class Appointment(db.Model):
     source = db.Column(db.String(20), nullable=True)
 
     def to_dict(self):
+        # Se o appointment veio de tarefa, inclua o ticket id e título
+        ticket_id = None
+        ticket_title = None
+        if self.todo_id and self.todo and self.todo.ticket:
+            ticket_id = self.todo.ticket.id
+            ticket_title = self.todo.ticket.title
         return {
             'id': self.id,
             'content': self.content,
@@ -109,7 +115,9 @@ class Appointment(db.Model):
             'recurring': self.is_recurring,
             'todo_id': self.todo_id,
             'is_completed': self.todo.is_completed if self.todo_id and self.todo else False,
-            'source': self.source
+            'source': self.source,
+            'ticket_id': ticket_id,
+            'ticket_title': ticket_title,
         }
 
 class TodoItem(db.Model):

@@ -110,11 +110,18 @@
     display: block;
 }
 
+/* Compromissos vindos da TRIAGEM: lilás */
+.appointment-item.from-triagem {
+    background-color: #f5e6fc !important;
+    border-left: 5px solid #a16ae8 ;
+}
+
 /* Estilos para prioridade dos compromissos na lista */
 .appointment-item.priority-normal {
     background-color: #f0f8ff;
     border-left: 5px solid #1e90ff;
 }
+
 .appointment-item.priority-importante {
     background-color: #fff8e1;
     border-left: 5px solid #ffc107;
@@ -178,11 +185,6 @@
     border-left: 5px solid #37b24d !important;
 }
 
-/* Compromissos vindos da TRIAGEM: lilás */
-.appointment-item.from-triagem {
-    background-color: #f5e6fc !important;
-    border-left: 5px solid #a16ae8 !important;
-}
 
 /* Compromissos REMARCADOS: laranja */
 .appointment-item.remarcada {

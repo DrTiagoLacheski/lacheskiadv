@@ -130,24 +130,34 @@ document.addEventListener('DOMContentLoaded', function() {
             let baseClass = `appointment-item d-flex justify-content-between align-items-center priority-${priority.toLowerCase()}`;
             const sourceClass = apt.source === 'financeiro' ? 'from-financeiro' :
                 apt.source === 'triagem' ? 'from-triagem' : '';
-
-            // NOVO: Checa se é remarcado pelo conteúdo
             const isRemarcada = apt.content && apt.content.includes('REMARCADA');
             const remarcadaClass = isRemarcada ? 'remarcada' : '';
 
             aptEl.className = `${baseClass} ${sourceClass} ${remarcadaClass}`.trim();
 
             const recurringIcon = apt.recurring ? '<i class="bi bi-arrow-repeat me-2" title="Repete mensalmente"></i>' : '';
+
+            // Se tem ticket_id e ticket_title, monta o link
+            let ticketLink = '';
+            if (apt.ticket_id && apt.ticket_title) {
+                ticketLink = `<a href="/ticket/${apt.ticket_id}" class="link-primary fw-bold" title="Ver caso">${apt.ticket_title}</a>`;
+            }
+
             aptEl.innerHTML = `
-            <p class="mb-0">${recurringIcon}<strong>${apt.time}</strong> - ${apt.content}</p>
-            <div class="appointment-actions">
-                <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="${apt.id}" data-time="${apt.time}" data-content="${apt.content}" data-priority="${priority}" data-recurring="${apt.recurring}" data-bs-toggle="modal" data-bs-target="#appointmentModal">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${apt.id}">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>`;
+        <p class="mb-0">
+            ${recurringIcon}
+            <strong>${apt.time}</strong> - 
+            ${ticketLink ? ticketLink + " - " : ""}
+            ${apt.content}
+        </p>
+        <div class="appointment-actions">
+            <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="${apt.id}" data-time="${apt.time}" data-content="${apt.content}" data-priority="${priority}" data-recurring="${apt.recurring}" data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${apt.id}">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>`;
             dom.appointmentList.appendChild(aptEl);
         });
     };
