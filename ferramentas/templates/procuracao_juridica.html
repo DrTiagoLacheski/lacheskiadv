@@ -61,23 +61,21 @@
         <div id="colaborador_selecao_container" class="form-group" style="display: none;">
             <label for="colaborador_id">Selecione o Colaborador:</label>
             <select id="colaborador_id" name="colaborador_id" class="form-select">
-                <option value="" selected disabled>-- Escolha um advogado --</option>
-                {% set advs_meus = advogados_disponiveis | selectattr('tipo', 'equalto', 'meu') | list %}
-                {% set advs_admin = advogados_disponiveis | selectattr('tipo', 'equalto', 'admin') | list %}
-                {% if advs_meus %}
-                    <optgroup label="Meus advogados">
-                        {% for item in advs_meus %}
-                            <option value="{{ item.advogado.id }}">{{ item.advogado.nome }}</option>
-                        {% endfor %}
-                    </optgroup>
-                {% endif %}
-                {% if advs_admin %}
-                    <optgroup label="Advogados do admin">
-                        {% for item in advs_admin %}
-                            <option value="{{ item.advogado.id }}_admin">{{ item.advogado.nome }}</option>
-                        {% endfor %}
-                    </optgroup>
-                {% endif %}
+                <option value="" selected disabled>-- Escolha um advogado colaborador --</option>
+                {% for colaborador in colaboradores %}
+                    <option value="{{ colaborador.id }}">
+                        {{ colaborador.nome }}
+                        {% if colaborador.is_principal %}
+                            (Principal
+                            {% if colaborador.owner_user.is_admin %}
+                                do Admin
+                            {% else %}
+                                de {{ colaborador.owner_user.username }}
+                            {% endif %}
+                            )
+                        {% endif %}
+                    </option>
+                {% endfor %}
             </select>
         </div>
 

@@ -84,9 +84,15 @@ def gerar_procuracao_route():
         }), 500
 
 
-@ferramentas_bp.route('/gerar-contrato-honorarios', methods=['POST'])
+@ferramentas_bp.route('/contrato-honorarios')
 @login_required
 def pagina_contrato_honorarios():
+    colaboradores = get_advogados_colaboradores_disponiveis(current_user)
+    return render_template('contrato_honorarios.html', colaboradores=colaboradores)
+
+@ferramentas_bp.route('/gerar-contrato-honorarios', methods=['POST'])
+@login_required
+def gerar_contrato_honorarios_route():
     """Endpoint da API para gerar o PDF do contrato de honorários."""
     try:
         data = request.json
