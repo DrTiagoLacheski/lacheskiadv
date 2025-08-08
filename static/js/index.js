@@ -267,6 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dom.appointmentModalEl.addEventListener('show.bs.modal', (e) => {
             const triggerButton = e.relatedTarget;
             dom.form.reset();
+
             const isEditMode = triggerButton && triggerButton.classList.contains('edit-btn');
             dom.modalTitle.innerText = isEditMode ? 'Editar Compromisso' : 'Adicionar Compromisso';
             dom.deleteModalBtn.style.display = isEditMode ? 'inline-block' : 'none';
