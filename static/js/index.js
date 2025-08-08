@@ -1,8 +1,7 @@
-// static/js/index.js
+// static/js/calendar.js
 
 document.addEventListener('DOMContentLoaded', function() {
     // --- CONSTANTES ---
-    // Centraliza nomes de classes e seletores para fácil manutenção
     const SELECTORS = {
         MONTH_YEAR: '#month-year',
         DAYS: '#calendar-days',
@@ -39,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
     // --- ELEMENTOS DO DOM ---
-    // Busca todos os elementos do DOM uma única vez
     const dom = {
         monthYearEl: document.querySelector(SELECTORS.MONTH_YEAR),
         daysEl: document.querySelector(SELECTORS.DAYS),
@@ -78,8 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
         recurringDays: {},
     };
 
-    // --- FUNÇÕES ---
-
+    // --- FUNÇÕES DE UTILIDADE ---
     const formatDate = (dateObj) => {
         const y = dateObj.getFullYear();
         const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -87,12 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${y}-${m}-${d}`;
     };
 
-    /**
-     * Função genérica para buscar dados da API do calendário.
-     * @param {string} endpoint - O endpoint da API a ser chamado (ex: 'urgent-days').
-     * @param {boolean} expectObject - Se o retorno esperado é um objeto (para dias recorrentes).
-     * @returns {Promise<Array|Object>} - Os dados da API.
-     */
     const fetchCalendarData = async (endpoint, expectObject = false) => {
         try {
             const response = await fetch(`/api/appointments/${endpoint}/${state.year}/${state.month + 1}`);
@@ -100,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         } catch (error) {
             console.error(error);
-            // Retorna um valor padrão seguro em caso de erro
             return expectObject ? {} : [];
         }
     };
@@ -137,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const recurringIcon = apt.recurring ? '<i class="bi bi-arrow-repeat me-2" title="Repete mensalmente"></i>' : '';
 
-            // Se tem ticket_id e ticket_title, monta o link
             let ticketLink = '';
             if (apt.ticket_id && apt.ticket_title) {
                 ticketLink = `<a href="/ticket/${apt.ticket_id}" class="link-primary fw-bold" title="Ver caso">${apt.ticket_title}</a>`;
@@ -163,7 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const renderCalendar = async () => {
-        // Busca todos os dados em paralelo usando a função genérica
         [
             state.urgentDays,
             state.importantDays,
@@ -199,12 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 classes.push(CSS_CLASSES.SELECTED);
             }
 
-            // Hierarquia de prioridade
             if (state.urgentDays.includes(i)) classes.push(CSS_CLASSES.URGENT);
             else if (state.importantDays.includes(i)) classes.push(CSS_CLASSES.IMPORTANT);
             else if (state.activeDays.includes(i)) classes.push(CSS_CLASSES.HAS_APPOINTMENT);
 
-            // Indicador de recorrência
             const recurringPriority = state.recurringDays[i];
             if (recurringPriority) {
                 classes.push(CSS_CLASSES.RECURRING, `${CSS_CLASSES.RECURRING_PREFIX}${recurringPriority.toLowerCase()}`);
@@ -212,14 +198,13 @@ document.addEventListener('DOMContentLoaded', function() {
             daysHTML += `<div class="${classes.join(' ')}">${i}</div>`;
         }
 
-        // Dias do mês seguinte para completar 6 linhas
+        // Dias do mês seguinte
         const cellsUsed = firstDayOfMonth + lastDateOfMonth;
         for (let i = 1; i <= 42 - cellsUsed; i++) {
             daysHTML += `<div class="next-date">${i}</div>`;
         }
 
         dom.daysEl.innerHTML = daysHTML;
-        // Reanexa os eventos aos novos dias criados
         dom.daysEl.querySelectorAll('div:not(.prev-date):not(.next-date)').forEach(dayEl => {
             dayEl.addEventListener('click', () => {
                 const day = parseInt(dayEl.innerText);
@@ -230,8 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    // --- EVENT LISTENERS ---
-
+    // --- EVENTOS ---
     const setupEventListeners = () => {
         dom.prevMonthBtn.addEventListener('click', () => {
             state.date.setMonth(state.month - 1);
@@ -284,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const triggerButton = e.relatedTarget;
             dom.form.reset();
             const isEditMode = triggerButton && triggerButton.classList.contains('edit-btn');
-
             dom.modalTitle.innerText = isEditMode ? 'Editar Compromisso' : 'Adicionar Compromisso';
             dom.deleteModalBtn.style.display = isEditMode ? 'inline-block' : 'none';
 
@@ -294,6 +277,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 dom.appointmentContentInput.value = triggerButton.dataset.content;
                 dom.appointmentPriorityInput.value = triggerButton.dataset.priority || 'Normal';
                 dom.appointmentRecurringInput.checked = (triggerButton.dataset.recurring === 'true');
+            } else {
+                dom.appointmentIdInput.value = "";
+                dom.appointmentTimeInput.value = "";
+                dom.appointmentContentInput.value = "";
+                dom.appointmentPriorityInput.value = "Normal";
+                dom.appointmentRecurringInput.checked = false;
             }
         });
 
@@ -341,13 +330,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        const body = {
-            content: dom.appointmentContentInput.value,
-            appointment_time: dom.appointmentTimeInput.value,
-            appointment_date: formatDate(state.selectedDate),
-            priority: dom.appointmentPriorityInput.value,
-            recurring: dom.appointmentRecurringInput.checked,
-        };
+        // Botão para adicionar novo compromisso (modal em branco, data selecionada)
+        dom.addAppointmentBtn.addEventListener('click', () => {
+            dom.form.reset();
+            dom.appointmentIdInput.value = "";
+            dom.appointmentTimeInput.value = "";
+            dom.appointmentContentInput.value = "";
+            dom.appointmentPriorityInput.value = "Normal";
+            dom.appointmentRecurringInput.checked = false;
+            appointmentModal.show();
+        });
     };
 
     // --- INICIALIZAÇÃO ---
