@@ -72,7 +72,6 @@ def editar_usuario(user_id):
 @login_required
 def editar_advogado(advogado_id):
     advogado = Advogado.query.get_or_404(advogado_id)
-    # Permite que somente o dono (advogado.user_id) ou admin edite
     if current_user.id != advogado.user_id and not current_user.is_admin:
         flash('Você não tem permissão para editar este advogado.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
@@ -84,12 +83,19 @@ def editar_advogado(advogado_id):
         advogado.cpf = request.form.get('cpf')
         advogado.rg = request.form.get('rg')
         advogado.orgao_emissor = request.form.get('orgao_emissor')
-        advogado.oab_pr = request.form.get('oab_pr')
-        advogado.oab_ro = request.form.get('oab_ro')
-        advogado.oab_sp = request.form.get('oab_sp')
         advogado.endereco_profissional = request.form.get('endereco_profissional')
-        # Corrige principal para bool
         advogado.is_principal = bool(int(request.form.get('is_principal', '0')))
+
+        # NOVO: Edita OABs como lista
+        oabs_novas = []
+        # Recebe todas OABs do form (inputs com name="oab_numero[]")
+        oab_numeros = request.form.getlist('oab_numero[]')
+        for numero in oab_numeros:
+            numero_strip = numero.strip()
+            if numero_strip:
+                oabs_novas.append({"numero": numero_strip})
+        advogado.oabs = oabs_novas
+
         db.session.commit()
         flash('Dados do advogado atualizados com sucesso!', 'success')
         return redirect(url_for('user.editar_usuario', user_id=advogado.user_id))

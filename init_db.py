@@ -5,10 +5,24 @@ from app import create_app, db
 from models import User, Advogado
 from ferramentas.config import DADOS_ADVOGADOS
 
+def format_oabs(adv_data):
+    """
+    Recebe um dict de dados de OABs, retorna lista [{'numero': ...}]
+    Exemplo: {'pr': '12345/PR', 'ro': '88888/RO', 'sp': '99999/SP'}
+    Resultado: [{'numero': '12345/PR'}, ...]
+    """
+    oabs = []
+    oab_dict = adv_data.get('oab', {})
+    for uf_key, numero in oab_dict.items():
+        if numero:
+            oabs.append({'numero': numero})
+    return oabs
+
 def initialize_database():
     """
     Cria usuários (admin e user) e perfis de advogado associados.
-    Ajustado para funcionar com relacionamento correto de Advogado <-> User.
+    Ajustado para funcionar com relacionamento correto de Advogado <-> User
+    e o novo campo de lista oabs.
     """
     app = create_app()
     with app.app_context():
@@ -46,9 +60,7 @@ def initialize_database():
                 cpf=adv_data['cpf'],
                 rg=adv_data.get('rg', ''),
                 orgao_emissor=adv_data.get('orgao_emissor', ''),
-                oab_pr=adv_data.get('oab', {}).get('pr', ''),
-                oab_ro=adv_data.get('oab', {}).get('ro', ''),
-                oab_sp=adv_data.get('oab', {}).get('sp', ''),
+                oabs=format_oabs(adv_data),
                 endereco_profissional=adv_data['endereco_profissional'],
                 is_principal=adv_data.get('is_principal', False)
             )
@@ -75,6 +87,7 @@ def initialize_database():
                 estado_civil="não informado",
                 profissao="advogado",
                 cpf="999.999.999-99",
+                oabs=[],
                 endereco_profissional="Endereço Padrão do Usuário",
                 is_principal=True
             )
@@ -87,6 +100,7 @@ def initialize_database():
                 estado_civil="não informado",
                 profissao="advogado",
                 cpf="888.888.888-88",
+                oabs=[],
                 endereco_profissional="Endereço do Associado de Teste",
                 is_principal=False
             )

@@ -154,9 +154,6 @@ class Advogado(db.Model):
     rg = db.Column(db.String(20), nullable=True)
     orgao_emissor = db.Column(db.String(20), nullable=True)
     oabs = db.Column(MutableList.as_mutable(PickleType), default=[], nullable=False)
-    oab_pr = db.Column(db.String(20), nullable=True)
-    oab_ro = db.Column(db.String(20), nullable=True)
-    oab_sp = db.Column(db.String(20), nullable=True)
     endereco_profissional = db.Column(db.String(255), nullable=False)
     is_principal = db.Column(db.Boolean, default=False, nullable=False)
 

@@ -86,7 +86,7 @@ def gerar_procuracao_route():
 
 @ferramentas_bp.route('/gerar-contrato-honorarios', methods=['POST'])
 @login_required
-def gerar_contrato_honorarios_route():
+def pagina_contrato_honorarios():
     """Endpoint da API para gerar o PDF do contrato de honorários."""
     try:
         data = request.json

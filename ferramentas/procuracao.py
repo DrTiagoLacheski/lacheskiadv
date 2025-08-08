@@ -49,7 +49,6 @@ def _formatar_cpf_cnpj(num):
 
 
 def _get_qualificacao_advogado_parts(advogado):
-    # ... (código sem alteração) ...
     if not advogado:
         return None, None
 
@@ -65,9 +64,10 @@ def _get_qualificacao_advogado_parts(advogado):
             qualificacao_rg += f", {advogado.orgao_emissor}"
         partes_core.append(qualificacao_rg)
 
-    if advogado.oab_pr and oab_valida(advogado.oab_pr): partes_core.append(f"OAB/PR n.º {advogado.oab_pr}")
-    if advogado.oab_ro and oab_valida(advogado.oab_ro): partes_core.append(f"OAB/RO n.º {advogado.oab_ro}")
-    if advogado.oab_sp and oab_valida(advogado.oab_sp): partes_core.append(f"OAB/SP n.º {advogado.oab_sp}")
+    # --- Lógica para OABs ---
+    oabs_validas = [oab["numero"] for oab in (advogado.oabs or []) if oab_valida(oab.get("numero"))]
+    if oabs_validas:
+        partes_core.append(" e ".join([f"OAB n.º {num}" for num in oabs_validas]))
 
     qualificacao_sem_endereco = ", " + ", ".join(partes_core)
     endereco = advogado.endereco_profissional

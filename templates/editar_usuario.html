@@ -75,17 +75,24 @@
                                         <label for="orgao_emissor_{{ advogado.id }}" class="form-label">Órgão Emissor</label>
                                         <input type="text" class="form-control" id="orgao_emissor_{{ advogado.id }}" name="orgao_emissor" value="{{ advogado.orgao_emissor }}">
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="oab_pr_{{ advogado.id }}" class="form-label">OAB PR</label>
-                                        <input type="text" class="form-control" id="oab_pr_{{ advogado.id }}" name="oab_pr" value="{{ advogado.oab_pr }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="oab_ro_{{ advogado.id }}" class="form-label">OAB RO</label>
-                                        <input type="text" class="form-control" id="oab_ro_{{ advogado.id }}" name="oab_ro" value="{{ advogado.oab_ro }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="oab_sp_{{ advogado.id }}" class="form-label">OAB SP</label>
-                                        <input type="text" class="form-control" id="oab_sp_{{ advogado.id }}" name="oab_sp" value="{{ advogado.oab_sp }}">
+                                    <div class="col-md-12">
+                                        <label class="form-label">OAB(s) <span class="text-muted">(adicione todas as OABs deste advogado)</span></label>
+                                        <div id="oabs-list-{{ advogado.id }}">
+                                            {% if advogado.oabs %}
+                                                {% for oab in advogado.oabs %}
+                                                    <div class="input-group mb-1 oab-input-row">
+                                                        <input type="text" class="form-control" name="oab_numero[]" value="{{ oab.numero }}" placeholder="Número da OAB (ex: 12345/PR)">
+                                                        <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+                                                    </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                            <!-- Campo extra vazio para adicionar nova OAB -->
+                                            <div class="input-group mb-1 oab-input-row">
+                                                <input type="text" class="form-control" name="oab_numero[]" value="" placeholder="Adicionar nova OAB">
+                                                <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-success btn-add-oab mt-1" data-adv-id="{{ advogado.id }}">Adicionar OAB</button>
                                     </div>
                                     <div class="col-md-12">
                                         <label for="endereco_profissional_{{ advogado.id }}" class="form-label">Endereço Profissional</label>
@@ -150,17 +157,24 @@
                                             <label for="orgao_emissor_{{ advogado.id }}" class="form-label">Órgão Emissor</label>
                                             <input type="text" class="form-control" id="orgao_emissor_{{ advogado.id }}" name="orgao_emissor" value="{{ advogado.orgao_emissor }}">
                                         </div>
-                                        <div class="col-md-4">
-                                            <label for="oab_pr_{{ advogado.id }}" class="form-label">OAB PR</label>
-                                            <input type="text" class="form-control" id="oab_pr_{{ advogado.id }}" name="oab_pr" value="{{ advogado.oab_pr }}">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="oab_ro_{{ advogado.id }}" class="form-label">OAB RO</label>
-                                            <input type="text" class="form-control" id="oab_ro_{{ advogado.id }}" name="oab_ro" value="{{ advogado.oab_ro }}">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="oab_sp_{{ advogado.id }}" class="form-label">OAB SP</label>
-                                            <input type="text" class="form-control" id="oab_sp_{{ advogado.id }}" name="oab_sp" value="{{ advogado.oab_sp }}">
+                                        <div class="col-md-12">
+                                            <label class="form-label">OAB(s) <span class="text-muted">(adicione todas as OABs deste advogado)</span></label>
+                                            <div id="oabs-list-{{ advogado.id }}">
+                                                {% if advogado.oabs %}
+                                                    {% for oab in advogado.oabs %}
+                                                        <div class="input-group mb-1 oab-input-row">
+                                                            <input type="text" class="form-control" name="oab_numero[]" value="{{ oab.numero }}" placeholder="Número da OAB (ex: 12345/PR)">
+                                                            <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+                                                        </div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                <!-- Campo extra vazio para adicionar nova OAB -->
+                                                <div class="input-group mb-1 oab-input-row">
+                                                    <input type="text" class="form-control" name="oab_numero[]" value="" placeholder="Adicionar nova OAB">
+                                                    <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-success btn-add-oab mt-1" data-adv-id="{{ advogado.id }}">Adicionar OAB</button>
                                         </div>
                                         <div class="col-md-12">
                                             <label for="endereco_profissional_{{ advogado.id }}" class="form-label">Endereço Profissional</label>
@@ -245,17 +259,24 @@
                                                 <label for="orgao_emissor_{{ advogado.id }}" class="form-label">Órgão Emissor</label>
                                                 <input type="text" class="form-control" id="orgao_emissor_{{ advogado.id }}" name="orgao_emissor" value="{{ advogado.orgao_emissor }}">
                                             </div>
-                                            <div class="col-md-4">
-                                                <label for="oab_pr_{{ advogado.id }}" class="form-label">OAB PR</label>
-                                                <input type="text" class="form-control" id="oab_pr_{{ advogado.id }}" name="oab_pr" value="{{ advogado.oab_pr }}">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="oab_ro_{{ advogado.id }}" class="form-label">OAB RO</label>
-                                                <input type="text" class="form-control" id="oab_ro_{{ advogado.id }}" name="oab_ro" value="{{ advogado.oab_ro }}">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="oab_sp_{{ advogado.id }}" class="form-label">OAB SP</label>
-                                                <input type="text" class="form-control" id="oab_sp_{{ advogado.id }}" name="oab_sp" value="{{ advogado.oab_sp }}">
+                                            <div class="col-md-12">
+                                                <label class="form-label">OAB(s) <span class="text-muted">(adicione todas as OABs deste advogado)</span></label>
+                                                <div id="oabs-list-{{ advogado.id }}">
+                                                    {% if advogado.oabs %}
+                                                        {% for oab in advogado.oabs %}
+                                                            <div class="input-group mb-1 oab-input-row">
+                                                                <input type="text" class="form-control" name="oab_numero[]" value="{{ oab.numero }}" placeholder="Número da OAB (ex: 12345/PR)">
+                                                                <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+                                                            </div>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                    <!-- Campo extra vazio para adicionar nova OAB -->
+                                                    <div class="input-group mb-1 oab-input-row">
+                                                        <input type="text" class="form-control" name="oab_numero[]" value="" placeholder="Adicionar nova OAB">
+                                                        <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-success btn-add-oab mt-1" data-adv-id="{{ advogado.id }}">Adicionar OAB</button>
                                             </div>
                                             <div class="col-md-12">
                                                 <label for="endereco_profissional_{{ advogado.id }}" class="form-label">Endereço Profissional</label>
@@ -287,4 +308,39 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar campo nova OAB para todos advogados (admin, user, associados)
+    document.querySelectorAll('.btn-add-oab').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const advId = btn.getAttribute('data-adv-id');
+            const wrapper = document.getElementById('oabs-list-' + advId);
+            const row = document.createElement('div');
+            row.className = 'input-group mb-1 oab-input-row';
+            row.innerHTML = `
+                <input type="text" class="form-control" name="oab_numero[]" value="" placeholder="Número da OAB (ex: 12345/PR)">
+                <button type="button" class="btn btn-outline-danger btn-remove-oab">Remover</button>
+            `;
+            wrapper.appendChild(row);
+        });
+    });
+
+    // Remover campo OAB para todos advogados
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-remove-oab')) {
+            // O wrapper é o <div id="oabs-list-...">, pai do input-row
+            const wrapper = e.target.closest('.oab-input-row').parentElement;
+            const rows = wrapper.querySelectorAll('.oab-input-row');
+            if (rows.length > 1) {
+                e.target.closest('.oab-input-row').remove();
+            } else {
+                e.target.closest('.oab-input-row').querySelector('input').value = '';
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
