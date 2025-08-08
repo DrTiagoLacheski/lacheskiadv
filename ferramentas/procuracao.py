@@ -15,6 +15,26 @@ from reportlab.lib.units import cm
 from PIL import Image as PILImage
 
 
+
+
+def RG_valido(rg):
+    """Retorna True se o RG tiver entre 7 e 10 dígitos numéricos (com ou sem hifens/pontos)."""
+    if not rg:
+        return False
+    rg_digits = ''.join(filter(str.isdigit, str(rg)))
+    # RG normalmente tem entre 7 e 10 dígitos
+    return 7 <= len(rg_digits) <= 10
+
+
+def oab_valida(oab):
+    import re
+    if not oab:
+        return False
+    oab = str(oab).strip()
+    return bool(re.fullmatch(r"\d{4,6}/[A-Z]{2}", oab))
+
+
+
 # --- FUNÇÕES AUXILIARES (permanecem iguais) ---
 def _formatar_cpf_cnpj(num):
     # ... (código sem alteração) ...
@@ -45,9 +65,9 @@ def _get_qualificacao_advogado_parts(advogado):
             qualificacao_rg += f", {advogado.orgao_emissor}"
         partes_core.append(qualificacao_rg)
 
-    if advogado.oab_pr: partes_core.append(f"OAB/PR n.º {advogado.oab_pr}")
-    if advogado.oab_ro: partes_core.append(f"OAB/RO n.º {advogado.oab_ro}")
-    if advogado.oab_sp: partes_core.append(f"OAB/SP n.º {advogado.oab_sp}")
+    if advogado.oab_pr and oab_valida(advogado.oab_pr): partes_core.append(f"OAB/PR n.º {advogado.oab_pr}")
+    if advogado.oab_ro and oab_valida(advogado.oab_ro): partes_core.append(f"OAB/RO n.º {advogado.oab_ro}")
+    if advogado.oab_sp and oab_valida(advogado.oab_sp): partes_core.append(f"OAB/SP n.º {advogado.oab_sp}")
 
     qualificacao_sem_endereco = ", " + ", ".join(partes_core)
     endereco = advogado.endereco_profissional
@@ -126,7 +146,8 @@ def gerar_procuracao_pdf(dados_cliente, current_user):
             f"brasileiro(a), {dados_cliente['estado_civil']}, {dados_cliente['profissao']}, "
             f"devidamente inscrito(a) no CPF n.º {_formatar_cpf_cnpj(dados_cliente['cpf'])}"
         )
-        if dados_cliente.get('rg'):
+        rg_valido = RG_valido(dados_cliente.get('rg'))
+        if rg_valido:
             qualificacao_pf += f", portador(a) do RG n.º {dados_cliente['rg']}"
         qualificacao_pf += f", residente e domiciliado(a) à {dados_cliente['endereco']}."
         texto_outorgante = f"<b>{dados_cliente['nome_completo'].upper()}</b>, {qualificacao_pf}"

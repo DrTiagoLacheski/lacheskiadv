@@ -66,9 +66,20 @@
         <div id="colaborador_selecao_container" class="form-group" style="display: none;">
             <label for="colaborador_id">Selecione o Colaborador:</label>
             <select id="colaborador_id" name="colaborador_id" class="form-select">
-                <option value="" selected disabled>-- Escolha um advogado --</option>
+                <option value="" selected disabled>-- Escolha um advogado colaborador --</option>
                 {% for colaborador in colaboradores %}
-                    <option value="{{ colaborador.id }}">{{ colaborador.nome }}</option>
+                    <option value="{{ colaborador.id }}">
+                        {{ colaborador.nome }}
+                        {% if colaborador.is_principal %}
+                            (Principal
+                            {% if colaborador.owner_user.is_admin %}
+                                do Admin
+                            {% else %}
+                                de {{ colaborador.owner_user.username }}
+                            {% endif %}
+                            )
+                        {% endif %}
+                    </option>
                 {% endfor %}
             </select>
         </div>

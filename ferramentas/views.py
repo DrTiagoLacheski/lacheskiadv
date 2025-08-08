@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request, jsonify, url_for, current
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import Advogado
+from ferramentas.untils.untils_advogado import get_advogado_by_id, get_advogados_colaboradores_disponiveis
 
 from . import pdf_tools
 # Importações relativas para funcionar dentro do pacote 'ferramentas'
@@ -44,18 +45,11 @@ def index():
 @ferramentas_bp.route('/procuracao/<tipo>')
 @login_required
 def pagina_procuracao(tipo):
-    """
-    Renderiza o formulário de procuração correto com base no tipo.
-    """
-    # ALTERAÇÃO 2: Busca os colaboradores QUE PERTENCEM ao usuário logado.
-    colaboradores = current_user.advogados.filter_by(is_principal=False).order_by(Advogado.nome).all()
-
-    if tipo == 'fisica':
-        return render_template('procuracao_fisica.html', colaboradores=colaboradores)
-    elif tipo == 'juridica':
-        return render_template('procuracao_juridica.html', colaboradores=colaboradores)
-    else:
-        return redirect(url_for('ferramentas.index'))
+    colaboradores = get_advogados_colaboradores_disponiveis(current_user)
+    return render_template(
+        'procuracao_fisica.html' if tipo == 'fisica' else 'procuracao_juridica.html',
+        colaboradores=colaboradores
+    )
 
 
 @ferramentas_bp.route('/gerar-procuracao', methods=['POST'])
@@ -63,39 +57,24 @@ def pagina_procuracao(tipo):
 def gerar_procuracao_route():
     try:
         data = request.json
-        if not data:
-            return jsonify({'success': False, 'error': 'Nenhum dado enviado.'}), 400
-
-        # ... (validações de campos permanecem iguais) ...
-        tipo_outorgante = data.get('tipo_outorgante')
-        if tipo_outorgante == 'juridica':
-            required_fields = ['razao_social', 'cnpj', 'endereco_sede', 'rep_nome', 'rep_cpf', 'rep_qualificacao']
-            cnpj_limpo = ''.join(filter(str.isdigit, data.get('cnpj', '')))
-            if len(cnpj_limpo) != 14:
-                return jsonify({'success': False, 'error': 'CNPJ deve conter 14 dígitos.'}), 400
-        else:
-            required_fields = ['nome_completo', 'profissao', 'cpf', 'endereco', 'estado_civil']
-            cpf_limpo = ''.join(filter(str.isdigit, data.get('cpf', '')))
-            if len(cpf_limpo) != 11:
-                return jsonify({'success': False, 'error': 'CPF deve conter 11 dígitos.'}), 400
-
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({
-                    'success': False,
-                    'error': f'O campo {field.replace("_", " ")} é obrigatório!',
-                    'missing_field': field
-                }), 400
-
-        # ALTERAÇÃO 3: Passa o 'current_user' para a função de geração do PDF.
-        arquivo = gerar_procuracao_pdf(data, current_user)
-
+        advogado_id_raw = data.get('colaborador_id')
+        advogado_id = None
+        tipo_adv = None
+        if advogado_id_raw:
+            if str(advogado_id_raw).endswith("_admin"):
+                advogado_id = int(str(advogado_id_raw).replace("_admin", ""))
+                tipo_adv = "admin"
+            else:
+                advogado_id = int(advogado_id_raw)
+                tipo_adv = "meu"
+        advogado_colaborador = get_advogado_by_id(current_user, advogado_id, tipo=tipo_adv) if advogado_id else None
+        # Passe advogado_colaborador para a função gerar_procuracao_pdf, adaptando a função se necessário
+        arquivo = gerar_procuracao_pdf(data, current_user, advogado_colaborador=advogado_colaborador)
         return jsonify({
             'success': True,
             'filename': os.path.basename(arquivo),
             'download_url': url_for('ferramentas.download_file', filename=os.path.basename(arquivo))
         })
-
     except Exception as e:
         current_app.logger.error(f"Erro em gerar_procuracao_route: {str(e)}", exc_info=True)
         return jsonify({
@@ -103,14 +82,6 @@ def gerar_procuracao_route():
             'error': 'Erro interno ao processar a solicitação',
             'details': str(e)
         }), 500
-
-
-@ferramentas_bp.route('/contrato-honorarios')
-@login_required
-def pagina_contrato_honorarios():
-    # ALTERAÇÃO 4: Busca os colaboradores QUE PERTENCEM ao usuário logado.
-    colaboradores = current_user.advogados.filter_by(is_principal=False).order_by(Advogado.nome).all()
-    return render_template('contrato_honorarios.html', colaboradores=colaboradores)
 
 
 @ferramentas_bp.route('/gerar-contrato-honorarios', methods=['POST'])

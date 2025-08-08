@@ -4,6 +4,9 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy import PickleType
+from sqlalchemy import Numeric
 
 db = SQLAlchemy()
 
@@ -18,20 +21,11 @@ class User(UserMixin, db.Model):
     associados = db.relationship('User', backref=db.backref('admin', remote_side=[id]), lazy='dynamic')
 
     # Tickets onde o user é autor
-    tickets = db.relationship(
-        'Ticket',
-        backref='author',
-        lazy='dynamic',
-        cascade="all, delete-orphan",
-        foreign_keys='Ticket.user_id'
-    )
+    tickets = db.relationship('Ticket', backref='author', lazy='dynamic',
+                              cascade="all, delete-orphan", foreign_keys='Ticket.user_id')
     # Tickets onde o user é delegado
-    delegated_tickets = db.relationship(
-        'Ticket',
-        backref='delegado_user',
-        lazy='dynamic',
-        foreign_keys='Ticket.delegado_id'
-    )
+    delegated_tickets = db.relationship('Ticket', backref='delegado_user', lazy='dynamic',
+                                        foreign_keys='Ticket.delegado_id')
 
     comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     attachments = db.relationship('Attachment', backref='author', lazy='dynamic')
@@ -43,6 +37,21 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_advogado_principal(self):
+        """Retorna o advogado principal deste usuário (sempre existe)"""
+        return self.advogados.filter_by(is_principal=True).first()
+
+    def get_advogados_colaboradores(self):
+        """
+        Para admin: retorna advogados colaboradores próprios.
+        Para associado: retorna advogados colaboradores do admin.
+        """
+        if self.is_admin:
+            return self.advogados.filter_by(is_principal=False).order_by(Advogado.nome).all()
+        elif self.admin_id and self.admin:
+            return self.admin.advogados.filter_by(is_principal=False).order_by(Advogado.nome).all()
+        return []
 
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -144,6 +153,7 @@ class Advogado(db.Model):
     cpf = db.Column(db.String(14), unique=True, nullable=False)
     rg = db.Column(db.String(20), nullable=True)
     orgao_emissor = db.Column(db.String(20), nullable=True)
+    oabs = db.Column(MutableList.as_mutable(PickleType), default=[], nullable=False)
     oab_pr = db.Column(db.String(20), nullable=True)
     oab_ro = db.Column(db.String(20), nullable=True)
     oab_sp = db.Column(db.String(20), nullable=True)
@@ -187,7 +197,6 @@ class Comentario(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     autor = db.relationship('User', backref='comentarios')
 
-from sqlalchemy import Numeric
 
 class LancamentoFinanceiro(db.Model):
     __tablename__ = "lancamento_financeiro"

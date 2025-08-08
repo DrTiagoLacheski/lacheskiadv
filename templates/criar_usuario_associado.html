@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4" style="max-width:650px;">
+    <h2 class="mb-4">Associados do Administrador</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Criar novo usuário associado</strong>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_associado.criar_usuario_associado') }}">
+                <input type="hidden" name="form_type" value="novo">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Nome de usuário</label>
+                    <input type="text" name="username" id="username" class="form-control" maxlength="64">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input type="email" name="email" id="email" class="form-control" maxlength="120">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" name="password" id="password" class="form-control" minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary">Criar e Associar Usuário</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Associar usuário já existente</strong>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_associado.criar_usuario_associado') }}">
+                <input type="hidden" name="form_type" value="existente">
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Usuário:</label>
+                    <select class="form-select" id="user_id" name="user_id" required>
+                        <option value="">Selecione...</option>
+                        {% for u in usuarios %}
+                            <option value="{{ u.id }}">{{ u.username }} ({{ u.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Associar Usuário Selecionado</button>
+            </form>
+        </div>
+    </div>
+
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Voltar</a>
+</div>
+{% endblock %}

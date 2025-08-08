@@ -8,28 +8,45 @@ user_bp = Blueprint('user', __name__, url_prefix='/usuario')
 @login_required
 def editar_usuario(user_id):
     usuario = User.query.get_or_404(user_id)
+    pode_editar_nome = current_user.id == usuario.id or (current_user.is_admin and (usuario.admin_id == current_user.id or usuario.is_admin))
     # Permite editar apenas o próprio usuário ou admin
-    if current_user.id != usuario.id and not current_user.is_admin:
+    if not pode_editar_nome:
         flash('Você não tem permissão para editar este usuário.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
 
     if request.method == 'POST':
+        novo_username = request.form.get('username', '').strip()
         senha = request.form.get('password')
         senha_confirmacao = request.form.get('password_confirm')
-        # Validação mínima de senha
-        if not senha or not senha_confirmacao:
-            flash('Por favor, preencha os dois campos de senha.', 'danger')
-            return redirect(url_for('user.editar_usuario', user_id=user_id))
-        if senha != senha_confirmacao:
-            flash('As senhas não conferem.', 'danger')
-            return redirect(url_for('user.editar_usuario', user_id=user_id))
-        if len(senha) < 6:
-            flash('A senha deve ter pelo menos 6 caracteres.', 'danger')
-            return redirect(url_for('user.editar_usuario', user_id=user_id))
-        usuario.set_password(senha)
-        db.session.commit()
-        flash('Senha alterada com sucesso!', 'success')
-        return redirect(url_for('dashboard.dashboard'))
+        alterou = False
+
+        # Editar nome de usuário
+        if novo_username and novo_username != usuario.username:
+            # Verifica se o username está disponível
+            if User.query.filter(User.username == novo_username, User.id != usuario.id).first():
+                flash('Este nome de usuário já está em uso.', 'danger')
+                return redirect(url_for('user.editar_usuario', user_id=user_id))
+            usuario.username = novo_username
+            alterou = True
+
+        # Editar senha
+        if senha or senha_confirmacao:
+            if not senha or not senha_confirmacao:
+                flash('Por favor, preencha os dois campos de senha.', 'danger')
+                return redirect(url_for('user.editar_usuario', user_id=user_id))
+            if senha != senha_confirmacao:
+                flash('As senhas não conferem.', 'danger')
+                return redirect(url_for('user.editar_usuario', user_id=user_id))
+            if len(senha) < 6:
+                flash('A senha deve ter pelo menos 6 caracteres.', 'danger')
+                return redirect(url_for('user.editar_usuario', user_id=user_id))
+            usuario.set_password(senha)
+            alterou = True
+
+        if alterou:
+            db.session.commit()
+            flash('Dados alterados com sucesso!', 'success')
+            return redirect(url_for('dashboard.dashboard'))
 
     # Adiciona consulta dos advogados do usuário
     advogados = usuario.advogados.order_by(Advogado.id).all()
