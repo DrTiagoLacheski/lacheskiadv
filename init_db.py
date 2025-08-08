@@ -8,14 +8,16 @@ from ferramentas.config import DADOS_ADVOGADOS
 def format_oabs(adv_data):
     """
     Recebe um dict de dados de OABs, retorna lista [{'numero': ...}]
-    Exemplo: {'pr': '12345/PR', 'ro': '88888/RO', 'sp': '99999/SP'}
+    Exemplo: {'pr': '12345', 'ro': '88888', 'sp': '99999'}
     Resultado: [{'numero': '12345/PR'}, ...]
     """
     oabs = []
     oab_dict = adv_data.get('oab', {})
     for uf_key, numero in oab_dict.items():
         if numero:
-            oabs.append({'numero': numero})
+            uf = uf_key.upper()
+            numero_limpo = str(numero).split("/")[0].strip()
+            oabs.append({'numero': f"{numero_limpo}/{uf.upper()}"})
     return oabs
 
 def initialize_database():

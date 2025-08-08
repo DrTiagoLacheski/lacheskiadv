@@ -68,9 +68,7 @@ def criar_usuario_associado():
             cpf="000.000.000-00",
             rg="",
             orgao_emissor="",
-            oab_pr="",
-            oab_ro="",
-            oab_sp="",
+            oabs=[],
             endereco_profissional="Não informado",
             is_principal=True
         )

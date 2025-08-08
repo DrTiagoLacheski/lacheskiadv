@@ -31,7 +31,8 @@ def oab_valida(oab):
     if not oab:
         return False
     oab = str(oab).strip()
-    return bool(re.fullmatch(r"\d{4,6}/[A-Z]{2}", oab))
+    # Aceita números simples, com ponto, e com UF
+    return bool(re.fullmatch(r"(\d{2,3}\.\d{3}|\d{4,6})(/[A-Z]{2})?", oab))
 
 
 
@@ -77,7 +78,7 @@ def _get_qualificacao_advogado_parts(advogado):
 
 # --- FUNÇÃO PRINCIPAL DE GERAÇÃO DO PDF (COM A CORREÇÃO) ---
 
-def gerar_procuracao_pdf(dados_cliente, current_user):
+def gerar_procuracao_pdf(dados_cliente, current_user, advogado_colaborador=None):
     """
     Gera o arquivo PDF da procuração com base nos dados do cliente usando ReportLab.
     Recebe 'current_user' para garantir que apenas os advogados corretos sejam usados.

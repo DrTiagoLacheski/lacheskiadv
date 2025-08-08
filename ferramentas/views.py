@@ -512,3 +512,29 @@ def download_arquivo(arquivo_id):
         as_attachment=True,
         download_name=arquivo.nome
     )
+
+@ferramentas_bp.route('/oabs')
+@login_required
+def exibir_oabs():
+    """
+    Rota para exibir as OABs de todos advogados do usuário logado.
+    Mostra uma lista simples em HTML.
+    """
+    advogados = current_user.advogados.order_by(Advogado.nome).all()
+    dados = []
+    for adv in advogados:
+        oabs = [oab["numero"] for oab in (adv.oabs or []) if oab.get("numero")]
+        dados.append({
+            "nome": adv.nome,
+            "oabs": oabs
+        })
+
+    # Renderiza como HTML simples
+    html = "<h2>OABs dos advogados do usuário</h2><ul>"
+    for adv in dados:
+        html += f"<li><strong>{adv['nome']}</strong>: " + ", ".join(adv["oabs"]) + "</li>"
+    html += "</ul>"
+    return html
+
+    # Se quiser como JSON, troque para:
+    # return jsonify(dados)
