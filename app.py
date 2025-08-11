@@ -56,6 +56,7 @@ def create_app():
     from routes.admin_associado import admin_associado_bp
     from routes.user import user_bp
     from routes.notificacoes import notificacoes_bp
+    from routes.calendar_export_import import calendar_export_import_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -68,6 +69,7 @@ def create_app():
     app.register_blueprint(admin_associado_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(notificacoes_bp)
+    app.register_blueprint(calendar_export_import_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

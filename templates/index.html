@@ -4,26 +4,20 @@
 
 {% block styles %}
     {{ super() }}
-    {# Link para o Font Awesome para ícones #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
-    {# Link para o seu CSS customizado #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index_custom.css') }}">
-
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-
-    {# Estilo para a logo no cabeçalho #}
     <style>
         .header-logo {
-            max-width: 350px; /* Ajuste o tamanho conforme necessário */
+            max-width: 350px;
             height: auto;
-            margin-bottom: 10px; /* Espaço entre a logo e o subtítulo */
+            margin-bottom: 10px;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="container">
-
         {% if mensagem_negada %}
             <div class="alert alert-danger" role="alert" style="margin-top:20px;">
                 {{ mensagem_negada }}
@@ -31,7 +25,6 @@
         {% endif %}
 
         <header class="header">
-            {# Título H1 substituído pela imagem da logo #}
             <img src="{{ url_for('static', filename='images/logolacheski.png') }}" alt="Logo Lacheski Advocacia" class="header-logo">
             <p>Portal de Ferramentas e Gerenciamento</p>
         </header>
@@ -49,31 +42,39 @@
                 <div class="calendar-days" id="calendar-days"></div>
             </div>
 
-
-<div class="appointments-card" id="appointments-card">
-    <div class="d-flex justify-content-between align-items-center">
-        <h3>Compromissos do Dia</h3>
-        <div class="d-flex gap-2">
-            <!-- NOVO BOTÃO "EXCLUIR TODOS" -->
-            <button id="delete-all-btn" class="btn btn-danger btn-sm">
-                <i class="bi bi-trash3-fill"></i> Excluir Todos
-            </button>
-
-            <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
-                    data-bs-toggle="modal" data-bs-target="#appointmentModal">
-                 <i class="bi bi-plus-lg"></i>
-            </button>
-
-            <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle">
-                 <i class="bi bi-gear-fill"></i>
-            </button>
-        </div>
-    </div>
-    <div id="appointment-list">
-        <!-- ... -->
-    </div>
-
-</div>
+            <div class="appointments-card" id="appointments-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>Compromissos do Dia</h3>
+                    <div class="d-flex gap-2">
+                        <button id="delete-all-btn" class="btn btn-danger btn-sm edit-only">
+                            <i class="bi bi-trash3-fill"></i> Excluir Todos
+                        </button>
+                        <button id="export-calendar-btn" class="btn btn-outline-success btn-sm edit-only">
+                            <i class="fa-solid fa-calendar-arrow-down"></i> Exportar Agendamentos
+                        </button>
+                        <form id="importCalendarForm" method="POST"
+                              action="{{ url_for('calendar_export_import.import_calendar_appointments') }}"
+                              enctype="multipart/form-data" style="display:inline;">
+                            <input type="file" id="importCalendarInput" name="calendar_zip" accept=".zip"
+                                   style="display: none;" required>
+                            <button class="btn btn-outline-primary btn-sm edit-only" type="button"
+                                    id="import-calendar-btn">
+                                <i class="fa-solid fa-calendar-arrow-up"></i> Importar Agendamentos
+                            </button>
+                        </form>
+                        <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
+                                data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                        <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle">
+                            <i class="bi bi-gear-fill"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="appointment-list">
+                    <!-- ... -->
+                </div>
+            </div>
         </div>
 
         <div class="main-options">
@@ -141,7 +142,6 @@
               </form>
           </div>
 
-
           <div class="modal-footer justify-content-between">
             <button type="button" class="btn btn-danger" id="delete-appointment-modal-btn">Excluir</button>
             <div>
@@ -160,6 +160,5 @@
 
 {% block scripts %}
     {{ super() }}
-    {# Agora, toda a lógica interativa da página está neste arquivo externo #}
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

@@ -109,6 +109,10 @@
 .appointments-card.edit-mode-active #delete-all-btn {
     display: block;
 }
+/* Esconde elementos com .edit-hide no modo de edição */
+.appointments-card.edit-mode-active .edit-hide {
+    display: none !important;
+}
 
 /* Compromissos vindos da TRIAGEM: lilás */
 .appointment-item.from-triagem {
@@ -190,4 +194,13 @@
 .appointment-item.remarcada {
     background-color: #ffe4c2 !important;
     border-left: 5px solid #d14606 !important;
+}
+
+/* Esconde por padrão */
+.edit-only {
+    display: none !important;
+}
+/* Mostra só no modo edição */
+.appointments-card.edit-mode-active .edit-only {
+    display: inline-block !important;
 }

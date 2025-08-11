@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
         FORM_PRIORITY: '#appointment-priority',
         FORM_RECURRING: '#appointment-recurring',
         ADD_BTN: '#add-appointment-btn',
+        EXPORT_CALENDAR_BTN: '#export-calendar-btn',
+        IMPORT_CALENDAR_BTN: '#import-calendar-btn',
+        IMPORT_CALENDAR_INPUT: '#importCalendarInput',
+        IMPORT_CALENDAR_FORM: '#importCalendarForm',
     };
 
     const CSS_CLASSES = {
@@ -58,6 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
         appointmentPriorityInput: document.querySelector(SELECTORS.FORM_PRIORITY),
         appointmentRecurringInput: document.querySelector(SELECTORS.FORM_RECURRING),
         addAppointmentBtn: document.querySelector(SELECTORS.ADD_BTN),
+        exportCalendarBtn: document.querySelector(SELECTORS.EXPORT_CALENDAR_BTN),
+        importCalendarBtn: document.querySelector(SELECTORS.IMPORT_CALENDAR_BTN),
+        importCalendarInput: document.querySelector(SELECTORS.IMPORT_CALENDAR_INPUT),
+        importCalendarForm: document.querySelector(SELECTORS.IMPORT_CALENDAR_FORM),
     };
 
     const appointmentModal = new bootstrap.Modal(dom.appointmentModalEl);
@@ -341,6 +349,28 @@ document.addEventListener('DOMContentLoaded', function() {
             dom.appointmentRecurringInput.checked = false;
             appointmentModal.show();
         });
+
+        // Exportação dos appointments do calendário
+        if (dom.exportCalendarBtn) {
+            dom.exportCalendarBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                // Download via link (ZIP file from Flask)
+                window.location.href = '/export_calendar_appointments';
+            });
+        }
+
+        // Importação dos appointments do calendário
+        if (dom.importCalendarBtn && dom.importCalendarInput && dom.importCalendarForm) {
+            dom.importCalendarBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                dom.importCalendarInput.click();
+            });
+            dom.importCalendarInput.addEventListener('change', function (e) {
+                if (this.files.length > 0) {
+                    dom.importCalendarForm.submit();
+                }
+            });
+        }
     };
 
     // --- INICIALIZAÇÃO ---
