@@ -140,6 +140,7 @@ class TodoItem(db.Model):
     was_rescheduled = db.Column(db.Boolean, default=False, nullable=False)
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
     priority = db.Column(db.String(20), default='Normal')
+    time = db.Column(db.String(8), nullable=True)
 
     def __repr__(self):
         return f'<TodoItem {self.id}: {self.content[:20]}>'

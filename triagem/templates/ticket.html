@@ -222,9 +222,11 @@
             </div>
             {% if current_user.is_admin or ticket.user_id == current_user.id or ticket.delegado.id == current_user.id %}
                 <form id="addTodoForm" class="d-flex gap-2 mt-3">
+                    <input type="time" id="newTodoTime" class="form-control"> <!-- NOVO -->
                     <input type="text" id="newTodoContent" class="form-control" placeholder="Adicionar nova tarefa..."
                            required>
                     <input type="date" id="newTodoDate" class="form-control">
+
                     <select id="newTodoPriority" class="form-select">
                         <option value="Normal" selected>Normal</option>
                         <option value="Importante">Importante</option>
@@ -271,52 +273,5 @@
 
 <script src="{{ url_for('ticket.static', filename='js/ticket.js') }}"></script>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script>
-let quillReport = null;
 
-function enableReportEdit() {
-    document.getElementById('reportView').classList.add('d-none');
-    const editForm = document.getElementById('reportEditForm');
-    editForm.classList.remove('d-none');
-    if (!quillReport) {
-        quillReport = new Quill('#quill-editor', {
-            theme: 'snow',
-            placeholder: 'Digite o relatório do caso...',
-            modules: {
-                toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['link', 'blockquote', 'code-block'],
-                    ['clean']
-                ]
-            }
-        });
-    }
-    quillReport.root.innerHTML = {{ ticket.description|tojson|safe }};
-
-    setTimeout(function() {
-        const quillBox = document.getElementById('quill-editor');
-        if (quillBox) {
-            quillBox.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-    }, 120);
-}
-
-function cancelReportEdit() {
-    document.getElementById('reportView').classList.remove('d-none');
-    document.getElementById('reportEditForm').classList.add('d-none');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const reportForm = document.getElementById('reportEditForm');
-    if (reportForm) {
-        reportForm.addEventListener('submit', function(e) {
-            if (quillReport) {
-                document.getElementById('reportEdit').value = quillReport.root.innerHTML;
-            }
-        });
-    }
-});
-</script>
 {% endblock %}

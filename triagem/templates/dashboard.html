@@ -46,8 +46,12 @@
 <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex gap-2">
         {% if current_user.is_admin %}
+
             <a href="{{ url_for('ticket.create_ticket') }}" class="btn btn-primary">Novo Caso</a>
             <!-- Botão Importar ZIP ajustado -->
+            <a href="{{ url_for('ticket_export_import.export_all_zip') }}" class="btn btn-outline-success">
+                <i class="bi bi-download"></i> Exportar Todos os Casos (.ZIP)
+            </a>
             <form id="importZipForm" method="POST" action="{{ url_for('ticket_export_import.import_ticket_zip') }}"
                   enctype="multipart/form-data" style="display:inline;">
                 <input type="file" id="importZipInput" name="ticket_zip" accept=".zip" style="display: none;" required>

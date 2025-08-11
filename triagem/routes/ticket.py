@@ -77,7 +77,7 @@ def create_ticket():
         new_ticket = Ticket(
             title=title.upper(),
             description=description,
-            case_number=case_number,
+            case_number=case_number.upper(),
             priority=priority,
             user_id=current_user.id,
             delegado_id=delegado_id,
@@ -396,11 +396,12 @@ def reorder_attachments(ticket):
 def add_todo(ticket):
     data = request.get_json()
     content = data.get('content')
-    priority = data.get('priority', 'Normal')  # NOVO
+    priority = data.get('priority', 'Normal')
     date_str = data.get('date')
+    time_str = data.get('time')  # NOVO
+
     if not content:
         return jsonify({'success': False, 'error': 'Content is required'}), 400
-
 
     todo_date = None
     if date_str:
@@ -411,10 +412,14 @@ def add_todo(ticket):
         if todo_date < datetime.utcnow().date():
             return jsonify({'success': False, 'error': 'A data não pode ser no passado.'}), 400
 
+    # NOVO: Salvar o horário na tarefa
+    todo_time = time_str if time_str else None
+
     last_todo = TodoItem.query.filter_by(ticket_id=ticket.id).order_by(TodoItem.position.desc()).first()
     next_position = (last_todo.position + 1) if last_todo else 0
 
-    new_todo = TodoItem(content=content, ticket_id=ticket.id, date=todo_date, priority=priority)  # NOVO
+    # Adicione o campo "time" ao modelo TodoItem se ainda não existir!
+    new_todo = TodoItem(content=content, ticket_id=ticket.id, date=todo_date, time=todo_time, priority=priority)
 
     db.session.add(new_todo)
     db.session.flush()
@@ -434,9 +439,9 @@ def add_todo(ticket):
             appointment = Appointment(
                 content=f"Tarefa: {content} (Caso #{ticket.id})",
                 appointment_date=todo_date,
-                appointment_time="--:--",
+                appointment_time=todo_time if todo_time else "--:--",  # NOVO
                 user_id=uid,
-                priority=priority,  # NOVO
+                priority=priority,
                 todo_id=new_todo.id,
                 source='triagem'
             )
@@ -450,6 +455,7 @@ def add_todo(ticket):
             'content': new_todo.content,
             'is_completed': new_todo.is_completed,
             'date': new_todo.date.strftime("%Y-%m-%d") if new_todo.date else None,
+            'time': new_todo.time if new_todo.time else None,  # NOVO
             'priority': new_todo.priority
         }
     }), 201

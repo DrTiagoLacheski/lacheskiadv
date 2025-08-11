@@ -7,15 +7,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // URLs do data-set, incluindo a nova para reordenar tarefas
+    // URLs do data-set
     const reorderUrl = ticketContainer.dataset.reorderUrl;
     const renameUrl = ticketContainer.dataset.renameUrl;
     const addTodoUrl = ticketContainer.dataset.addTodoUrl;
     const updateTodoUrlBase = ticketContainer.dataset.updateTodoUrlBase;
     const deleteTodoUrlBase = ticketContainer.dataset.deleteTodoUrlBase;
-    const reorderTodosUrl = ticketContainer.dataset.reorderTodosUrl; // URL para reordenar a checklist
+    const reorderTodosUrl = ticketContainer.dataset.reorderTodosUrl;
 
-    // ---- LÓGICA PARA REORDENAR ANEXOS ----
+    // ---- REORDENAÇÃO DE ANEXOS ----
     const attachmentsList = document.getElementById('attachmentsList');
     if (attachmentsList && typeof Sortable !== 'undefined') {
         new Sortable(attachmentsList, {
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LÓGICA PARA EDIÇÃO IN-PLACE DO NOME DO ANEXO ----
+    // ---- EDIÇÃO DE NOME DE ANEXO ----
     if (attachmentsList) {
         const toggleEditMode = (filenameSpan, showEditForm) => {
             const form = filenameSpan.nextElementSibling;
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LÓGICA PARA UPLOAD AUTOMÁTICO DE ANEXOS ----
+    // ---- UPLOAD AUTOMÁTICO DE ANEXOS ----
     const addAttachmentForm = document.getElementById('addAttachmentForm');
     if (addAttachmentForm) {
         const fileInput = document.getElementById('ticket_attachments');
@@ -124,35 +124,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LÓGICA PARA O CHECKLIST (TO-DO LIST) ----
+    // ---- CHECKLIST DE TAREFAS (TO-DO) ----
     const todoListContainer = document.getElementById('todoListContainer');
     const addTodoForm = document.getElementById('addTodoForm');
     let newTodoContentInput = null;
     let newTodoDateInput = null;
-
+    let newTodoTimeInput = null;
     let newTodoPriorityInput = null;
-
 
     if (addTodoForm) {
         newTodoContentInput = document.getElementById('newTodoContent');
         newTodoDateInput = document.getElementById('newTodoDate');
+        newTodoTimeInput = document.getElementById('newTodoTime');
         newTodoPriorityInput = document.getElementById('newTodoPriority');
-        // Definir min para hoje no campo de data, mas não preencher valor por padrão
+        // Definir min para hoje no campo de data
         if (newTodoDateInput) {
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             newTodoDateInput.min = `${yyyy}-${mm}-${dd}`;
-            newTodoDateInput.value = ''; // Não preencher o valor por padrão
+            newTodoDateInput.value = '';
+        }
+        if (newTodoTimeInput) {
+            newTodoTimeInput.value = '';
         }
     }
 
-    // --- INICIALIZA A REORDENAÇÃO DA CHECKLIST ---
+    // --- REORDENAÇÃO DA CHECKLIST ---
     if (todoListContainer && typeof Sortable !== 'undefined') {
         new Sortable(todoListContainer, {
             animation: 150,
-            handle: '.todo-item', // Permite arrastar pelo item inteiro
+            handle: '.todo-item',
             ghostClass: 'sortable-ghost',
             onEnd: function() {
                 const items = todoListContainer.querySelectorAll('.todo-item');
@@ -175,18 +178,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (addTodoForm) {
-        // Adicionar uma nova tarefa com data opcional
+        // Adicionar uma nova tarefa com data e horário opcional
         addTodoForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const content = newTodoContentInput.value.trim();
             const date = newTodoDateInput ? newTodoDateInput.value : '';
-            const priority = newTodoPriorityInput ? newTodoPriorityInput.value : 'Normal'; // NOVO
+            const time = newTodoTimeInput ? newTodoTimeInput.value : '';
+            const priority = newTodoPriorityInput ? newTodoPriorityInput.value : 'Normal';
 
             if (!content) return;
-            // Só faz validação se o usuário preencheu a data
-
-
-
             if (date) {
                 const selected = new Date(date + 'T00:00:00');
                 const now = new Date();
@@ -196,16 +196,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             }
-            // Monta o objeto só com content ou content+date
+            // Monta o objeto, incluindo data e horário se existirem
             const body = { content, priority };
             if (date) body.date = date;
+            if (time) body.time = time;
+
             try {
                 const response = await fetch(addTodoUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                // Aqui começa o tratamento seguro da resposta
                 const contentType = response.headers.get("content-type");
                 if (!response.ok) {
                     const text = await response.text();
@@ -218,14 +219,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     const text = await response.text();
                     throw new Error("Resposta não é JSON: " + text);
                 }
-                // Fim do tratamento seguro
-
                 if (result.success) {
                     document.getElementById('no-todos-message')?.remove();
                     const todoItemEl = createTodoElement(result.todo);
                     todoListContainer.appendChild(todoItemEl);
                     newTodoContentInput.value = '';
                     if (newTodoDateInput) newTodoDateInput.value = '';
+                    if (newTodoTimeInput) newTodoTimeInput.value = '';
                 } else {
                     throw new Error(result.error || 'Falha ao adicionar tarefa.');
                 }
@@ -235,14 +235,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Atualizar (marcar/desmarcar) e Deletar tarefas
+        // Atualizar e Deletar tarefas
         todoListContainer.addEventListener('click', async (e) => {
             const todoItem = e.target.closest('.todo-item');
             if (!todoItem) return;
 
             const todoId = todoItem.dataset.id;
 
-            // Se clicou no checkbox
+            // Checkbox
             if (e.target.matches('.form-check-input')) {
                 const isCompleted = e.target.checked;
                 todoItem.classList.toggle('completed', isCompleted);
@@ -253,20 +253,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                     .then(response => response.json())
                     .then(data => {
-                        // Atualiza o risco na agenda do dia
                         updateAppointmentStrike(todoId, isCompleted);
                     })
                     .catch(err => console.error("Falha ao atualizar tarefa:", err));
             }
 
-            // Se clicou no botão de deletar
+            // Botão deletar
             if (e.target.closest('.delete-todo-btn')) {
                 e.preventDefault();
                 if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
                     todoItem.style.opacity = '0.5';
                     try {
                         const response = await fetch(`${deleteTodoUrlBase}/${todoId}/delete`, { method: 'POST' });
-                        // Tratamento seguro para deleção também:
                         const contentType = response.headers.get("content-type");
                         let result;
                         if (contentType && contentType.includes("application/json")) {
@@ -301,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <label class="form-check-label" for="todo-${todo.id}">
             ${escapeHTML(todo.content)}
             ${todo.date ? `<span class="badge bg-info text-dark ms-2">${formatDateBR(todo.date)}</span>` : ""}
+            ${todo.time ? `<span class="badge bg-secondary text-dark ms-2">${escapeHTML(todo.time)}</span>` : ""}
             ${todo.priority ? `<span class="badge bg-warning text-dark ms-2">${escapeHTML(todo.priority)}</span>` : ""}
         </label>
         <button class="btn btn-xs btn-outline-danger delete-todo-btn">
@@ -315,14 +314,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatDateBR(dateStr) {
-        // Espera yyyy-mm-dd, retorna dd/mm/yyyy
         if (!dateStr) return '';
         const [y, m, d] = dateStr.split('-');
         return `${d}/${m}/${y}`;
     }
 
     function updateAppointmentStrike(todoId, isCompleted) {
-        // Procura pela agenda do dia (id "appointment-list") e aplica/remover risco
         const appointmentEl = document.querySelector(`.appointment-item[data-todo-id='${todoId}']`);
         if (!appointmentEl) return;
         if (isCompleted) {
@@ -331,7 +328,4 @@ document.addEventListener('DOMContentLoaded', function() {
             appointmentEl.classList.remove('completed');
         }
     }
-
-    // ---- FUNÇÕES PARA EDITAR O RELATÓRIO ----
-
 });
