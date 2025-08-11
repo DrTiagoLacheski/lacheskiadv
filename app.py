@@ -52,11 +52,13 @@ def create_app():
     from views import main_bp
     from ferramentas.views import ferramentas_bp
     from ferramentas.routes.recibo import recibo_bp
+    from ferramentas.routes.modelos_doc import admin_bp
     from routes.appointment import appointment_bp
     from routes.admin_associado import admin_associado_bp
     from routes.user import user_bp
     from routes.notificacoes import notificacoes_bp
     from routes.calendar_export_import import calendar_export_import_bp
+
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -70,6 +72,7 @@ def create_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(notificacoes_bp)
     app.register_blueprint(calendar_export_import_bp)
+    app.register_blueprint(admin_bp, url_prefix='/modelo_procuracao')
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

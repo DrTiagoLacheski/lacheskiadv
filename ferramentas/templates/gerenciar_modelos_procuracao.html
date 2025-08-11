@@ -1,0 +1,161 @@
+{% extends "base_m.html" %}
+
+{% block title %}Gerenciar Modelos de Procuração{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .modelos-list { margin-top: 24px; }
+        .modelo-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 22px; margin-bottom: 18px; }
+        .modelo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .modelo-nome { font-size: 1.12em; font-weight: 700; color: #2557a7; }
+        .modelo-conteudo { font-family: 'Roboto', monospace; font-size: 1em; background: #f7f7f7; border-radius: 6px; padding: 10px; margin-bottom: 8px; white-space: pre-line; }
+        .modelo-actions button,
+        .modelo-actions a { margin-right: 8px; }
+        .add-modelo-form { background: #f8f8fc; border-radius: 8px; padding: 22px; margin-bottom: 36px; box-shadow: 0 1px 6px rgba(44,62,80,0.05);}
+        .add-modelo-form label { font-weight: 600; }
+        .add-modelo-form textarea { font-size: 1em; font-family: 'Roboto', monospace; }
+        .preview-box { background: #fafafa; border: 1px dashed #bbb; border-radius: 6px; padding: 16px; margin-top: 8px; color: #333; font-size: 0.98em;}
+        .vars-list { margin:8px 0 0 0; padding: 0; }
+        .vars-list li { display: inline-block; background: #e3e9f7; color: #2557a7; border-radius: 6px; margin: 0 6px 6px 0; padding: 4px 12px; font-size:0.97em;}
+        .var-inserter { margin-bottom: 4px !important; margin-right: 4px !important; }
+        .output-sample { margin-top: 8px; padding: 12px; background: #f0f7ef; border-radius: 5px; color: #166b1d; font-size: 0.97em; border: 1px solid #d0e2d6; display:none; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <h1>Gerenciar Modelos de Procuração</h1>
+    <p>Crie, edite e exclua modelos de documentos para a geração de procurações personalizadas.</p>
+
+    <section>
+        <form method="POST" action="{{ url_for('admin.gerenciar_modelos_procuracao') }}" class="add-modelo-form" id="addModeloForm">
+            <h3>Criar Novo Modelo</h3>
+            <div class="form-group">
+                <label for="nome">Nome do Modelo:</label>
+                <input type="text" name="nome" id="nome" class="form-control" required maxlength="128">
+            </div>
+            <div class="form-group">
+                <label for="conteudo">Conteúdo do Modelo:</label>
+                <textarea name="conteudo" id="conteudo" rows="10" class="form-control" required placeholder="Exemplo: Eu, {{nome_completo}}, nomeio como procurador {{adv_principal_nome}} ..."></textarea>
+                <div style="margin:8px 0;">
+                    <strong>Insira variáveis:</strong>
+                    {% for var in variaveis %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary var-inserter" data-var="{{ var }}">{{ "{{" }}{{ var }}{{ "}}" }}</button>
+                    {% endfor %}
+                </div>
+                <small>
+                    Use variáveis do formulário acima. Não é necessário usar HTML, o sistema formata automaticamente.
+                </small>
+                <div id="outputSample" class="output-sample"></div>
+            </div>
+            <button type="button" id="btnPreview" class="btn btn-outline-info">Visualizar Modelo</button>
+            <button type="submit" class="btn btn-success">Salvar Modelo</button>
+            <div id="preview" class="preview-box" style="display:none;"></div>
+        </form>
+    </section>
+
+    <hr>
+
+    <section class="modelos-list">
+        <h3>Modelos Cadastrados</h3>
+        {% if modelos %}
+            {% for modelo in modelos %}
+                <div class="modelo-card">
+                    <div class="modelo-header">
+                        <span class="modelo-nome">{{ modelo.nome }}</span>
+                        <div class="modelo-actions">
+                            <a href="{{ url_for('admin.editar_modelo_procuracao', modelo_id=modelo.id) }}" class="btn btn-sm btn-primary">Editar</a>
+                            <form method="POST" action="{{ url_for('admin.excluir_modelo_procuracao', modelo_id=modelo.id) }}" style="display:inline;" onsubmit="return confirm('Excluir este modelo?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="modelo-conteudo">{{ modelo.conteudo }}</div>
+                    <div class="text-muted" style="font-size:0.92em;">
+                        Criado por: {{ modelo.criado_por.username }} em {{ modelo.data_criacao.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Nenhum modelo cadastrado ainda.</p>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        // Preview do modelo usando dados fictícios
+        document.getElementById('btnPreview').onclick = function() {
+            var conteudo = document.getElementById('conteudo').value;
+            var preview = document.getElementById('preview');
+            preview.innerHTML = "<span style='color:gray;'>Carregando preview...</span>";
+            preview.style.display = 'block';
+            fetch("{{ url_for('admin.preview_modelo_procuracao') }}", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                body: "conteudo=" + encodeURIComponent(conteudo)
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                preview.innerHTML = "<b>Preview:</b><br>" + data.preview;
+            })
+            .catch(() => {
+                preview.innerHTML = "<span style='color:red;'>Erro ao gerar preview.</span>";
+            });
+        };
+
+        // Inserção de variáveis no textarea + mostra amostra do resultado esperado
+        document.querySelectorAll('.var-inserter').forEach(function(btn){
+            btn.onclick = function(){
+                var ta = document.getElementById('conteudo');
+                var text = ta.value;
+                var start = ta.selectionStart;
+                var end = ta.selectionEnd;
+                // CORRIGIDO: Use string JS pura para inserir o texto literal {{variavel}}
+                var varTxt = "{\u007B" + btn.dataset.var + "\u007D}";
+                ta.value = text.substring(0, start) + varTxt + text.substring(end);
+                ta.focus();
+                ta.selectionStart = ta.selectionEnd = start + varTxt.length;
+
+                // Mostra saída de amostra
+                showOutputSample(btn.dataset.var);
+            }
+        });
+
+        // Função para mostrar amostra da saída de cada variável
+        function showOutputSample(variable) {
+            var outputSample = document.getElementById('outputSample');
+            var outputs = {
+                nome_completo: "João da Silva",
+                estado_civil: "Solteiro(a)",
+                profissao: "Advogado",
+                cpf: "123.456.789-00",
+                rg: "12.345.678-9",
+                endereco: "Rua das Flores, 100, Centro, Cidade/UF",
+                adv_principal_nome: "Maria Advogada",
+                adv_principal_estado_civil: "Casada",
+                adv_principal_profissao: "Advogada",
+                adv_principal_cpf: "999.888.777-66",
+                adv_principal_rg: "11.222.333-4",
+                adv_principal_orgao_emissor: "SSP/SP",
+                adv_principal_endereco_profissional: "Av. Central, 100, Cidade/UF",
+                adv_principal_oabs: "OAB n.º 12345/SP, OAB n.º 54321/RJ",
+                adv_colab_nome: "Carlos Colaborador",
+                adv_colab_estado_civil: "Solteiro",
+                adv_colab_profissao: "Advogado",
+                adv_colab_cpf: "111.222.333-44",
+                adv_colab_rg: "22.333.444-5",
+                adv_colab_orgao_emissor: "SSP/RJ",
+                adv_colab_endereco_profissional: "Rua Nova, 200, Cidade/UF",
+                adv_colab_oabs: "OAB n.º 98765/SP"
+            };
+            var sample = outputs[variable] ? outputs[variable] : "Exemplo";
+            outputSample.innerHTML = "<strong>Exemplo de saída para <code>{{" + variable + "}}</code>:</strong> " + sample;
+            outputSample.style.display = "block";
+        }
+    </script>
+{% endblock %}

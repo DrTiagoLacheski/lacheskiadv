@@ -9,16 +9,28 @@
 
 {% block content %}
     <header class="header">
-        {# CORREÇÃO: O título agora reflete que é para Pessoa Física #}
         <h1>GERADOR DE PROCURAÇÃO - PESSOA FÍSICA</h1>
         <p>Preencha os dados do outorgante (Pessoa Física):</p>
     </header>
 
+    <a href="{{ url_for('admin.gerenciar_modelos_procuracao') }}" class="btn btn-info" style="margin-bottom: 18px;">
+        <i class="bi bi-card-list"></i> Gerenciar Modelos de Procuração
+    </a>
+
     <form id="procuracaoForm" class="form" data-action="{{ url_for('ferramentas.gerar_procuracao_route') }}">
-        <!-- Campo oculto para enviar o tipo de outorgante ao backend -->
         <input type="hidden" id="tipo_outorgante" name="tipo_outorgante" value="fisica">
 
-        <!-- Formulário para Pessoa Física -->
+        <!-- Escolher modelo de procuração -->
+        <div class="form-group">
+            <label for="modelo_id">Modelo de Procuração:</label>
+            <select id="modelo_id" name="modelo_id" class="form-select" required>
+                <option value="" disabled selected>-- Escolha o modelo --</option>
+                {% for modelo in modelos_procuracao %}
+                    <option value="{{ modelo.id }}">{{ modelo.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
         <div id="form-pessoa-fisica">
             <div class="form-group">
                 <label for="nome_completo">Nome completo:</label>
@@ -100,6 +112,5 @@
 
 {% block scripts %}
     {{ super() }}
-    <!-- O script agora é carregado do arquivo central, não mais daqui -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 {% endblock %}

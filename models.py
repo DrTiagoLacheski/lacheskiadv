@@ -213,3 +213,12 @@ class LancamentoFinanceiro(db.Model):
 
     def __repr__(self):
         return f"<LancamentoFinanceiro {self.id} - {self.tipo} - {self.valor}>"
+
+#poder criar seus prorios modelos de formulario
+class ProcuracaoModelo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(128), nullable=False)
+    conteudo = db.Column(db.Text, nullable=False)  # Exemplo: texto com tags {{nome_completo}}, {{cpf}}, etc.
+    criado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    criado_por = db.relationship('User', backref='modelos_procuracao')
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)

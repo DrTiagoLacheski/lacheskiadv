@@ -1,0 +1,75 @@
+{% extends "base_m.html" %}
+
+{% block title %}Editar Modelo de Procuração{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .edit-modelo-form { background: #f8f8fc; border-radius: 8px; padding: 22px; margin-bottom: 36px; box-shadow: 0 1px 6px rgba(44,62,80,0.05);}
+        .edit-modelo-form label { font-weight: 600; }
+        .edit-modelo-form textarea { font-size: 1em; font-family: 'Roboto', monospace; }
+        .preview-box { background: #fafafa; border: 1px dashed #bbb; border-radius: 6px; padding: 16px; margin-top: 8px; color: #333; font-size: 0.98em;}
+        .vars-list { margin:8px 0 0 0; padding: 0; }
+        .vars-list li { display: inline-block; background: #e3e9f7; color: #2557a7; border-radius: 6px; margin: 0 6px 6px 0; padding: 4px 12px; font-size:0.97em;}
+    </style>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <h1>Editar Modelo de Procuração</h1>
+    <p>Altere os campos necessários e salve o modelo:</p>
+
+    <section>
+        <form method="POST" action="{{ url_for('admin.editar_modelo_procuracao', modelo_id=modelo.id) }}" class="edit-modelo-form" id="editModeloForm">
+            <div class="form-group">
+                <label for="nome">Nome do Modelo:</label>
+                <input type="text" name="nome" id="nome" class="form-control" required maxlength="128" value="{{ modelo.nome }}">
+            </div>
+            <div class="form-group">
+                <label for="conteudo">Conteúdo do Modelo:</label>
+                <textarea name="conteudo" id="conteudo" rows="12" class="form-control" required>{{ modelo.conteudo }}</textarea>
+                <small>
+                    {% raw %}
+                        Use apenas as variáveis permitidas:
+                    {% endraw %}
+                </small>
+                <ul class="vars-list">
+                    {% for var in variaveis %}
+                        <li>{{ "{{" }}{{ var }}{{ "}}" }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <button type="button" id="btnPreview" class="btn btn-outline-info">Visualizar Modelo</button>
+            <button type="submit" class="btn btn-success">Salvar Alterações</button>
+            <a href="{{ url_for('admin.gerenciar_modelos_procuracao') }}" class="btn btn-secondary">Voltar</a>
+            <div id="preview" class="preview-box" style="display:none;"></div>
+        </form>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        // Preview do modelo usando dados fictícios
+        document.getElementById('btnPreview').onclick = function() {
+            var conteudo = document.getElementById('conteudo').value;
+            var preview = document.getElementById('preview');
+            preview.innerHTML = "<span style='color:gray;'>Carregando preview...</span>";
+            preview.style.display = 'block';
+            fetch("{{ url_for('admin.preview_modelo_procuracao') }}", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                body: "conteudo=" + encodeURIComponent(conteudo)
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                preview.innerHTML = "<b>Preview:</b><br>" + data.preview;
+            })
+            .catch(() => {
+                preview.innerHTML = "<span style='color:red;'>Erro ao gerar preview.</span>";
+            });
+        };
+    </script>
+{% endblock %}

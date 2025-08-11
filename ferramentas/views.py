@@ -46,9 +46,13 @@ def index():
 @login_required
 def pagina_procuracao(tipo):
     colaboradores = get_advogados_colaboradores_disponiveis(current_user)
+    # Buscar todos os modelos cadastrados
+    from models import ProcuracaoModelo
+    modelos_procuracao = ProcuracaoModelo.query.order_by(ProcuracaoModelo.nome.asc()).all()
     return render_template(
         'procuracao_fisica.html' if tipo == 'fisica' else 'procuracao_juridica.html',
-        colaboradores=colaboradores
+        colaboradores=colaboradores,
+        modelos_procuracao=modelos_procuracao
     )
 
 
