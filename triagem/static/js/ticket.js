@@ -1,5 +1,7 @@
 // static/js/ticket.js
 
+let quillReportEditor = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const ticketContainer = document.getElementById('ticket-container');
     if (!ticketContainer) {
@@ -284,6 +286,45 @@ document.addEventListener('DOMContentLoaded', function() {
                         todoItem.style.opacity = '1';
                     }
                 }
+            }
+        });
+    }
+
+    // ---- RELATÓRIO DO CASO (QUILL EDITOR) ----
+    const quillEditorDiv = document.getElementById('quill-editor');
+    if (quillEditorDiv) {
+        quillReportEditor = new Quill('#quill-editor', { theme: 'snow' });
+    }
+
+    window.enableReportEdit = function () {
+        const reportView = document.getElementById('reportView');
+        const reportEditForm = document.getElementById('reportEditForm');
+        if (!reportView || !reportEditForm || !quillEditorDiv || !quillReportEditor) {
+            console.error('Elemento do editor não encontrado ou Quill não inicializado.');
+            return;
+        }
+        reportView.classList.add('d-none');
+        reportEditForm.classList.remove('d-none');
+        quillReportEditor.root.innerHTML = reportView.innerHTML;
+    };
+
+    window.cancelReportEdit = function() {
+        const reportView = document.getElementById('reportView');
+        const reportEditForm = document.getElementById('reportEditForm');
+        if (!reportView || !reportEditForm) return;
+        reportEditForm.classList.add('d-none');
+        reportView.classList.remove('d-none');
+    };
+
+    // Salvar o conteúdo do Quill antes do submit
+    const reportEditFormElem = document.getElementById('reportEditForm');
+    if (reportEditFormElem) {
+        reportEditFormElem.addEventListener('submit', function (e) {
+            if (quillReportEditor) {
+                let html = quillReportEditor.root.innerHTML;
+                // Remove parágrafos/divs vazios
+                html = html.replace(/<(p|div)>\s*(<br\s*\/?>)?\s*<\/(p|div)>/gi, '');
+                document.getElementById('reportEdit').value = html;
             }
         });
     }
