@@ -3,62 +3,15 @@
 {% block styles %}
     {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/financeiro.css') }}">
-    <style>
-    .modal-tabs { display: flex; border-bottom: 2px solid #dee2e6; }
-    .modal-tab {
-        flex: 1;
-        text-align: center;
-        padding: 14px 0;
-        cursor: pointer;
-        font-weight: 600;
-        background: none;
-        border: none;
-        font-size: 1.05rem;
-        color: var(--cor-texto-secundario);
-        transition: color 0.2s, border-bottom 0.2s;
-        border-bottom: 2px solid transparent;
-    }
-    .modal-tab.active {
-        color: var(--cor-primaria);
-        border-bottom: 2px solid var(--cor-primaria);
-        background: #f8f8f8;
-    }
-    .chart-title {
-        font-size: 1.15rem;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #2557a7;
-        text-align: center;
-        letter-spacing: 0.5px;
-    }
-    .chart-legend {
-        display: flex;
-        gap: 14px;
-        font-size: 0.95em;
-        margin: 6px 0 4px 0;
-        justify-content: center;
-    }
-    .chart-legend span {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-    .chart-legend-dot {
-        width: 14px; height: 14px; border-radius: 50%; display: inline-block;
-    }
-    .status { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
-    .status-previsto { background-color: #fff3cd; color: #856404; }
-    .status-recebido { background-color: #d4edda; color: #155724; }
-    .status-inadimplente { background-color: #f8d7da; color: #721c24; }
-    </style>
+
 {% endblock %}
 
 {% block content %}
 <main class="dashboard-container">
-    <header class="dashboard-header">
-        <h1>Dashboard Financeiro</h1>
-        <div class="header-controls">
-            <form class="date-filter-form" method="get" action="{{ url_for('main.financeiro') }}">
+    <header class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+        <h1 style="margin-bottom:12px;">Dashboard Financeiro</h1>
+        <div class="header-controls" style="display:flex;gap:18px;align-items:center;">
+            <form class="date-filter-form" method="get" action="{{ url_for('main.financeiro') }}" style="display:flex;gap:8px;align-items:center;">
                 <label for="start-date">De:</label>
                 <input type="date" id="start-date" name="start_date" value="{{ request.args.get('start_date','') }}">
                 <label for="end-date">Até:</label>
@@ -66,12 +19,14 @@
                 <button type="submit" class="btn">Filtrar</button>
             </form>
             <div class="actions-menu" id="actions-menu">
-                <button class="btn" id="add-receita-btn"><i class="fas fa-plus"></i> Nova Receita</button>
+                <button class="btn btn-primary btn-nova-receita" id="add-receita-btn">
+                    <i class="fas fa-plus"></i> Nova Receita
+                </button>
             </div>
         </div>
     </header>
 
-    <section class="kpi-grid">
+    <section class="kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px;">
         <div class="kpi-card recebido-card">
             <div class="icon icon-receita"><i class="fas fa-arrow-up"></i></div>
             <div>
@@ -95,8 +50,8 @@
         </div>
     </section>
 
-    <section class="charts-grid">
-        <div class="chart-container">
+    <section class="charts-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;">
+        <div class="chart-container" style="padding:16px 8px;">
             <div class="chart-title">Receitas por Status (Mensal)</div>
             <div class="chart-legend">
                 <span><span class="chart-legend-dot" style="background:#28a745"></span>Recebido</span>
@@ -105,7 +60,7 @@
             </div>
             <canvas id="receitasStatusChart"></canvas>
         </div>
-        <div class="chart-container">
+        <div class="chart-container" style="padding:16px 8px;">
             <div class="chart-title">Receitas por Status (Empilhado por Caso)</div>
             <div class="chart-legend">
                 <span><span class="chart-legend-dot" style="background:#28a745"></span>Recebido</span>
@@ -114,13 +69,13 @@
             </div>
             <canvas id="receitasPorCasoEmpilhadoChart"></canvas>
         </div>
-        <div class="chart-container">
+        <div class="chart-container" style="padding:16px 8px;">
             <div class="chart-title">Distribuição dos Inadimplentes por Caso</div>
             <canvas id="inadimplentesPorCasoPie"></canvas>
         </div>
     </section>
 
-    <section class="details-section">
+    <section class="details-section" style="padding:16px 0;">
         <h2 style="margin-bottom:18px;color:#2557a7;">Lançamentos Financeiros</h2>
         <table>
             <thead>
@@ -139,25 +94,25 @@
             <tbody>
             {% for l in lançamentos %}
             <tr>
-                <td>{{ l.tipo }}</td>
-                <td>{{ l.descricao }}</td>
-                <td class="{{ 'valor-entrada' if l.tipo == 'Entrada' else 'valor-saida' }}">R$ {{ ('%.2f' % l.valor).replace('.', ',') }}</td>
-                <td>
+                <td data-label="Tipo">{{ l.tipo }}</td>
+                <td data-label="Descrição">{{ l.descricao }}</td>
+                <td data-label="Valor" class="{{ 'valor-entrada' if l.tipo == 'Entrada' else 'valor-saida' }}">R$ {{ ('%.2f' % l.valor).replace('.', ',') }}</td>
+                <td data-label="Data Original">
                     {% if l.data_original %}
                         {{ l.data_original.strftime('%d/%m/%Y') }}
                     {% else %}
                         —
                     {% endif %}
                 </td>
-                <td>
+                <td data-label="Data Remarcada">
                     {% if l.data_original and l.data_original != l.data %}
                         {{ l.data.strftime('%d/%m/%Y') }}
                     {% else %}
                         —
                     {% endif %}
                 </td>
-                <td>{{ l.categoria }}</td>
-                <td>
+                <td data-label="Categoria">{{ l.categoria }}</td>
+                <td data-label="Caso">
                     {% if l.ticket %}
                         <a href="{{ url_for('ticket.view_ticket', ticket_id=l.ticket.id) }}"
                            style="color:#2557a7; text-decoration:underline" title="Ver caso">
@@ -167,8 +122,7 @@
                         -
                     {% endif %}
                 </td>
-
-                <td class="status-cell" data-lancamento-id="{{ l.id }}">
+                <td data-label="Status" class="status-cell" data-lancamento-id="{{ l.id }}">
     <span class="status-label">
         {% if l.status == 'Previsto' %}
             <span class="status status-previsto">Previsto</span>
@@ -186,7 +140,7 @@
                         <option value="Previsto" {% if l.status == 'Previsto' %}selected{% endif %}>Previsto</option>
                     </select>
                 </td>
-                <td>
+                <td data-label="Ações">
                     <form method="post" action="{{ url_for('main.excluir_lancamento', lancamento_id=l.id) }}"
                           style="display:inline;"
                           onsubmit="return confirm('Deseja realmente excluir este lançamento?');">
@@ -220,7 +174,7 @@
                 <label for="descricao">Descrição</label>
                 <input type="text" id="descricao" name="descricao" class="form-control" placeholder="Ex: Honorários do caso X" required>
             </div>
-            <div class="form-row">
+            <div class="form-row" style="display:flex;gap:12px;">
                 <div class="form-group">
                     <label for="valor">Valor</label>
                     <div class="input-with-icon">
@@ -243,7 +197,7 @@
             </div>
             <div class="form-group">
                 <label>Categoria</label>
-                <div class="category-pills" id="category-pills-receita">
+                <div class="category-pills" id="category-pills-receita" style="display:flex;gap:8px;">
                     <button type="button" class="pill" data-value="Honorários">Honorários</button>
                     <button type="button" class="pill" data-value="Consultoria">Consultoria</button>
                     <button type="button" class="pill" data-value="Outros">Outros</button>
@@ -266,7 +220,7 @@
                     Marcar como recebido agora
                 </label>
             </div>
-            <div class="form-actions">
+            <div class="form-actions" style="display:flex;gap:8px;">
                 <button type="button" class="btn btn-secondary close-button">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar Lançamento</button>
             </div>
@@ -282,18 +236,5 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/financeiro.js') }}"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            function toggleRecebidoCheckbox() {
-                var isReceita = document.getElementById('tipo-receita').checked;
-                var group = document.getElementById('marcar-recebido-group');
-                if (group) group.style.display = isReceita ? '' : 'none';
-            }
-            var tipoReceita = document.getElementById('tipo-receita');
-            if (tipoReceita) {
-                tipoReceita.addEventListener('change', toggleRecebidoCheckbox);
-                toggleRecebidoCheckbox();
-            }
-        });
-    </script>
+
 {% endblock %}

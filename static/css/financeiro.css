@@ -8,13 +8,21 @@
     --cor-texto-secundario: #7f8c8d;
     --sombra-card: 0 4px 15px rgba(0,0,0,0.07);
 }
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--cor-fundo);
     color: #333;
     margin: 0;
 }
-.dashboard-container { max-width: 1600px; margin: 20px auto; padding: 20px; }
+
+.dashboard-container {
+    max-width: 1600px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+/* --- HEADER --- */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -24,16 +32,59 @@ body {
     border-bottom: 1px solid #dee2e6;
     flex-wrap: wrap;
 }
-.dashboard-header h1 { font-size: 2rem; margin: 0; color: var(--cor-texto-principal); }
-.header-controls { display: flex; align-items: center; gap: 15px; }
+
+.dashboard-header h1 {
+    font-size: 2rem;
+    margin: 0;
+    color: var(--cor-texto-principal);
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
 
 /* --- FILTRO DE DATA --- */
-.date-filter-form { display: flex; align-items: center; gap: 10px; }
-.date-filter-form label { font-weight: 600; font-size: 0.9rem; }
-.date-filter-form input[type="date"], .date-filter-form .btn { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; }
+.date-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+}
 
-/* --- BOTÃO E DROPDOWN DE AÇÕES --- */
-.actions-menu { position: relative; }
+.date-filter-form label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.date-filter-form input[type="date"], .date-filter-form .btn {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* --- BOTÃO NOVA RECEITA DESTACADO --- */
+.btn-nova-receita {
+    background-color: #2557a7 !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 700;
+    font-size: 1.09em;
+    box-shadow: 0 2px 12px rgba(37,87,167,0.07);
+    letter-spacing: 0.03em;
+    padding: 12px 18px;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-nova-receita:hover, .btn-nova-receita:focus {
+    background-color: #1c477f !important;
+    color: #fff !important;
+}
+.actions-menu {
+    position: relative;
+}
+
+/* --- DROPDOWN --- */
 .dropdown-content {
     display: none;
     position: absolute; right: 0; top: 110%;
@@ -45,59 +96,107 @@ body {
     overflow: hidden;
     animation: fadeIn 0.2s;
 }
-.dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 .dropdown-content a:hover { background-color: #f1f1f1; }
 .actions-menu.active .dropdown-content { display: block; }
 
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.kpi-card { padding: 25px; border-radius: 10px; box-shadow: var(--sombra-card); display: flex; align-items: center; gap: 20px; }
-
-/* --- CARD COLORIDO POR STATUS --- */
+/* --- KPI CARDS --- */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.kpi-card {
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: var(--sombra-card);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
 .kpi-card.recebido-card {
     background: #d4edda !important;
     border: 1px solid #b9dfbb;
 }
-.kpi-card.recebido-card .icon {
-    color: #155724;
-}
-.kpi-card.recebido-card .value,
-.kpi-card.recebido-card .label {
-    color: #155724;
-}
+.kpi-card.recebido-card .icon { color: #155724; }
+.kpi-card.recebido-card .value, .kpi-card.recebido-card .label { color: #155724; }
 
 .kpi-card.inadimplente-card {
     background: #f8d7da !important;
     border: 1px solid #f5c6cb;
 }
-.kpi-card.inadimplente-card .icon {
-    color: #721c24;
-}
-.kpi-card.inadimplente-card .value,
-.kpi-card.inadimplente-card .label {
-    color: #721c24;
-}
+.kpi-card.inadimplente-card .icon { color: #721c24; }
+.kpi-card.inadimplente-card .value, .kpi-card.inadimplente-card .label { color: #721c24; }
 
 .kpi-card.previsto-card {
     background: #fff3cd !important;
     border: 1px solid #ffe8a1;
 }
-.kpi-card.previsto-card .icon {
-    color: #856404;
-}
-.kpi-card.previsto-card .value,
-.kpi-card.previsto-card .label {
-    color: #856404;
-}
+.kpi-card.previsto-card .icon { color: #856404; }
+.kpi-card.previsto-card .value, .kpi-card.previsto-card .label { color: #856404; }
 
-.kpi-card .icon { font-size: 2.2rem; padding: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 65px; height: 65px; background: none; }
+.kpi-card .icon {
+    font-size: 2.2rem;
+    padding: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 65px; height: 65px; background: none;
+}
 .kpi-card .value { font-size: 1.7rem; font-weight: 700; }
 .kpi-card .label { font-size: 0.95rem; }
 
-.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.chart-container { background: var(--cor-surface); padding: 20px; border-radius: 10px; box-shadow: var(--sombra-card); position: relative; min-height: 300px; }
+/* --- CHARTS --- */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.chart-container {
+    background: var(--cor-surface);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--sombra-card);
+    position: relative;
+    min-height: 300px;
+}
+.chart-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #2557a7;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+.chart-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 0.95em;
+    margin: 6px 0 4px 0;
+    justify-content: center;
+}
+.chart-legend span { display: flex; align-items: center; gap: 4px; }
+.chart-legend-dot {
+    width: 14px; height: 14px; border-radius: 50%; display: inline-block;
+}
 
 /* --- TABELAS --- */
-.details-section { background: var(--cor-surface); padding: 20px; border-radius: 10px; box-shadow: var(--sombra-card); }
+.details-section {
+    background: var(--cor-surface);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--sombra-card);
+}
 .tab-nav { display: flex; border-bottom: 2px solid #dee2e6; margin-bottom: 20px; }
 .tab-button { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 1.1rem; font-weight: 600; color: var(--cor-texto-secundario); margin-bottom: -2px; border-bottom: 2px solid transparent; }
 .tab-button.active { color: var(--cor-primaria); border-bottom-color: var(--cor-primaria); }
@@ -108,6 +207,9 @@ th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0;
 .valor-entrada { color: var(--cor-sucesso); font-weight: bold; }
 .valor-saida { color: var(--cor-perigo); font-weight: bold; }
 .status { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+.status-previsto { background-color: #fff3cd; color: #856404; }
+.status-recebido { background-color: #d4edda; color: #155724; }
+.status-inadimplente { background-color: #f8d7da; color: #721c24; }
 .status-vencido { background-color: #f8d7da; color: #721c24; }
 .status-aguardando { background-color: #fff3cd; color: #856404; }
 
@@ -177,5 +279,116 @@ th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0;
 .file-attachments label {font-weight:600;}
 .anexos-list {margin-top:5px;font-size:0.95em;color:#444;}
 .anexos-list li {margin-bottom:4px;}
+
+/* --- MOBILE RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 767.98px) {
+    .dashboard-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 14px;
+    }
+    .header-controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px;
+    }
+    .date-filter-form {
+        width: 100%;
+        flex-direction: column !important;
+        gap: 6px;
+    }
+    .date-filter-form label {
+        font-size: 0.98em;
+        margin-bottom: 2px;
+    }
+    .date-filter-form input[type="date"],
+    .date-filter-form button {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    .actions-menu {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .btn-nova-receita {
+        width: 100%;
+        font-size: 1.18em;
+        margin-bottom: 16px;
+    }
+    .kpi-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+    }
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+        gap: 18px;
+    }
+    .chart-container {
+        padding: 10px 0 !important;
+        min-width: 0;
+    }
+    .details-section {
+        padding: 10px 0 !important;
+    }
+    .details-section table {
+        font-size: 0.92em;
+    }
+    .details-section thead {
+        display: none;
+    }
+    .details-section tbody tr {
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        margin-bottom: 12px;
+        border-radius: 8px;
+        padding: 10px 7px;
+    }
+    .details-section td {
+        display: flex;
+        width: 100%;
+        border: none;
+        padding: 6px 0;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .details-section td:before {
+        content: attr(data-label);
+        font-weight:600;
+        width: 130px;
+        color: #2557a7;
+        font-size: 0.96em;
+        margin-right: 10px;
+    }
+    .details-section form.btn,
+    .details-section button.btn,
+    .details-section .status-cell {
+        margin-top: 7px;
+        margin-bottom: 2px;
+    }
+    .modal-content {
+        max-width: 98vw;
+        width: 98vw;
+        padding: 8px;
+    }
+    #add-entry-modal .modal-header h2 {
+        font-size: 1.15em;
+    }
+    #add-entry-modal .form-group,
+    #add-entry-modal .form-row {
+        flex-direction: column !important;
+        gap: 8px;
+    }
+    #add-entry-modal .form-group input,
+    #add-entry-modal .form-group select {
+        width: 100%;
+    }
+    .category-pills {
+        flex-direction: column !important;
+        gap: 8px;
+    }
+}
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

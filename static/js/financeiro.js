@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const statusSelect = document.getElementById('status-select');
     const entryForm = document.getElementById('entry-form');
 
+    // --- Marcar como recebido agora (o campo que depende do tipo de receita) ---
+    function toggleRecebidoCheckbox() {
+        var tipoReceita = document.getElementById('tipo-receita');
+        var group = document.getElementById('marcar-recebido-group');
+        if (tipoReceita && group) group.style.display = tipoReceita.checked ? '' : 'none';
+    }
+    var tipoReceita = document.getElementById('tipo-receita');
+    if (tipoReceita) {
+        tipoReceita.addEventListener('change', toggleRecebidoCheckbox);
+        toggleRecebidoCheckbox();
+    }
+
     function openModal() {
         if (!modal) return;
         modal.style.display = 'block';
@@ -349,6 +361,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const descricao = entryForm.querySelector('#descricao') ? entryForm.querySelector('#descricao').value : "";
             const valor = valorInput ? valorInput.value : "";
 
+            // Se quiser AJAX, implemente aqui!
         });
     }
 });
