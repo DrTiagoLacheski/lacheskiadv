@@ -102,11 +102,16 @@ def export_ticket_zip(ticket):
                 if os.path.isfile(file_path):
                     zf.writestr(f'attachments/comment_{comment.id}_{att.filename}', open(file_path, 'rb').read())
     mem_zip.seek(0)
+    # Ajuste para nome: ticket_{titulo}_{YYYYMMDD_HHMMSS}.zip
+    # Remove caracteres inválidos do título
+    safe_title = ''.join(c for c in ticket.title if c.isalnum() or c in (' ', '-', '_')).rstrip().replace(' ', '_')
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"CASO_{safe_title}_{timestamp}.zip"
     return send_file(
         mem_zip,
         mimetype='application/zip',
         as_attachment=True,
-        download_name=f"ticket_{ticket.id}.zip"
+        download_name=filename
     )
 
 @export_import_bp.route('/import_zip', methods=['GET', 'POST'])
@@ -308,9 +313,12 @@ def export_all_zip():
                     if os.path.isfile(file_path):
                         zf.writestr(f"attachments/ticket_{ticket.id}_comment_{comment.id}_{att.filename}", open(file_path, 'rb').read())
     mem_zip.seek(0)
+    # Gera o timestamp no formato YYYYMMDD_HHMMSS
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"todos_os_casos_{timestamp}.zip"
     return send_file(
         mem_zip,
         mimetype='application/zip',
         as_attachment=True,
-        download_name="todos_os_tickets.zip"
+        download_name=filename
     )
