@@ -309,3 +309,63 @@ def delete_all_on_date(date_str):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Erro interno ao processar a exclusão."}), 500
+
+
+@appointment_bp.route('/api/appointments/completed-days/<int:year>/<int:month>', methods=['GET'])
+@login_required
+def get_completed_days(year, month):
+    """
+    Encontra todos os dias com compromissos marcados como concluídos.
+    """
+    # Configurar datas do período
+    start_date = datetime(year, month, 1).date()
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1).date()
+    else:
+        end_date = datetime(year, month + 1, 1).date()
+
+    # Buscar compromissos com tarefas concluídas
+    from models import TodoItem
+    completed_query = db.session.query(
+        extract('day', Appointment.appointment_date)
+    ).filter(
+        Appointment.user_id == current_user.id,
+        Appointment.appointment_date >= start_date,
+        Appointment.appointment_date < end_date,
+        Appointment.todo_id.isnot(None)
+    ).join(TodoItem).filter(
+        TodoItem.is_completed == True
+    ).distinct()
+
+    completed_days = [int(day[0]) for day in completed_query.all()]
+    return jsonify(sorted(completed_days))
+
+
+@appointment_bp.route('/api/appointments/rescheduled-days/<int:year>/<int:month>', methods=['GET'])
+@login_required
+def get_rescheduled_days(year, month):
+    """
+    Encontra todos os dias com compromissos remarcados.
+    """
+    # Configurar datas do período
+    start_date = datetime(year, month, 1).date()
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1).date()
+    else:
+        end_date = datetime(year, month + 1, 1).date()
+
+    # Buscar compromissos remarcados
+    rescheduled_query = db.session.query(
+        extract('day', Appointment.appointment_date)
+    ).filter(
+        Appointment.user_id == current_user.id,
+        Appointment.appointment_date >= start_date,
+        Appointment.appointment_date < end_date,
+        or_(
+            Appointment.data_original.isnot(None),
+            Appointment.remarcada_count > 0
+        )
+    ).distinct()
+
+    rescheduled_days = [int(day[0]) for day in rescheduled_query.all()]
+    return jsonify(sorted(rescheduled_days))
