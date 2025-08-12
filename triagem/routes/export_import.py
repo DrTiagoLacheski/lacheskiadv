@@ -5,7 +5,7 @@ from io import BytesIO
 from flask import Blueprint, current_app, send_file, flash, redirect, url_for, request
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models import db, Ticket, TodoItem, Comment, Attachment, User
+from models import db, Ticket, TodoItem, Comment, Attachment, User, Appointment
 from datetime import datetime
 
 export_import_bp = Blueprint(
@@ -15,16 +15,20 @@ export_import_bp = Blueprint(
     static_folder='../static'
 )
 
+
 def ticket_permission_required(f):
     from functools import wraps
     @wraps(f)
     def decorated(ticket_id, *args, **kwargs):
         ticket = Ticket.query.get_or_404(ticket_id)
-        if not (current_user.is_admin or ticket.user_id == current_user.id or (ticket.delegado_id and ticket.delegado_id == current_user.id)):
+        if not (current_user.is_admin or ticket.user_id == current_user.id or (
+                ticket.delegado_id and ticket.delegado_id == current_user.id)):
             flash('Você não tem permissão para acessar este caso.', 'danger')
             return redirect(url_for('dashboard.dashboard'))
         return f(ticket, *args, **kwargs)
+
     return decorated
+
 
 def serialize_ticket(ticket):
     """
@@ -46,11 +50,12 @@ def serialize_ticket(ticket):
         "author_username": ticket.author.username if ticket.author else None,
     }
 
+
 @export_import_bp.route('/<int:ticket_id>/export_zip', methods=['GET'])
 @login_required
 @ticket_permission_required
 def export_ticket_zip(ticket):
-    # Exporta o ticket e anexos em um ZIP, modelo novo (delegado por ID e username)
+    # Exporta o ticket e anexos em um ZIP, modelo atualizado com novos campos
     data = {
         "ticket": serialize_ticket(ticket),
         "todos": [
@@ -59,7 +64,14 @@ def export_ticket_zip(ticket):
                 "is_completed": todo.is_completed,
                 "date": todo.date.isoformat() if todo.date else None,
                 "was_rescheduled": todo.was_rescheduled,
-                "position": todo.position
+                "position": todo.position,
+                "priority": todo.priority,
+                "time": todo.time,  # Campo time adicionado
+                "data_original": todo.data_original.isoformat() if hasattr(todo,
+                                                                           'data_original') and todo.data_original else None,
+                # Campo data_original
+                "remarcada_count": todo.remarcada_count if hasattr(todo, 'remarcada_count') else 0
+                # Campo remarcada_count
             }
             for todo in ticket.todos
         ],
@@ -67,6 +79,8 @@ def export_ticket_zip(ticket):
             {
                 "content": comment.content,
                 "created_at": comment.created_at.isoformat() if comment.created_at else None,
+                "author_id": comment.user_id,
+                "author_username": comment.author.username if comment.author else None,
                 "attachments": [
                     {
                         "filename": att.filename,
@@ -80,10 +94,17 @@ def export_ticket_zip(ticket):
         "attachments": [
             {
                 "filename": att.filename,
-                "path": att.path
+                "path": att.path,
+                "position": att.position
             }
             for att in ticket.attachments
-        ]
+        ],
+        "metadata": {
+            "version": "2.0",
+            "export_date": datetime.now().isoformat(),
+            "exporter_id": current_user.id,
+            "exporter_username": current_user.username
+        }
     }
 
     mem_zip = BytesIO()
@@ -114,6 +135,7 @@ def export_ticket_zip(ticket):
         download_name=filename
     )
 
+
 @export_import_bp.route('/import_zip', methods=['GET', 'POST'])
 @login_required
 def import_ticket_zip():
@@ -140,6 +162,11 @@ def import_ticket_zip():
                     data = json.loads(json_data)
                     t = data.get("ticket")
 
+                    # Determinar a versão do arquivo exportado (padrão 1.0 para compatibilidade)
+                    version = "1.0"
+                    if "metadata" in data and "version" in data["metadata"]:
+                        version = data["metadata"]["version"]
+
                     delegado_id = None
                     if t.get("delegado_id"):
                         delegado_id = t["delegado_id"]
@@ -164,7 +191,7 @@ def import_ticket_zip():
                     db.session.add(new_ticket)
                     db.session.flush()
 
-                    # Todos (agora com 'time' e 'priority')
+                    # Todos (agora com campos adicionais)
                     for todo in data.get("todos", []):
                         new_todo = TodoItem(
                             content=todo["content"],
@@ -173,14 +200,17 @@ def import_ticket_zip():
                             was_rescheduled=todo.get("was_rescheduled", False),
                             position=todo.get("position", 0),
                             ticket_id=new_ticket.id,
-                            time=todo.get("time"),
+                            time=todo.get("time"),  # Campo adicionado
                             priority=todo.get("priority", "Normal"),
+                            # Novos campos na versão 2.0+
+                            data_original=datetime.fromisoformat(todo["data_original"]).date() if todo.get(
+                                "data_original") else None,
+                            remarcada_count=todo.get("remarcada_count", 0)
                         )
                         db.session.add(new_todo)
                         db.session.flush()
 
                         if new_todo.date:
-                            from models import Appointment
                             appointment = Appointment(
                                 content=f"Tarefa: {new_todo.content} (Caso #{new_ticket.id})",
                                 appointment_date=new_todo.date,
@@ -188,7 +218,10 @@ def import_ticket_zip():
                                 user_id=current_user.id,
                                 priority=new_todo.priority,
                                 todo_id=new_todo.id,
-                                source='triagem'
+                                source='triagem',
+                                # Novos campos
+                                data_original=new_todo.data_original,
+                                remarcada_count=new_todo.remarcada_count
                             )
                             db.session.add(appointment)
 
@@ -196,36 +229,64 @@ def import_ticket_zip():
                     for comment in data.get("comments", []):
                         new_comment = Comment(
                             content=comment["content"],
-                            created_at=datetime.fromisoformat(comment["created_at"]) if comment.get("created_at") else datetime.utcnow(),
+                            created_at=datetime.fromisoformat(comment["created_at"]) if comment.get(
+                                "created_at") else datetime.utcnow(),
                             user_id=current_user.id,
                             ticket_id=new_ticket.id
                         )
                         db.session.add(new_comment)
+                        db.session.flush()
 
                     # Attachments do ticket e comentários
                     attachments_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], str(new_ticket.id))
                     os.makedirs(attachments_dir, exist_ok=True)
+
+                    # Processa anexos
                     for att in data.get("attachments", []):
                         att_filename = att["filename"]
-                        att_path_in_zip = f"attachments/ticket_{t['id']}_{att_filename}"
-                        if att_path_in_zip in zf.namelist():
+                        # Tenta diferentes caminhos para compatibilidade
+                        possible_paths = [
+                            f"attachments/{att_filename}",
+                            f"attachments/ticket_{t['id']}_{att_filename}"
+                        ]
+
+                        att_content = None
+                        for path in possible_paths:
+                            if path in zf.namelist():
+                                att_content = zf.read(path)
+                                break
+
+                        if att_content:
                             with open(os.path.join(attachments_dir, att_filename), 'wb') as f:
-                                f.write(zf.read(att_path_in_zip))
+                                f.write(att_content)
                             new_attachment = Attachment(
                                 filename=att_filename,
                                 path=f"{new_ticket.id}/{att_filename}",
                                 ticket_id=new_ticket.id,
-                                user_id=current_user.id
+                                user_id=current_user.id,
+                                position=att.get("position", 0)
                             )
                             db.session.add(new_attachment)
+
                     # Attachments dos comentários
-                    for comment in data.get("comments", []):
+                    for i, comment in enumerate(data.get("comments", [])):
                         for att in comment.get("attachments", []):
                             att_filename = att["filename"]
-                            att_path_in_zip = f"attachments/ticket_{t['id']}_comment_{comment['id']}_{att_filename}"
-                            if att_path_in_zip in zf.namelist():
+                            # Tenta diferentes caminhos para compatibilidade
+                            possible_paths = [
+                                f"attachments/comment_{comment.get('id', i)}_{att_filename}",
+                                f"attachments/ticket_{t['id']}_comment_{comment.get('id', i)}_{att_filename}"
+                            ]
+
+                            att_content = None
+                            for path in possible_paths:
+                                if path in zf.namelist():
+                                    att_content = zf.read(path)
+                                    break
+
+                            if att_content:
                                 with open(os.path.join(attachments_dir, att_filename), 'wb') as f:
-                                    f.write(zf.read(att_path_in_zip))
+                                    f.write(att_content)
                                 new_attachment = Attachment(
                                     filename=att_filename,
                                     path=f"{new_ticket.id}/{att_filename}",
@@ -242,13 +303,17 @@ def import_ticket_zip():
                 return redirect(url_for('dashboard.dashboard'))
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"Erro ao importar ticket(s): {str(e)}", exc_info=True)
             flash(f"Erro ao importar ticket(s): {e}", 'danger')
             return redirect(url_for('dashboard.dashboard'))
     return '''
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" class="p-3">
         <h4>Importar Ticket(s) (ZIP)</h4>
-        <input type="file" name="ticket_zip" accept=".zip" required>
+        <div class="mb-3">
+            <input type="file" name="ticket_zip" accept=".zip" required class="form-control">
+        </div>
         <button type="submit" class="btn btn-primary">Importar</button>
+        <a href="/dashboard" class="btn btn-secondary">Cancelar</a>
     </form>
     '''
 
@@ -256,12 +321,15 @@ def import_ticket_zip():
 @export_import_bp.route('/export_all_zip')
 @login_required
 def export_all_zip():
+    if not current_user.is_admin:
+        flash('Apenas administradores podem exportar todos os casos.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
     mem_zip = BytesIO()
     with zipfile.ZipFile(mem_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
         tickets = Ticket.query.all()
         for ticket in tickets:
             # Serializa cada ticket como no export individual
-
             data = {
                 "ticket": serialize_ticket(ticket),
                 "todos": [
@@ -273,6 +341,9 @@ def export_all_zip():
                         "position": todo.position,
                         "time": getattr(todo, 'time', None),
                         "priority": getattr(todo, 'priority', 'Normal'),
+                        "data_original": todo.data_original.isoformat() if hasattr(todo,
+                                                                                   'data_original') and todo.data_original else None,
+                        "remarcada_count": todo.remarcada_count if hasattr(todo, 'remarcada_count') else 0
                     }
                     for todo in ticket.todos
                 ],
@@ -280,6 +351,8 @@ def export_all_zip():
                     {
                         "content": comment.content,
                         "created_at": comment.created_at.isoformat() if comment.created_at else None,
+                        "author_id": comment.user_id,
+                        "author_username": comment.author.username if comment.author else None,
                         "attachments": [
                             {
                                 "filename": att.filename,
@@ -293,15 +366,21 @@ def export_all_zip():
                 "attachments": [
                     {
                         "filename": att.filename,
-                        "path": att.path
+                        "path": att.path,
+                        "position": att.position
                     }
                     for att in ticket.attachments
-                ]
+                ],
+                "metadata": {
+                    "version": "2.0",
+                    "export_date": datetime.now().isoformat(),
+                    "exporter_id": current_user.id,
+                    "exporter_username": current_user.username
+                }
             }
             zf.writestr(f"ticket_{ticket.id}.json", json.dumps(data, ensure_ascii=False, indent=2))
 
             # Anexos do ticket
-            ticket_attach_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], str(ticket.id))
             for att in ticket.attachments:
                 file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], att.path)
                 if os.path.isfile(file_path):
@@ -311,7 +390,8 @@ def export_all_zip():
                 for att in comment.attachments:
                     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], att.path)
                     if os.path.isfile(file_path):
-                        zf.writestr(f"attachments/ticket_{ticket.id}_comment_{comment.id}_{att.filename}", open(file_path, 'rb').read())
+                        zf.writestr(f"attachments/ticket_{ticket.id}_comment_{comment.id}_{att.filename}",
+                                    open(file_path, 'rb').read())
     mem_zip.seek(0)
     # Gera o timestamp no formato YYYYMMDD_HHMMSS
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
