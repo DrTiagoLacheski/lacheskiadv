@@ -136,11 +136,13 @@ class TodoItem(db.Model):
     is_completed = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     date = db.Column(db.Date, nullable=True)
+    data_original = db.Column(db.Date, nullable=True)
     position = db.Column(db.Integer, default=0, nullable=False)
     was_rescheduled = db.Column(db.Boolean, default=False, nullable=False)
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
     priority = db.Column(db.String(20), default='Normal')
     time = db.Column(db.String(8), nullable=True)
+    remarcada_count = db.Column(db.Integer, default=0, nullable = True)
 
     def __repr__(self):
         return f'<TodoItem {self.id}: {self.content[:20]}>'

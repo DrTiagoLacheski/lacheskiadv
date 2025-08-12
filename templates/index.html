@@ -17,148 +17,166 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        {% if mensagem_negada %}
-            <div class="alert alert-danger" role="alert" style="margin-top:20px;">
-                {{ mensagem_negada }}
+<div class="container">
+    {% if mensagem_negada %}
+        <div class="alert alert-danger" role="alert" style="margin-top:20px;">
+            {{ mensagem_negada }}
+        </div>
+    {% endif %}
+
+    <header class="header">
+        <img src="{{ url_for('static', filename='images/logolacheski.png') }}" alt="Logo Lacheski Advocacia" class="header-logo">
+        <p>Portal de Ferramentas e Gerenciamento</p>
+    </header>
+
+    <div class="dashboard">
+        <div class="date-time-card">
+            <div class="calendar-header">
+                <button id="prev-month-btn" class="calendar-nav-btn" aria-label="Mês anterior">&lt;</button>
+                <h3 id="month-year" aria-live="polite"></h3>
+                <button id="next-month-btn" class="calendar-nav-btn" aria-label="Próximo mês">&gt;</button>
             </div>
-        {% endif %}
-
-        <header class="header">
-            <img src="{{ url_for('static', filename='images/logolacheski.png') }}" alt="Logo Lacheski Advocacia" class="header-logo">
-            <p>Portal de Ferramentas e Gerenciamento</p>
-        </header>
-
-        <div class="dashboard">
-            <div class="date-time-card">
-                <div class="calendar-header">
-                    <button id="prev-month-btn" class="calendar-nav-btn">&lt;</button>
-                    <h3 id="month-year"></h3>
-                    <button id="next-month-btn" class="calendar-nav-btn">&gt;</button>
-                </div>
-                <div class="calendar-weekdays">
-                    <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
-                </div>
-                <div class="calendar-days" id="calendar-days"></div>
+            <div class="calendar-weekdays" aria-hidden="true">
+                <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
             </div>
-
-            <div class="appointments-card" id="appointments-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h3>Compromissos do Dia</h3>
-                    <div class="d-flex gap-2">
-                        <button id="delete-all-btn" class="btn btn-danger btn-sm edit-only">
-                            <i class="bi bi-trash3-fill"></i> Excluir Todos
-                        </button>
-                        <button id="export-calendar-btn" class="btn btn-outline-success btn-sm edit-only">
-                            <i class="fa-solid fa-calendar-arrow-down"></i> Exportar Agendamentos
-                        </button>
-                        <form id="importCalendarForm" method="POST"
-                              action="{{ url_for('calendar_export_import.import_calendar_appointments') }}"
-                              enctype="multipart/form-data" style="display:inline;">
-                            <input type="file" id="importCalendarInput" name="calendar_zip" accept=".zip"
-                                   style="display: none;" required>
-                            <button class="btn btn-outline-primary btn-sm edit-only" type="button"
-                                    id="import-calendar-btn">
-                                <i class="fa-solid fa-calendar-arrow-up"></i> Importar Agendamentos
-                            </button>
-                        </form>
-                        <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
-                                data-bs-toggle="modal" data-bs-target="#appointmentModal">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
-                        <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle">
-                            <i class="bi bi-gear-fill"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="appointment-list">
-                    <!-- ... -->
-                </div>
+            <div class="calendar-days" id="calendar-days" role="grid" aria-label="Calendário mensal">
+                <!-- Células geradas via JS com data-attributes -->
             </div>
         </div>
 
-        <div class="main-options">
-            <a href="{{ url_for('ferramentas.index') }}" class="main-option-card">
-                <div class="option-icon">⚖️</div>
-                <h3>Ferramentas Jurídicas</h3>
-                <p>Acesse todas as ferramentas automatizadas</p>
-            </a>
-             <a href="{{ url_for('dashboard.dashboard') }}" class="main-option-card">
-                <div class="option-icon">📋</div>
-                <h3>Gerenciamento de Triagem</h3>
-                <p>Controle de casos e clientes</p>
-            </a>
-            <a href="{{ url_for('main.painel_gerenciador') }}" class="main-option-card">
-                <div class="option-icon">📚</div>
-                <h3>Guidelines</h3>
-                <p>Procedimentos e modelos documentais</p>
-            </a>
-            <a href="{{ url_for('main.financeiro') }}" class="main-option-card finance-card">
-                <div class="option-icon">💰</div>
-                <h3>Finanças do Escritório</h3>
-                <p>Controle de fluxo de caixa e finanças</p>
-            </a>
-            <a href="{{ url_for('ferramentas.pagina_ferramentas_pdf') }}" class="main-option-card pdf-tools-card">
-                <div class="option-icon"><i class="fas fa-file-pdf"></i></div>
-                <h3>Manipulador de PDF</h3>
-                <p>Compressão, divisão, junção e conversão de PDFs</p>
-            </a>
+        <div class="appointments-card" id="appointments-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 id="appointments-title" aria-live="polite">Compromissos do Dia</h3>
+                <div class="d-flex gap-2">
+                    <button id="delete-all-btn" class="btn btn-danger btn-sm edit-only">
+                        <i class="bi bi-trash3-fill"></i> Excluir Todos
+                    </button>
+                    <button id="export-calendar-btn" class="btn btn-outline-success btn-sm edit-only">
+                        <i class="fa-solid fa-calendar-arrow-down"></i> Exportar
+                    </button>
+                    <form id="importCalendarForm" method="POST"
+                          action="{{ url_for('calendar_export_import.import_calendar_appointments') }}"
+                          enctype="multipart/form-data" style="display:inline;">
+                        <input type="file" id="importCalendarInput" name="calendar_zip" accept=".zip"
+                               style="display: none;" required>
+                        <button class="btn btn-outline-primary btn-sm edit-only" type="button"
+                                id="import-calendar-btn">
+                            <i class="fa-solid fa-calendar-arrow-up"></i> Importar
+                        </button>
+                    </form>
+                    <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
+                            data-bs-toggle="modal" data-bs-target="#appointmentModal" aria-label="Adicionar compromisso">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle" aria-label="Alternar modo de edição">
+                        <i class="bi bi-gear-fill"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="appointment-list" aria-live="polite">
+                <!-- Conteúdo renderizado dinamicamente -->
+            </div>
         </div>
     </div>
 
-    <div class="modal fade" id="appointmentModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalTitle">Adicionar Compromisso</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-              <form id="appointment-form">
-                  <input type="hidden" id="appointment-id">
-                  <div class="mb-3">
-                      <label for="appointment-time" class="form-label">Horário (HH:MM)</label>
-                      <input type="time" class="form-control" id="appointment-time" required>
-                  </div>
-                  <div class="mb-3">
-                      <label for="appointment-content" class="form-label">Descrição</label>
-                      <textarea class="form-control" id="appointment-content" rows="3" required></textarea>
-                  </div>
+    <div class="main-options">
+        <a href="{{ url_for('ferramentas.index') }}" class="main-option-card">
+            <div class="option-icon">⚖️</div>
+            <h3>Ferramentas Jurídicas</h3>
+            <p>Acesse todas as ferramentas automatizadas</p>
+        </a>
+        <a href="{{ url_for('dashboard.dashboard') }}" class="main-option-card">
+            <div class="option-icon">📋</div>
+            <h3>Gerenciamento de Triagem</h3>
+            <p>Controle de casos e clientes</p>
+        </a>
+        <a href="{{ url_for('main.painel_gerenciador') }}" class="main-option-card">
+            <div class="option-icon">📚</div>
+            <h3>Guidelines</h3>
+            <p>Procedimentos e modelos documentais</p>
+        </a>
+        <a href="{{ url_for('main.financeiro') }}" class="main-option-card finance-card">
+            <div class="option-icon">💰</div>
+            <h3>Finanças do Escritório</h3>
+            <p>Controle de fluxo de caixa e finanças</p>
+        </a>
+        <a href="{{ url_for('ferramentas.pagina_ferramentas_pdf') }}" class="main-option-card pdf-tools-card">
+            <div class="option-icon"><i class="fas fa-file-pdf"></i></div>
+            <h3>Manipulador de PDF</h3>
+            <p>Compressão, divisão, junção e conversão de PDFs</p>
+        </a>
+    </div>
+</div>
 
-                  <div class="mb-3">
-                      <label for="appointment-priority" class="form-label">Prioridade</label>
-                      <select class="form-select" id="appointment-priority">
-                          <option value="Normal" selected>Normal</option>
-                          <option value="Importante">Importante</option>
-                          <option value="Urgente">Urgente</option>
-                      </select>
-                  </div>
-
-                  <div class="mb-3 form-check">
-                      <input type="checkbox" class ="form-check-input" id="appointment-recurring">
-                      <label class="form-check-label" for="appointment-recurring">Repetir mensalmente</label>
-                  </div>
-
-              </form>
-          </div>
-
-          <div class="modal-footer justify-content-between">
-            <button type="button" class="btn btn-danger" id="delete-appointment-modal-btn">Excluir</button>
-            <div>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="save-appointment-btn">Salvar</button>
-            </div>
-          </div>
+<!-- Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Adicionar Compromisso</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+          <form id="appointment-form">
+              <input type="hidden" id="appointment-id">
+              <div class="mb-3">
+                  <label for="appointment-time" class="form-label">Horário (HH:MM)</label>
+                  <input type="time" class="form-control" id="appointment-time" required>
+              </div>
+              <div class="mb-3">
+                  <label for="appointment-content" class="form-label">Descrição</label>
+                  <textarea class="form-control" id="appointment-content" rows="3" required></textarea>
+              </div>
+              <div class="mb-3">
+                  <label for="appointment-priority" class="form-label">Prioridade</label>
+                  <select class="form-select" id="appointment-priority">
+                      <option value="Normal" selected>Normal</option>
+                      <option value="Importante">Importante</option>
+                      <option value="Urgente">Urgente</option>
+                  </select>
+              </div>
+              <div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input" id="appointment-recurring">
+                  <label class="form-check-label" for="appointment-recurring">Repetir mensalmente</label>
+              </div>
+          </form>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-danger" id="delete-appointment-modal-btn">Excluir</button>
+        <div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="save-appointment-btn">Salvar</button>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <footer class="footer">
-        <p>© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
-    </footer>
+<footer class="footer">
+    <p>© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
+</footer>
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <script>
+    // Verificar preferência de redução de movimento (acessibilidade)
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.body.setAttribute('data-disable-animations', 'true');
+    }
+
+    // Armazenar a preferência do usuário (caso seja implementado um botão de toggle)
+    function toggleAnimations() {
+        const currentState = document.body.getAttribute('data-disable-animations') === 'true';
+        document.body.setAttribute('data-disable-animations', (!currentState).toString());
+        localStorage.setItem('disable-animations', (!currentState).toString());
+    }
+
+    // Verificar preferência salva
+    const savedPreference = localStorage.getItem('disable-animations');
+    if (savedPreference !== null) {
+        document.body.setAttribute('data-disable-animations', savedPreference);
+    }
+</script>
 {% endblock %}

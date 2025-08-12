@@ -203,13 +203,39 @@
             <div id="todoListContainer">
                 {% if todos %}
                     {% for todo in todos %}
-                        <div class="todo-item {% if todo.is_completed %}completed{% endif %}" data-id="{{ todo.id }}">
+                        <div class="todo-item {% if todo.is_completed %}completed{% endif %}" data-id="{{ todo.id }}"
+                             {% if todo.data_original %}data-original-date="{{ todo.data_original.strftime('%Y-%m-%d') }}"{% endif %}>
                             <input class="form-check-input" type="checkbox" id="todo-{{ todo.id }}"
                                    {% if todo.is_completed %}checked{% endif %}>
                             <label class="form-check-label" for="todo-{{ todo.id }}">
                                 {{ todo.content }}
                                 {% if todo.date %}
                                     <span class="badge bg-info text-dark ms-2">{{ todo.date.strftime("%d/%m/%Y") }}</span>
+                                    {% if todo.data_original %}
+                                        <span class="badge bg-warning text-dark ms-2" title="Data original">
+                        <i class="bi bi-calendar-x"></i> {{ todo.data_original.strftime("%d/%m/%Y") }}
+                    </span>
+                                    {% endif %}
+                                    {% if todo.remarcada_count and todo.remarcada_count > 0 %}
+                                        <span class="badge bg-danger text-white ms-1"
+                                              title="Remarcada {{ todo.remarcada_count }} vezes">
+                        <i class="bi bi-arrow-repeat"></i> {{ todo.remarcada_count }}x
+                    </span>
+                                    {% endif %}
+                                {% endif %}
+                                {% if todo.time %}
+                                    <span class="badge bg-secondary text-white ms-2">{{ todo.time }}</span>
+                                {% endif %}
+
+                                <!-- Novo badge para prioridade -->
+                                {% if todo.priority %}
+                                    <span class="badge
+                    {% if todo.priority == 'Urgente' %}bg-danger{% elif todo.priority == 'Importante' %}bg-warning text-dark{% else %}bg-primary{% endif %}
+                    ms-2" title="Prioridade: {{ todo.priority }}">
+                    <i class="bi
+                        {% if todo.priority == 'Urgente' %}bi-exclamation-triangle-fill{% elif todo.priority == 'Importante' %}bi-exclamation-circle{% else %}bi-info-circle{% endif %}"></i>
+                    {{ todo.priority }}
+                </span>
                                 {% endif %}
                             </label>
                             {% if current_user.is_admin %}

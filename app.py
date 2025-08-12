@@ -49,6 +49,7 @@ def create_app():
     from triagem.routes.dashboard import dashboard_bp
     from triagem.routes.ticket import ticket_bp
     from triagem.routes.export_import import export_import_bp
+    from triagem.routes.scheduler import scheduler_bp
     from views import main_bp
     from ferramentas.views import ferramentas_bp
     from ferramentas.routes.recibo import recibo_bp
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(notificacoes_bp)
     app.register_blueprint(calendar_export_import_bp)
     app.register_blueprint(admin_bp, url_prefix='/modelo_procuracao')
+    app.register_blueprint(scheduler_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

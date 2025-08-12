@@ -1,89 +1,177 @@
-from models import Appointment, User, TodoItem, db
-from datetime import date as dt_date
+# triagem/Utils/utils_ticket.py
+from datetime import datetime, timedelta, date as dt_date
+from models import db, TodoItem, Appointment, User, Ticket
+from flask import current_app
+
 
 def ensure_todo_appointments(ticket):
     """
-    Para cada tarefa com data do ticket que não tem Appointment registrado,
-    cria Appointment para admin, delegado e criador da tarefa.
+    Garante que todas as tarefas com data marcada tenham compromissos correspondentes
+    para todos os usuários relevantes (admin, autor e delegado).
     """
-    todos = ticket.todos.filter(TodoItem.date.isnot(None)).all()
-    for todo in todos:
-        admin_user_id = ticket.author.id if ticket.author.is_admin else None
-        delegado_user = None
-        if ticket.delegado:
-            delegado_user = User.query.filter_by(username=ticket.delegado).first()
+    todos_with_date = ticket.todos.filter(TodoItem.date.isnot(None)).all()
 
+    for todo in todos_with_date:
+        # Coletar IDs de usuários que devem ter este compromisso
         user_ids = set()
+        # Admin do ticket
+        admin_user_id = ticket.author.id if ticket.author.is_admin else None
         if admin_user_id:
             user_ids.add(admin_user_id)
-        if delegado_user:
-            user_ids.add(delegado_user.id)
-        user_ids.add(todo.ticket.author.id)
+        # Delegado (se existir)
+        if ticket.delegado_id:
+            user_ids.add(ticket.delegado_id)
+        # Autor (se não for admin)
+        if not ticket.author.is_admin:
+            user_ids.add(ticket.author.id)
 
-        for uid in user_ids:
-            exists = Appointment.query.filter_by(user_id=uid, todo_id=todo.id).first()
-            if not exists:
-                appointment = Appointment(
+        # Verificar e criar compromissos para cada usuário
+        for user_id in user_ids:
+            appointment = Appointment.query.filter_by(
+                user_id=user_id,
+                todo_id=todo.id
+            ).first()
+
+            if not appointment:
+                new_appointment = Appointment(
                     content=f"Tarefa: {todo.content} (Caso #{ticket.id})",
                     appointment_date=todo.date,
-                    appointment_time="--:--",
-                    user_id=uid,
-                    priority='Normal',
+                    appointment_time=todo.time if todo.time else "--:--",
+                    user_id=user_id,
+                    priority=todo.priority,
                     todo_id=todo.id,
                     source='triagem'
                 )
-                db.session.add(appointment)
+                db.session.add(new_appointment)
+
     db.session.commit()
+    current_app.logger.info(f"Compromissos sincronizados para o ticket {ticket.id}")
 
 
 def reschedule_overdue_todos():
     """
-    Para cada tarefa vencida, não concluída e não remarcada:
-    - Atualiza a data da tarefa para hoje
-    - Remove appointments antigos
-    - Cria novos appointments com a nova data para admin, delegado e autor
+    Versão aprimorada que garante a remarcação de TODAS as tarefas vencidas,
+    incluindo tarefas antigas, sempre que a página é atualizada.
+    Retorna o número de tarefas remarcadas.
     """
     today = dt_date.today()
+
+    # Busca TODAS as tarefas vencidas não concluídas, incluindo as antigas
     overdue_todos = TodoItem.query.filter(
-        TodoItem.date < today,
-        TodoItem.is_completed == False,
-        (TodoItem.was_rescheduled == False)
+        (TodoItem.date < today) &
+        (TodoItem.is_completed == False)
     ).all()
+
+    remarcadas_count = 0
     for todo in overdue_todos:
-        ticket = todo.ticket
+        # Preservar a data original na primeira remarcação
+        if hasattr(todo, 'data_original') and not todo.data_original:
+            todo.data_original = todo.date
 
-        # Apaga todos os appointments antigos vinculados à tarefa
-        old_apps = Appointment.query.filter_by(todo_id=todo.id, appointment_date=todo.date).all()
-        for app in old_apps:
-            db.session.delete(app)
+        # Calcular próximo dia útil
+        next_date = get_next_business_day(today)
 
-        # Remarca tarefa para hoje
-        todo.date = today
+        # Limpar marcações anteriores
+        clean_content = limpar_marcacoes_remarcacao(todo.content)
+
+        # Incrementar contador de remarcações
+        if hasattr(todo, 'remarcada_count'):
+            todo.remarcada_count = (todo.remarcada_count or 0) + 1
+
+            # Formatar conteúdo com contador
+            if todo.remarcada_count > 1:
+                todo.content = f"[Remarcada {todo.remarcada_count}x] {clean_content}"
+            else:
+                todo.content = f"[Remarcada] {clean_content}"
+        else:
+            # Comportamento de fallback para compatibilidade
+            todo.content = f"[Remarcada] {clean_content}"
+
+        # Atualizar a data e marcar como remarcada
+        old_date = todo.date
+        todo.date = next_date
         todo.was_rescheduled = True
 
-        # Cria novos appointments para hoje
-        admin_user_id = ticket.author.id if ticket.author.is_admin else None
-        delegado_user = None
-        if ticket.delegado:
-            delegado_user = User.query.filter_by(username=ticket.delegado).first()
+        # Atualizar compromissos relacionados
+        update_related_appointments(todo, old_date, next_date)
+        remarcadas_count += 1
 
-        user_ids = set()
-        if admin_user_id:
-            user_ids.add(admin_user_id)
-        if delegado_user:
-            user_ids.add(delegado_user.id)
-        user_ids.add(ticket.author.id)
-
-        for uid in user_ids:
-            appointment = Appointment(
-                content=f"Tarefa: {todo.content} (Caso #{ticket.id}) [Remarcada]",
-                appointment_date=today,
-                appointment_time="--:--",
-                user_id=uid,
-                priority='Normal',
-                todo_id=todo.id,
-                source='triagem'
-            )
-            db.session.add(appointment)
-    if overdue_todos:
+    if remarcadas_count > 0:
         db.session.commit()
+        current_app.logger.info(f"Total de {remarcadas_count} tarefas remarcadas")
+
+    return remarcadas_count
+
+
+def limpar_marcacoes_remarcacao(content):
+    """
+    Remove todas as marcações de remarcação anteriores do conteúdo
+    para evitar duplicações.
+    """
+    # Remover marcações do tipo [Remarcada]
+    if "[Remarcada]" in content:
+        content = content.replace("[Remarcada] ", "")
+
+    # Remover marcações do tipo [Remarcada 2x], [Remarcada 3x], etc
+    import re
+    content = re.sub(r'\[Remarcada \d+x\] ', '', content)
+
+    return content
+
+
+def get_next_business_day(from_date):
+    """
+    Retorna o próximo dia útil (ignorando finais de semana).
+    """
+    next_day = from_date + timedelta(days=1)
+    # Se cair no fim de semana, avança para segunda-feira
+    while next_day.weekday() >= 5:  # 5=Sábado, 6=Domingo
+        next_day += timedelta(days=1)
+    return next_day
+
+
+def update_related_appointments(todo, old_date, new_date):
+    """
+    Atualiza os compromissos associados a uma tarefa remarcada.
+    Versão segura que verifica a existência dos campos.
+    """
+    related_appointments = Appointment.query.filter_by(todo_id=todo.id).all()
+
+    for appointment in related_appointments:
+        # Verificação de segurança para campos
+        has_data_original = hasattr(appointment, 'data_original')
+        has_remarcada_count = hasattr(appointment, 'remarcada_count')
+
+        # Guardar a data original na primeira remarcação (com segurança)
+        if has_data_original and not appointment.data_original:
+            appointment.data_original = old_date
+
+        # Limpar marcações anteriores no conteúdo do compromisso
+        clean_content = limpar_marcacoes_remarcacao(appointment.content)
+
+        # Incrementar contador de remarcações com verificação de segurança
+        if has_remarcada_count:
+            appointment.remarcada_count = (appointment.remarcada_count or 0) + 1
+            remarcada_count = appointment.remarcada_count
+        else:
+            # Estimativa do contador baseado no conteúdo
+            remarcada_count = 1
+            if "[Remarcada]" in appointment.content:
+                remarcada_count = 2
+            # Verifica se há um formato como [Remarcada 3x]
+            import re
+            match = re.search(r'\[Remarcada (\d+)x\]', appointment.content)
+            if match:
+                try:
+                    remarcada_count = int(match.group(1)) + 1
+                except:
+                    remarcada_count = 2
+
+        # Atualizar conteúdo com nova marcação
+        if remarcada_count > 1:
+            appointment.content = f"[Remarcada {remarcada_count}x] {clean_content}"
+        else:
+            appointment.content = f"[Remarcada] {clean_content}"
+
+        # Atualizar data do compromisso
+        appointment.appointment_date = new_date

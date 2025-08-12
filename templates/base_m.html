@@ -20,6 +20,11 @@
 
 </head>
 <body>
+    {% if current_user.is_authenticated %}
+    <!-- Elemento oculto para verificação de usuário logado -->
+    <div id="user-logged-in" style="display:none;"></div>
+    {% endif %}
+
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">Inicio</a>
@@ -70,12 +75,74 @@
             {% endif %}
         {% endwith %}
 
+        <!-- Área para notificações de tarefas remarcadas -->
+        <div id="task-notifications"></div>
+
         {% block content %}{% endblock %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <script src="{{ url_for('static', filename='js/notificacoes.js') }}"></script>
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    {% endblock %}
+
+    <!-- Script para verificação de tarefas vencidas -->
+    <script>
+        // Função para verificar tarefas vencidas
+        function checkOverdueTasks() {
+            // Verifica se o usuário está logado usando o elemento específico
+            if (document.getElementById('user-logged-in')) {
+                fetch('/scheduler/check_overdue_tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta do servidor: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.tasks_rescheduled > 0) {
+                        console.log(`${data.tasks_rescheduled} tarefas foram remarcadas`);
+
+                        // Mostrar notificação visual sobre tarefas remarcadas
+                        const notificationDiv = document.createElement('div');
+                        notificationDiv.className = 'alert alert-info alert-dismissible fade show';
+                        notificationDiv.innerHTML = `
+                            <strong>Tarefas atualizadas:</strong> ${data.tasks_rescheduled} tarefas vencidas foram remarcadas para o próximo dia útil.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        `;
+
+                        // Adicionar a notificação no topo da página
+                        const notificationArea = document.getElementById('task-notifications');
+                        if (notificationArea) {
+                            notificationArea.appendChild(notificationDiv);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar tarefas vencidas:', error);
+                });
+            }
+        }
+
+        // Executar a verificação quando a página é carregada
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar tarefas vencidas a cada 30 minutos (evita sobrecarga do servidor)
+            const lastCheck = localStorage.getItem('lastOverdueTaskCheck');
+            const now = new Date().getTime();
+
+            if (!lastCheck || (now - parseInt(lastCheck)) > 30 * 60 * 1000) {
+                // Executar verificação com um pequeno atraso para garantir que a página carregou completamente
+                setTimeout(checkOverdueTasks, 500);
+                localStorage.setItem('lastOverdueTaskCheck', now);
+            }
+        });
+    </script>
 </body>
 </html>

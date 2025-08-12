@@ -455,8 +455,11 @@ def add_todo(ticket):
             'content': new_todo.content,
             'is_completed': new_todo.is_completed,
             'date': new_todo.date.strftime("%Y-%m-%d") if new_todo.date else None,
-            'time': new_todo.time if new_todo.time else None,  # NOVO
-            'priority': new_todo.priority
+            'time': new_todo.time if new_todo.time else None,
+            'priority': new_todo.priority,
+            'data_original': new_todo.data_original.strftime("%Y-%m-%d") if hasattr(new_todo,
+                                                                                    'data_original') and new_todo.data_original else None,
+            'remarcada_count': new_todo.remarcada_count if hasattr(new_todo, 'remarcada_count') else 0
         }
     }), 201
 

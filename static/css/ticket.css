@@ -43,15 +43,39 @@
     flex-grow: 1;
 }
 
+/* Estilo para tarefas remarcadas */
+.todo-item .badge[title^="Data original"] {
+    position: relative;
+}
+
+.todo-item .badge[title^="Remarcada"] {
+    font-size: 0.75em;
+}
+.todo-item .badge.bg-danger {
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+.todo-item:has(.badge[title^="Remarcada"]) {
+    border-left: 3px solid #0b7505;
+    padding-left: 10px;
+}
+
 /* --- ESTILOS PARA O CHECKLIST --- */
 .todo-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 0.5rem 0;
-    border-bottom: 1px solid #eee;
+     border-bottom: 1px dashed #ffffff;
+    padding-bottom: 2px;
     cursor: move;
 }
+
+
 
 .todo-item:last-child {
     border-bottom: none;
@@ -68,9 +92,9 @@
     margin-bottom: 0;
 }
 
-.todo-item.completed label {
-    color: #6c757d; /* Cinza do Bootstrap */
+.todo-item.completed {
     text-decoration: line-through;
+    opacity: 0.7;
 }
 
 .todo-item .delete-todo-btn {

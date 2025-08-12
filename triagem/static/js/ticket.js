@@ -334,14 +334,53 @@ document.addEventListener('DOMContentLoaded', function() {
     function createTodoElement(todo) {
         const div = document.createElement('div');
         div.className = 'todo-item';
+        if (todo.is_completed) div.classList.add('completed');
         div.dataset.id = todo.id;
+
+        // Se houver data_original, adicionar ao dataset
+        if (todo.data_original) {
+            div.dataset.originalDate = todo.data_original;
+        }
+
+        let badgesHtml = '';
+        // Adicionar badge para data atual
+        if (todo.date) {
+            badgesHtml += `<span class="badge bg-info text-dark ms-2">${formatDateBR(todo.date)}</span>`;
+
+            // Adicionar badge para data original se existir
+            if (todo.data_original) {
+                badgesHtml += `
+                <span class="badge bg-warning text-dark ms-2" title="Data original">
+                    <i class="bi bi-calendar-x"></i> ${formatDateBR(todo.data_original)}
+                </span>
+            `;
+            }
+
+            // Adicionar contador de remarcações se existir
+            if (todo.remarcada_count && todo.remarcada_count > 0) {
+                badgesHtml += `
+                <span class="badge bg-secondary text-white ms-1" title="Remarcada ${todo.remarcada_count} vezes">
+                    <i class="bi bi-arrow-repeat"></i> ${todo.remarcada_count}x
+                </span>
+            `;
+            }
+        }
+
+        // Adicionar badge para horário se existir
+        if (todo.time) {
+            badgesHtml += `<span class="badge bg-secondary text-white ms-2">${escapeHTML(todo.time)}</span>`;
+        }
+
+        // Adicionar badge para prioridade se existir
+        if (todo.priority && todo.priority !== 'Normal') {
+            badgesHtml += `<span class="badge bg-warning text-dark ms-2">${escapeHTML(todo.priority)}</span>`;
+        }
+
         div.innerHTML = `
         <input class="form-check-input" type="checkbox" id="todo-${todo.id}" ${todo.is_completed ? "checked" : ""}>
         <label class="form-check-label" for="todo-${todo.id}">
             ${escapeHTML(todo.content)}
-            ${todo.date ? `<span class="badge bg-info text-dark ms-2">${formatDateBR(todo.date)}</span>` : ""}
-            ${todo.time ? `<span class="badge bg-secondary text-dark ms-2">${escapeHTML(todo.time)}</span>` : ""}
-            ${todo.priority ? `<span class="badge bg-warning text-dark ms-2">${escapeHTML(todo.priority)}</span>` : ""}
+            ${badgesHtml}
         </label>
         <button class="btn btn-xs btn-outline-danger delete-todo-btn">
             <i class="bi bi-x-lg"></i>
