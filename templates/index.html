@@ -17,6 +17,7 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="container">
     {% if mensagem_negada %}
         <div class="alert alert-danger" role="alert" style="margin-top:20px;">
@@ -161,22 +162,42 @@
     {{ super() }}
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     <script>
-    // Verificar preferência de redução de movimento (acessibilidade)
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.body.setAttribute('data-disable-animations', 'true');
-    }
+        // Verificar preferência de redução de movimento (acessibilidade)
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.body.setAttribute('data-disable-animations', 'true');
+        }
 
-    // Armazenar a preferência do usuário (caso seja implementado um botão de toggle)
-    function toggleAnimations() {
-        const currentState = document.body.getAttribute('data-disable-animations') === 'true';
-        document.body.setAttribute('data-disable-animations', (!currentState).toString());
-        localStorage.setItem('disable-animations', (!currentState).toString());
-    }
+        // Armazenar a preferência do usuário (caso seja implementado um botão de toggle)
+        function toggleAnimations() {
+            const currentState = document.body.getAttribute('data-disable-animations') === 'true';
+            document.body.setAttribute('data-disable-animations', (!currentState).toString());
+            localStorage.setItem('disable-animations', (!currentState).toString());
+        }
 
-    // Verificar preferência salva
-    const savedPreference = localStorage.getItem('disable-animations');
-    if (savedPreference !== null) {
-        document.body.setAttribute('data-disable-animations', savedPreference);
-    }
-</script>
+        // Verificar preferência salva
+        const savedPreference = localStorage.getItem('disable-animations');
+        if (savedPreference !== null) {
+            document.body.setAttribute('data-disable-animations', savedPreference);
+        }
+
+        // Modo escuro - verificar preferência do sistema
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+
+        // Função para alternar o tema escuro/claro
+        function toggleDarkMode() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Verificar preferência salva para o tema
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+    </script>
 {% endblock %}

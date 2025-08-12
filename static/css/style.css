@@ -545,3 +545,81 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Adicionar ao arquivo style.css existente */
+
+/* Estilo para o botão de tema */
+#theme-toggle {
+    color: rgba(255,255,255,.55);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#theme-toggle:hover {
+    color: rgba(255,255,255,.75);
+    background-color: rgba(255,255,255,.1);
+}
+
+/* Ajustar ícones conforme o tema atual */
+[data-theme="dark"] #dark-icon {
+    display: none;
+}
+
+[data-theme="dark"] #light-icon {
+    display: inline-block;
+}
+
+/* Melhoria na navegação para modo escuro */
+[data-theme="dark"] .navbar {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .navbar-dark .navbar-brand,
+[data-theme="dark"] .navbar-dark .nav-link {
+    color: #e2e8f0;
+}
+
+/* Ajustes gerais para o modo escuro */
+[data-theme="dark"] body {
+    background-color: #1a202c;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .container {
+    background-color: #1a202c;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 0.25rem rgba(49, 130, 206, 0.25);
+}
+
+[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}

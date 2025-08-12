@@ -35,6 +35,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
 
+                    <li class="nav-item">
+                        <button onclick="toggleDarkMode()" class="btn btn-link nav-link" id="theme-toggle">
+                            <i class="bi bi-moon-stars" id="dark-icon"></i>
+                            <i class="bi bi-sun" id="light-icon" style="display:none;"></i>
+                        </button>
+                    </li>
+
                     {% if current_user.is_admin %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_associado.criar_usuario_associado') }}">
@@ -143,6 +150,22 @@
                 localStorage.setItem('lastOverdueTaskCheck', now);
             }
         });
+
+        function updateThemeIcons() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            document.getElementById('dark-icon').style.display = isDark ? 'none' : 'inline-block';
+            document.getElementById('light-icon').style.display = isDark ? 'inline-block' : 'none';
+        }
+
+        // Atualizar ícones quando a página carrega
+        document.addEventListener('DOMContentLoaded', updateThemeIcons);
+
+        // Modificar a função toggleDarkMode para também atualizar os ícones
+        const originalToggleDarkMode = window.toggleDarkMode;
+        window.toggleDarkMode = function () {
+            originalToggleDarkMode();
+            updateThemeIcons();
+        };
     </script>
 </body>
 </html>
