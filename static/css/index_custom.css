@@ -1,849 +1,640 @@
 /* =========================================================
-   CALENDARIO E LISTA DE COMPROMISSOS
-   Estrutura reorganizada (Option B)
-   - Data-attributes para prioridade, origem, etc.
-   - Layout dos itens da lista segmentado (apt-header / apt-body)
-   - Triagem urgente: overlay de cor + chip interno (sem texto gigantesco no ::before)
-   - Conflito recorrencia x barra triagem resolvido (triagem usa ::before / recorrencia usa ::after)
+   CALENDARIO E LISTA DE COMPROMISSOS - VERSÃO OTIMIZADA
+   - Removidas duplicações e conflitos
+   - Variáveis organizadas e consistentes
+   - Estilos otimizados para melhor performance
    ========================================================= */
 
 /* ================= TOKENS BASE (LIGHT) ================= */
 :root {
-  --color-bg:#ffffff;
-  --color-text:#2d3748; /* Escurecido um pouco para maior contraste */
-  --color-text-light:#4a5568; /* Escurecido para melhor legibilidade */
-  --color-muted:#718096; /* Mais escuro que antes */
-  --color-border-neutral:#e5e7eb;
-  --color-hover:#f3f4f6;
+  /* Cores básicas */
+  --color-bg: #ffffff;
+  --color-text: #2d3748;
+  --color-text-light: #4a5568;
+  --color-muted: #718096;
+  --color-border-neutral: #e5e7eb;
+  --color-hover: #f3f4f6;
 
-  --color-today-border:#2563eb;
-  --color-today-ring:rgba(37,99,235,.55);
-  --color-selected-border:#0d6efd;
-  --color-selected-bg:#f0f6ff;
+  /* Cores de estado */
+  --color-today-border: #2563eb;
+  --color-today-bg: #eaf2fd;
+  --color-today-ring: rgba(37,99,235,.55);
+  --color-selected-border: #0d6efd;
+  --color-selected-bg: #f0f6ff;
 
-  --color-triagem:#7e22ce;
-  --color-triagem-bg:#efe4fb;
-  --color-financeiro:#059669;
-  --color-financeiro-bg:#e3f8ef;
+  /* Cores por origem */
+  --color-triagem: #7e22ce;
+  --color-triagem-bg: #efe4fb;
+  --color-financeiro: #059669;
+  --color-financeiro-bg: #e3f8ef;
 
-  --color-completed:#6b7280;
-  --color-completed-bg:#f3f4f6;
+  /* Cores de prioridade */
+  --color-normal: #2563eb;
+  --color-normal-bg: #e0efff;
+  --color-important: #d97706;
+  --color-important-bg: #fff1db;
+  --color-urgent: #dc2626;
+  --color-urgent-bg: #ffe2e2;
+  --color-rescheduled: #b45309;
+  --color-rescheduled-bg: #ffe9d6;
 
-  --color-normal:#2563eb;
-  --color-important:#d97706;
-  --color-urgent:#dc2626;
-  --color-rescheduled:#b45309;
+  /* Triagem especial */
+  --color-triagem-urgent: #c41483;
+  --color-triagem-urgent-border: #8a0e5a;
+  --color-triagem-urgent-bg: #fde3f3;
+  --color-triagem-rescheduled: #8b2fa8;
+  --color-triagem-rescheduled-border: #6a247f;
+  --color-triagem-rescheduled-bg: #f5e9fc;
 
-  --color-normal-bg:#e0efff;
-  --color-important-bg:#fff1db;
-  --color-urgent-bg:#ffe2e2;
-  --color-rescheduled-bg:#ffe9d6;
+  /* Cores de recorrência */
+  --rec-normal: #93c5fd;
+  --rec-important: #f2c27a;
+  --rec-urgent: #f5a3a3;
+  --rec-neutral: #d1d5db;
+  --rec-rescheduled: #f5d2ae;
+  --rec-triagem-urgent: #ebb9da;
+  --rec-triagem-rescheduled: #ddc3ef;
 
-  --color-triagem-urgent:#c41483;
-  --color-triagem-urgent-border:#8a0e5a;
-  --color-triagem-urgent-bg:#fde3f3;
+  /* Cores de texto específicas */
+  --text-normal-card: #1a365d;
+  --text-important-card: #7b341e;
+  --text-urgent-card: #9b2c2c;
+  --text-rescheduled-card: #744210;
+  --text-triagem-card: #44337a;
+  --text-financeiro-card: #22543d;
 
-  --color-triagem-rescheduled:#8b2fa8;
-  --color-triagem-rescheduled-border:#6a247f;
-  --color-triagem-rescheduled-bg:#f5e9fc;
+  /* Overlays triagem urgente */
+  --triagem-urgent-overlay: linear-gradient(125deg, #f5d6ec 0%, #f9e6f2 65%, #ffffff 82%);
+  --triagem-chip-bg: rgba(120, 50, 95, 0.18);
+  --triagem-chip-text: #552744;
 
-  --rec-normal:#93c5fd;
-  --rec-important:#f2c27a;
-  --rec-urgent:#f5a3a3;
-  --rec-neutral:#d1d5db;
-  --rec-rescheduled:#f5d2ae;
-  --rec-triagem-urgent:#ebb9da;
-  --rec-triagem-rescheduled:#ddc3ef;
+  /* Chip triagem normal */
+  --triagem-normal-chip-bg: rgba(126, 34, 206, 0.12);
+  --triagem-normal-chip-text: #44337a;
+  --triagem-normal-chip-border: rgba(126, 34, 206, 0.25);
 
-  --focus-ring:0 0 0 3px rgba(37,99,235,.35);
-  --transition-fast:.18s;
-  --transition-medium:.28s;
-  --radius-sm:6px;
-  --radius-pill:999px;
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.08);
+  /* Efeitos e transições */
+  --focus-ring: 0 0 0 3px rgba(37,99,235,.35);
+  --transition-fast: .18s;
+  --transition-medium: .28s;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.08);
+  --text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 
-  --urgent-badge-text:#ffffff;
+  /* Z-index */
+  --z-cell-focus: 10;
+  --z-urgent-day: 2;
 
-  /* Glow (usado só no urgente normal ou modos especiais) */
-  --urgent-glow-border:rgba(220,38,38,0.60);
-  --urgent-glow-soft:rgba(220,38,38,0.20);
-  --urgent-glow-far:rgba(220,38,38,0.10);
+  /* Estados especiais */
+  --color-completed: #6b7280;
+  --color-completed-bg: #f3f4f6;
+  --urgent-badge-text: #ffffff;
 
-  --triagem-urgent-glow-border:rgba(196,20,131,0.55);
-  --triagem-urgent-glow-soft: rgba(225, 99, 178, 0.24);
-  --triagem-urgent-glow-far:rgba(196,20,131,0.12);
-
-  --urgent-gradient-accent:#ffe9e9;
-  --triagem-urgent-gradient-accent:#ffdbf2;
-
-  /* Overlays triagem */
-  --triagem-urgent-overlay-soft:linear-gradient(100deg,#c41483 0%,#d753a3 55%,#eaa4cd 100%);
-  --triagem-urgent-overlay:linear-gradient(100deg,#c41483 0%,#d43f9b 50%,#e764b3 100%);
-  --triagem-urgent-overlay-wide:linear-gradient(115deg,#c41483 0%,#db5faa 55%,#fabfe2 100%);
-
-  --triagem-chip-bg:rgba(255,255,255,0.25); /* Aumentado opacidade para melhor contraste */
-  --triagem-chip-text:#ffffff;
-
-  /* Chip de triagem para triagens não-urgentes */
-  --triagem-normal-chip-bg:rgba(126, 34, 206, 0.12);
-  --triagem-normal-chip-text:#44337a;
-  --triagem-normal-chip-border:rgba(126, 34, 206, 0.25);
-
-  /* Cores de texto para melhor leitura */
-  --text-normal-card:#1a365d; /* Azul escuro para texto em cards normais */
-  --text-important-card:#7b341e; /* Laranja escuro para texto em cards importantes */
-  --text-urgent-card:#9b2c2c; /* Vermelho escuro para texto em cards urgentes */
-  --text-rescheduled-card:#744210; /* Marrom escuro para texto em cards remarcados */
-  --text-triagem-card:#44337a; /* Roxo escuro para texto em cards de triagem */
-  --text-financeiro-card:#22543d; /* Verde escuro para texto em cards financeiros */
-
-  --text-white-shadow:0 1px 2px rgba(0,0,0,0.2); /* Shadow padrão para texto branco */
-
-  --z-cell-focus:10;
+  /* Cards */
+  --color-card-bg: #f8fafc;
+  --color-urgent-text: #b91c1c;
 }
 
 /* ================= DARK MODE ================= */
 :root[data-theme="dark"] {
-  --color-bg:#0f172a;
-  --color-text:#f8fafc; /* Mais claro para melhor contraste */
-  --color-text-light:#e2e8f0; /* Mais claro para melhor leitura */
-  --color-muted:#94a3b8; /* Mais claro que o original */
-  --color-border-neutral:#1e293b;
-  --color-hover:#1e293b;
+  --color-bg: #0f172a;
+  --color-text: #f8fafc;
+  --color-text-light: #e2e8f0;
+  --color-muted: #94a3b8;
+  --color-border-neutral: #1e293b;
+  --color-hover: #1e293b;
+  --color-today-bg: #1d3553;
 
-  --color-today-ring:rgba(56,189,248,.40);
-  --color-today-border:#38bdf8;
-  --color-selected-bg:#1e3352;
-  --color-selected-border:#3b82f6;
+  --color-today-ring: rgba(56,189,248,.40);
+  --color-today-border: #38bdf8;
+  --color-selected-bg: #1e3352;
+  --color-selected-border: #3b82f6;
 
-  --color-completed-bg:#1e293b;
+  --color-completed-bg: #1e293b;
 
-  --color-normal-bg:#1d3553;
-  --color-important-bg:#3a2a10;
-  --color-urgent-bg:#3a1e1e;
-  --color-rescheduled-bg:#3d2d1f;
-  --color-triagem-urgent-bg:#402235;
-  --color-triagem-rescheduled-bg:#342341;
+  --color-normal-bg: #1d3553;
+  --color-important-bg: #3a2a10;
+  --color-urgent-bg: #3a1e1e;
+  --color-rescheduled-bg: #3d2d1f;
+  --color-triagem-urgent-bg: #402235;
+  --color-triagem-rescheduled-bg: #342341;
 
-  --urgent-gradient-accent:#462a2b;
-  --triagem-urgent-gradient-accent:#442336;
+  --triagem-urgent-overlay: linear-gradient(125deg, #693055 0%, #7d4064 65%, #1e293b 82%);
+  --triagem-chip-bg: rgba(255,255,255,0.22);
+  --triagem-chip-text: #ffffff;
 
-  --triagem-urgent-overlay-soft:linear-gradient(100deg,#a82c6d 0%,#ba4e85 55%,#76304e 100%);
-  --triagem-urgent-overlay:linear-gradient(100deg,#b80f76 0%,#c84490 55%,#8d2557 100%);
-  --triagem-urgent-overlay-wide:linear-gradient(115deg,#c41483 0%,#d368a5 55%,#5b233e 100%);
-  --triagem-chip-bg:rgba(255,255,255,0.22); /* Aumentado para dark mode */
-  --triagem-chip-text:#ffffff;
+  --triagem-normal-chip-bg: rgba(159, 122, 234, 0.15);
+  --triagem-normal-chip-text: #d8b4fe;
+  --triagem-normal-chip-border: rgba(159, 122, 234, 0.3);
 
-  /* Chip de triagem para triagens não-urgentes em dark mode */
-  --triagem-normal-chip-bg:rgba(159, 122, 234, 0.15);
-  --triagem-normal-chip-text:#d8b4fe;
-  --triagem-normal-chip-border:rgba(159, 122, 234, 0.3);
+  --text-normal-card: #bfdbfe;
+  --text-important-card: #fbd38d;
+  --text-urgent-card: #fca5a5;
+  --text-rescheduled-card: #fbd38d;
+  --text-triagem-card: #d8b4fe;
+  --text-financeiro-card: #86efac;
 
-  /* Cores de texto para dark mode */
-  --text-normal-card:#bfdbfe; /* Azul claro para texto em cards normais */
-  --text-important-card:#fbd38d; /* Laranja claro para texto em cards importantes */
-  --text-urgent-card:#fca5a5; /* Vermelho claro para texto em cards urgentes */
-  --text-rescheduled-card:#fbd38d; /* Amarelo claro para texto em cards remarcados */
-  --text-triagem-card:#d8b4fe; /* Roxo claro para texto em cards de triagem */
-  --text-financeiro-card:#86efac; /* Verde claro para texto em cards financeiros */
-
-  --text-white-shadow:0 1px 3px rgba(0,0,0,0.4); /* Shadow mais forte para texto no dark mode */
+  --text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  --color-card-bg: #1e293b;
+  --color-urgent-text: #fca5a5;
 }
 
-/* ================= CALENDARIO ================= */
-.calendar-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0;color:var(--color-text);}
-.calendar-nav-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-text-light);padding:4px 8px;border-radius:var(--radius-sm);transition:color var(--transition-fast),background-color var(--transition-fast);}
-.calendar-nav-btn:hover{background:var(--color-hover);color:var(--color-text);}
-.calendar-nav-btn:focus-visible{outline:none;box-shadow:var(--focus-ring);}
-#month-year{font-weight:600;font-size:1.2rem;color:var(--color-text);}
-
-.calendar-weekdays, .calendar-days{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;}
-.calendar-weekdays div{font-weight:600;font-size:.7rem;letter-spacing:.5px;text-transform:uppercase;color:var(--color-muted);padding:6px 0;}
-
-.calendar-days div{
-  transition:background-color var(--transition-fast),border-color var(--transition-fast),color var(--transition-fast),
-             transform var(--transition-fast), box-shadow var(--transition-fast);
-  cursor:pointer;
-  border:2px solid transparent;
-  aspect-ratio:1/1;
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-  font-weight:500;
-  color:var(--color-text-light);
-  background-color:var(--color-bg);
-  border-radius:var(--radius-sm);
-  font-size:.95rem;
-  user-select:none;
-  z-index:0;
-}
-.calendar-days div:focus-visible{outline:none;box-shadow:var(--focus-ring);z-index:var(--z-cell-focus);}
-.calendar-days div:hover:not([data-outside="true"]):not([data-selected="true"]){background-color:var(--color-hover);}
-.calendar-days div[data-outside="true"]{color:#d1d5db;cursor:default;opacity:.55;}
-
-.calendar-days div[data-today="true"]{color:var(--color-text);font-weight:600;}
-.calendar-days div[data-today="true"]::before{
-  content:"";
-  position:absolute;inset:3px;
-  border:2px solid var(--color-today-border);
-  border-radius:inherit;
-  pointer-events:none;
-  box-shadow:0 0 0 2px var(--color-today-ring);
-  opacity:.9;
-}
-.calendar-days div[data-today="true"][data-selected="true"]::before{
-  border-color:var(--color-selected-border);
-  box-shadow:0 0 0 2px rgba(13,110,253,.55);
+/* ================= CALENDÁRIO ================= */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  color: var(--color-text);
 }
 
-.calendar-days div[data-selected="true"]{
-  background-color:var(--color-selected-bg);
-  border-color:var(--color-selected-border);
-  color:var(--color-text);
-  font-weight:600;
+.calendar-nav-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-light);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
-/* Prioridades */
-.calendar-days div[data-priority="urgent"]{
-  color:var(--color-urgent);
-  font-weight:700;
-  background-color:var(--color-urgent-bg);
-  border-color:var(--color-urgent);
+.calendar-nav-btn:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
 }
 
-/* Triagem Urgente barra lateral (usa ::before) */
-.calendar-days div[data-origin="triagem"][data-priority="urgent"]{
-  color:var(--color-triagem-urgent);
-  font-weight:700;
-  background:var(--color-triagem-urgent-bg);
-  border-color:var(--color-triagem-urgent-border);
-  position:relative;
-}
-.calendar-days div[data-origin="triagem"][data-priority="urgent"]::before{
-  content:"";
-  position:absolute;
-  left:2px;top:12%;bottom:12%;
-  width:4px;border-radius:2px;
-  background:linear-gradient(to bottom,var(--color-triagem-urgent) 0%,var(--color-triagem-urgent-border) 100%);
-  opacity:.85;pointer-events:none;
+.calendar-nav-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
-/* Todas as triagens têm uma barra lateral */
-.calendar-days div[data-origin="triagem"]:not([data-priority="urgent"])::before{
-  content:"";
-  position:absolute;
-  left:2px;top:12%;bottom:12%;
-  width:4px;border-radius:2px;
-  background:linear-gradient(to bottom,var(--color-triagem) 0%,var(--color-triagem) 100%);
-  opacity:.85;pointer-events:none;
-}
-
-.calendar-days div[data-origin="triagem"][data-priority="rescheduled"]{
-  color:var(--color-triagem-rescheduled);
-  font-weight:600;
-  border-color:var(--color-triagem-rescheduled-border);
-  background:var(--color-triagem-rescheduled-bg);
-}
-.calendar-days div[data-priority="important"]{color:var(--color-important);font-weight:700;}
-.calendar-days div[data-priority="normal"]{color:var(--color-normal);font-weight:700;}
-.calendar-days div[data-priority="rescheduled"]:not([data-origin="triagem"]){
-  color:var(--color-rescheduled);font-weight:700;
-}
-.calendar-days div[data-status="completed"]{
-  text-decoration:line-through;
-  color:var(--color-completed);
-  opacity:.65;
-  font-weight:500;
-}
-
-/* Recorrencia (triangulo) usa ::after e portanto não conflita com barra triagem */
-.calendar-days div[data-recurring="true"]::after{
-  content:"";
-  position:absolute;top:0;right:0;
-  border-width:0 15px 15px 0;
-  border-style:solid;
-  border-color:transparent var(--rec-neutral) transparent transparent;
-  pointer-events:none;
-  transition:border-color var(--transition-fast);
-}
-.calendar-days div[data-recurring="true"][data-priority="normal"]::after{border-color:transparent var(--rec-normal) transparent transparent;}
-.calendar-days div[data-recurring="true"][data-priority="important"]::after{border-color:transparent var(--rec-important) transparent transparent;}
-.calendar-days div[data-recurring="true"][data-priority="urgent"]::after{border-color:transparent var(--rec-urgent) transparent transparent;}
-.calendar-days div[data-recurring="true"][data-priority="rescheduled"]::after{border-color:transparent var(--rec-rescheduled) transparent transparent;}
-.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="urgent"]::after{border-color:transparent var(--rec-triagem-urgent) transparent transparent;}
-.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="rescheduled"]::after{border-color:transparent var(--rec-triagem-rescheduled) transparent transparent;}
-
-/* Badges calendario */
-.calendar-days div .badge-urgent{
-  position:absolute;bottom:4px;right:4px;
-  background:var(--color-urgent);color:var(--urgent-badge-text);
-  font-size:.55rem;padding:2px 5px;border-radius:var(--radius-pill);
-  letter-spacing:.5px;font-weight:600;
-  box-shadow:0 1px 2px rgba(0,0,0,.25);
-  pointer-events:none;line-height:1;
-}
-.calendar-days div[data-origin="triagem"][data-priority="urgent"] .badge-urgent{background:var(--color-triagem-urgent);}
-.calendar-days div .dot-count{
-  position:absolute;top:4px;left:4px;
-  min-width:16px;height:16px;padding:0 4px;
-  background:var(--color-normal);color:#fff;
-  font-size:.55rem;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:600;line-height:1;
-  box-shadow:0 1px 2px rgba(0,0,0,.25);
-}
-.calendar-days div[data-priority="urgent"] .dot-count{background:var(--color-urgent);}
-.calendar-days div[data-origin="triagem"][data-priority="urgent"] .dot-count{background:var(--color-triagem-urgent);}
-.calendar-days div[data-origin="triagem"][data-priority="rescheduled"] .dot-count{background:var(--color-triagem-rescheduled);}
-
-/* ================= LISTA BASE ================= */
-#appointment-list{
-  max-height:260px;
-  overflow-y:auto;
-  padding-right:15px;
-  margin-right:-15px;
-  scrollbar-width:thin;
-  scrollbar-color:var(--color-border-neutral) transparent;
-}
-#appointment-list::-webkit-scrollbar{width:8px;}
-#appointment-list::-webkit-scrollbar-track{background:transparent;}
-#appointment-list::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px;}
-#appointment-list::-webkit-scrollbar-thumb:hover{background:#9ca3af;}
-
-.appointment-item{
-  border-bottom:1px solid var(--color-border-neutral);
-  padding:10px 12px;
-  font-size:.9rem;
-  line-height:1.3rem;
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  color:var(--color-text);
-  background:var(--color-bg);
-  transition:background-color var(--transition-fast),
-             box-shadow var(--transition-fast),
-             border-left-color var(--transition-fast);
-}
-.appointment-item:last-child{border-bottom:none;}
-
-/* Estados gerais */
-.appointment-item[data-status="completed"]{
-  text-decoration:line-through;
-  opacity:.75;
-}
-.appointment-item[data-priority="normal"]{
-  background-color:var(--color-normal-bg);
-  border-left:5px solid var(--color-normal);
-}
-.appointment-item[data-priority="normal"] .apt-content {
-  color: var(--text-normal-card); /* Cor específica para melhor leitura */
-}
-
-.appointment-item[data-priority="important"]{
-  background-color:var(--color-important-bg);
-  border-left:5px solid var(--color-important);
-}
-.appointment-item[data-priority="important"] .apt-content {
-  color: var(--text-important-card); /* Cor específica para melhor leitura */
-}
-
-.appointment-item[data-priority="urgent"]{
-  background:linear-gradient(125deg,var(--urgent-gradient-accent) 0%,#ffffff 82%);
-  border-left:6px solid var(--color-urgent);
-  box-shadow:0 0 0 1px var(--urgent-glow-border),
-             0 0 5px 1px var(--urgent-glow-soft),
-             0 0 14px 4px var(--urgent-glow-far);
-}
-.appointment-item[data-priority="urgent"] .apt-content {
-  color: var(--text-urgent-card); /* Cor específica para melhor leitura */
-}
-.appointment-item[data-priority="urgent"]::before{
-  content:"!";
-  position:absolute;top:6px;right:10px;
-  font-size:.75rem;font-weight:700;
-  color:var(--color-urgent);
-  text-shadow:0 0 4px var(--urgent-glow-soft);
-  opacity:.9;
-}
-
-/* Origem triagem normal (não urgente) */
-.appointment-item[data-origin="triagem"]:not([data-priority="urgent"]){
-  background-color:var(--color-triagem-bg)!important;
-  border-left:5px solid var(--color-triagem);
-  position: relative; /* Para posicionar o chip corretamente */
-}
-.appointment-item[data-origin="triagem"]:not([data-priority="urgent"]) .apt-content {
-  color: var(--text-triagem-card); /* Cor específica para melhor leitura */
-}
-
-/* Chip de triagem normal (não urgente) */
-.triagem-normal-chip {
-  background: var(--triagem-normal-chip-bg);
-  color: var(--triagem-normal-chip-text);
-  font-size: .65rem;
+#month-year {
   font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--color-text);
+}
+
+.calendar-weekdays,
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.calendar-weekdays div {
+  font-weight: 600;
+  font-size: .7rem;
   letter-spacing: .5px;
-  padding: 2px 6px;
-  border-radius: var(--radius-pill);
-  line-height: 1;
-  white-space: nowrap;
-  border: 1px solid var(--triagem-normal-chip-border);
-  display: inline-block;
-  margin-right: 8px;
-  vertical-align: middle;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  padding: 6px 0;
+}
+
+/* Células do calendário - Base */
+.calendar-days div {
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+              color var(--transition-fast), transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+  cursor: pointer;
+  border: 2px solid transparent;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-weight: 500;
+  color: var(--color-text-light);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  user-select: none;
+  z-index: 0;
+}
+
+.calendar-days div:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  z-index: var(--z-cell-focus);
+}
+
+.calendar-days div:hover:not([data-outside="true"]):not([data-selected="true"]) {
+  background-color: var(--color-hover);
+}
+
+.calendar-days div[data-outside="true"] {
+  color: var(--color-muted);
+  cursor: default;
+  opacity: .55;
+}
+
+/* Dia atual - corrigido */
+.calendar-days div[data-today="true"] {
+  color: var(--color-text) !important;
+  font-weight: 600;
+  background: var(--color-today-bg) !important;
+  position: relative;
+}
+
+/* Prioridade URGENTE prevalece sobre o dia de hoje */
+.calendar-days div[data-today="true"][data-priority="urgent"]:not([data-selected="true"]) {
+  /* Aplica o estilo de urgente, não o de hoje */
+  color: var(--color-urgent) !important;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-urgent-bg) 0%, #fff5f5 90%) !important;
+  border: 2px solid var(--color-urgent) !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"]:not([data-selected="true"]) {
+  color: var(--color-triagem-urgent) !important;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-triagem-urgent-bg) 0%, #fff0f8 90%) !important;
+  border: 2px solid var(--color-triagem-urgent-border) !important;
+  box-shadow: 0 2px 8px rgba(196,20,131,0.3);
+}
+
+/* Remove o anel azul do dia de hoje quando for urgente */
+.calendar-days div[data-today="true"][data-priority="urgent"]::before,
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"]::before {
+  display: none !important;
+}
+
+/* Dia selecionado */
+.calendar-days div[data-selected="true"] {
+  background: var(--color-selected-bg) !important;
+  border-color: var(--color-selected-border) !important;
+  color: var(--color-text) !important;
+}
+
+.calendar-days div[data-today="true"][data-selected="true"]::before {
+  border-color: var(--color-selected-border);
+}
+
+/* Prioridades no calendário */
+.calendar-days div[data-priority="normal"]:not([data-today="true"]):not([data-selected="true"]) {
+  color: var(--color-normal);
+  font-weight: 700;
+  background-color: var(--color-normal-bg);
+}
+
+.calendar-days div[data-priority="important"]:not([data-today="true"]):not([data-selected="true"]) {
+  color: var(--color-important);
+  font-weight: 700;
+  background-color: var(--color-important-bg);
+}
+
+.calendar-days div[data-priority="urgent"]:not([data-today="true"]):not([data-selected="true"]) {
+  color: var(--color-urgent);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-urgent-bg) 0%, #fff5f5 90%);
+  border: 2px solid var(--color-urgent);
+  transform: scale(1.05);
+  z-index: var(--z-urgent-day);
+}
+
+.calendar-days div[data-priority="urgent"]:hover:not([data-today="true"]):not([data-selected="true"]) {
+  transform: scale(1.08);
+}
+
+.calendar-days div[data-priority="rescheduled"]:not([data-origin="triagem"]):not([data-today="true"]):not([data-selected="true"]) {
+  color: var(--color-rescheduled);
+  font-weight: 700;
+  background-color: var(--color-rescheduled-bg);
+}
+
+/* Triagem no calendário */
+.calendar-days div[data-origin="triagem"][data-priority="urgent"]:not([data-today="true"]):not([data-selected="true"]) {
+  color: var(--color-triagem-urgent);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-triagem-urgent-bg) 0%, #fff0f8 90%);
+  border: 2px solid var(--color-triagem-urgent-border);
+  transform: scale(1.05);
+  z-index: var(--z-urgent-day);
+}
+
+.calendar-days div[data-origin="triagem"][data-priority="urgent"]:hover:not([data-today="true"]):not([data-selected="true"]) {
+  transform: scale(1.08);
+}
+
+.calendar-days div[data-origin="triagem"][data-priority="rescheduled"]:not([data-today="true"]):not([data-selected="true"]) {
+  color: var(--color-triagem-rescheduled);
+  font-weight: 600;
+  border-color: var(--color-triagem-rescheduled-border);
+  background: var(--color-triagem-rescheduled-bg);
+}
+
+.calendar-days div[data-origin="triagem"]:not([data-priority="urgent"]):not([data-today="true"]):not([data-selected="true"]) {
+  background-color: var(--color-triagem-bg);
+  color: var(--color-triagem);
+  font-weight: 600;
+}
+
+/* Barra lateral de triagem */
+.calendar-days div[data-origin="triagem"]::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 12%;
+  bottom: 12%;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--color-triagem);
+  opacity: .85;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.calendar-days div[data-origin="triagem"][data-priority="urgent"]::before {
+  background: linear-gradient(to bottom, var(--color-triagem-urgent) 0%, var(--color-triagem-urgent-border) 100%);
+}
+
+/* Indicadores de recorrência */
+.calendar-days div[data-recurring="true"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-width: 0 15px 15px 0;
+  border-style: solid;
+  border-color: transparent var(--rec-neutral) transparent transparent;
+  pointer-events: none;
+  transition: border-color var(--transition-fast);
+  z-index: 1;
+}
+
+.calendar-days div[data-recurring="true"][data-priority="normal"]::after {
+  border-color: transparent var(--rec-normal) transparent transparent;
+}
+
+.calendar-days div[data-recurring="true"][data-priority="important"]::after {
+  border-color: transparent var(--rec-important) transparent transparent;
+}
+
+.calendar-days div[data-recurring="true"][data-priority="urgent"]::after {
+  border-color: transparent var(--rec-urgent) transparent transparent;
+}
+
+.calendar-days div[data-recurring="true"][data-priority="rescheduled"]::after {
+  border-color: transparent var(--rec-rescheduled) transparent transparent;
+}
+
+.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="urgent"]::after {
+  border-color: transparent var(--rec-triagem-urgent) transparent transparent;
+}
+
+.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="rescheduled"]::after {
+  border-color: transparent var(--rec-triagem-rescheduled) transparent transparent;
+}
+
+/* Status concluído */
+.calendar-days div[data-status="completed"] {
+  text-decoration: line-through;
+  color: var(--color-completed) !important;
+  opacity: .65;
+  font-weight: 500 !important;
+}
+
+@media (max-width: 640px) {
+  #appointment-list {
+    max-height: none !important;
+    overflow-y: visible !important;
+    padding-bottom: 24px !important; /* Espaço extra para não ser coberto pelo footer */
+    margin-bottom: 0 !important;
+  }
+  .appointments-card {
+    padding-bottom: 18px !important;
+  }
+  .container {
+    padding-bottom: 0 !important;
+  }
+}
+
+#appointment-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#appointment-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#appointment-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+#appointment-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Item de compromisso base */
+.appointment-item {
+  border-bottom: 1px solid var(--color-border-neutral);
+  padding: 10px 12px;
+  font-size: .9rem;
+  line-height: 1.3rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast),
+              border-left-color var(--transition-fast);
+}
+
+.appointment-item:last-child {
+  border-bottom: none;
+}
+
+.appointment-item:hover {
+  background-color: var(--color-hover);
+}
+
+/* Status concluído para items */
+.appointment-item[data-status="completed"] {
+  text-decoration: line-through;
+  opacity: .75;
+}
+
+/* Prioridades dos compromissos */
+.appointment-item[data-priority="normal"] {
+  background-color: var(--color-normal-bg);
+  border-left: 5px solid var(--color-normal);
+}
+
+.appointment-item[data-priority="normal"] .apt-content {
+  color: var(--text-normal-card);
+}
+
+.appointment-item[data-priority="important"] {
+  background-color: var(--color-important-bg);
+  border-left: 5px solid var(--color-important);
+}
+
+.appointment-item[data-priority="important"] .apt-content {
+  color: var(--text-important-card);
+}
+
+.appointment-item[data-priority="urgent"] {
+  background: linear-gradient(125deg, var(--color-urgent-bg) 0%, #ffffff 82%);
+  border-left: 6px solid var(--color-urgent);
+}
+
+.appointment-item[data-priority="urgent"] .apt-content {
+  color: var(--text-urgent-card);
+}
+
+.appointment-item[data-priority="urgent"]::after {
+  content: "!";
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--color-urgent);
+  opacity: .9;
+}
+
+.appointment-item[data-priority="rescheduled"] {
+  background-color: var(--color-rescheduled-bg) !important;
+  border-left: 5px solid var(--color-rescheduled) !important;
+}
+
+.appointment-item[data-priority="rescheduled"] .apt-content {
+  color: var(--text-rescheduled-card);
+}
+
+/* Origem triagem normal */
+.appointment-item[data-origin="triagem"]:not([data-priority="urgent"]) {
+  background-color: var(--color-triagem-bg) !important;
+  border-left: 5px solid var(--color-triagem);
+  position: relative;
+}
+
+.appointment-item[data-origin="triagem"]:not([data-priority="urgent"]) .apt-content {
+  color: var(--text-triagem-card);
 }
 
 /* Origem financeiro */
-.appointment-item[data-origin="financeiro"]{
-  background-color:var(--color-financeiro-bg)!important;
-  border-left:5px solid var(--color-financeiro)!important;
+.appointment-item[data-origin="financeiro"] {
+  background-color: var(--color-financeiro-bg) !important;
+  border-left: 5px solid var(--color-financeiro) !important;
 }
+
 .appointment-item[data-origin="financeiro"] .apt-content {
-  color: var(--text-financeiro-card); /* Cor específica para melhor leitura */
-}
-
-/* Rescheduled fora triagem urgente */
-.appointment-item[data-priority="rescheduled"]{
-  background-color:var(--color-rescheduled-bg)!important;
-  border-left:5px solid var(--color-rescheduled)!important;
-}
-.appointment-item[data-priority="rescheduled"] .apt-content {
-  color: var(--text-rescheduled-card); /* Cor específica para melhor leitura */
-}
-
-/* Rescheduled triagem não urgente */
-.appointment-item[data-origin="triagem"][data-priority="rescheduled"]{
-  background-color:var(--color-triagem-rescheduled-bg)!important;
-  border-left:5px solid var(--color-triagem-rescheduled)!important;
-}
-
-/* ================= TRIAGEM URGENTE (overlay + chip) ================= */
-.appointment-item[data-origin="triagem"][data-priority="urgent"]{
-  border-left:0!important;
-  border-right:0;
-  background:transparent;
-  color:#fff;
-  border-radius:8px;
-  box-shadow:0 1px 3px rgba(0,0,0,.14);
-  padding:14px 16px 12px;
-  overflow:hidden;
-}
-.appointment-item[data-origin="triagem"][data-priority="urgent"]::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:var(--triagem-urgent-overlay-soft);
-  pointer-events:none;
-  opacity:1;
-}
-.appointment-item[data-origin="triagem"][data-priority="urgent"] > *{position:relative;z-index:1;}
-.appointment-item[data-origin="triagem"][data-priority="urgent"]::after{display:none;} /* sem texto extra */
-
-/* Ajuste quando completada */
-.appointment-item[data-origin="triagem"][data-priority="urgent"][data-status="completed"]::before{
-  filter:saturate(.65) brightness(.9);
-}
-
-/* Remarcada triagem urgente */
-.appointment-item[data-origin="triagem"][data-priority="urgent"][data-rescheduled="true"]::before{
-  background:var(--triagem-urgent-overlay-soft);
-}
-
-/* ============ Estrutura Interna ============ */
-.apt-header{
-  display:grid;
-  grid-template-columns:auto auto 1fr auto;
-  gap:10px;
-  align-items:center;
-  row-gap:6px;
-}
-@media (max-width:640px){
-  .apt-header{
-    grid-template-columns:1fr auto;
-    grid-template-areas:
-      "time meta"
-      "icons chip"
-      "ticket ticket";
-    gap:6px 10px;
-  }
-  .apt-icons{grid-area:icons;}
-  .apt-time{grid-area:time;}
-  .triagem-chip{grid-area:chip;}
-  .apt-ticket{grid-area:ticket;}
-  .apt-meta{grid-area:meta;justify-content:flex-end;}
-}
-
-.apt-icons{
-  display:flex;
-  gap:4px;
-  align-items:center;
-  font-size:.75rem;
-}
-.apt-icons i{
-  color:rgba(255,255,255,0.85);
-  filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));
-}
-
-/* Cores específicas para ícones fora do triagem urgente */
-.appointment-item:not([data-origin="triagem"][data-priority="urgent"]) .apt-icons i {
-  color: var(--color-text);
-  filter: none;
-}
-
-.apt-time{
-  font-weight:700;
-  font-size:.95rem; /* Aumentado de .9rem para .95rem */
-  letter-spacing:.5px;
-  color:#fff;
-  text-decoration:underline;
-  cursor:pointer;
-  text-shadow: var(--text-white-shadow);
-}
-.apt-time:hover,.apt-time:focus{
-  text-decoration:none;
-  filter:brightness(1.05);
-}
-
-/* Cor do horário para cards normais */
-.appointment-item:not([data-origin="triagem"][data-priority="urgent"]) .apt-time {
-  color: var(--color-text);
-  text-shadow: none;
-}
-
-/* Melhor contraste no chip de triagem */
-.triagem-chip{
-  background:var(--triagem-chip-bg);
-  backdrop-filter:blur(2px);
-  color:var(--triagem-chip-text);
-  font-size:.65rem; /* Aumentado para .65rem */
-  font-weight:700; /* Aumentado de 600 para 700 */
-  letter-spacing:.7px;
-  padding:3px 8px; /* Aumentado padding horizontal */
-  border-radius:var(--radius-pill);
-  line-height:1;
-  white-space:nowrap;
-  box-shadow:0 1px 2px rgba(0,0,0,.25);
-  text-shadow: var(--text-white-shadow);
-}
-
-.apt-ticket{
-  font-weight:700; /* Aumentado de 600 para 700 */
-  color:#fff;
-  text-decoration:none;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  min-width:0;
-  text-shadow: var(--text-white-shadow);
-}
-
-/* Cor do ticket para cards não-urgentes de triagem */
-.appointment-item:not([data-origin="triagem"][data-priority="urgent"]) .apt-ticket {
-  color: var(--color-text);
-  text-shadow: none;
-}
-
-.apt-ticket:hover{
-  text-decoration:underline;
-  opacity: 0.9;
-}
-
-.apt-meta{
-  display:flex;
-  gap:6px;
-  align-items:center;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-/* Melhorado contraste nos badges */
-.apt-badge{
-  font-size:.65rem; /* Aumentado para .65rem */
-  text-transform:uppercase;
-  letter-spacing:.6px;
-  font-weight:700; /* Aumentado de 600 para 700 */
-  padding:3px 8px; /* Aumentado padding horizontal */
-  border-radius:var(--radius-pill);
-  background:rgba(255,255,255,0.28); /* Aumentado opacidade para melhor contraste */
-  color:#fff;
-  line-height:1;
-  display:inline-flex;
-  align-items:center;
-  gap:3px;
-  box-shadow:0 1px 2px rgba(0,0,0,0.25);
-  text-shadow: var(--text-white-shadow);
-}
-.apt-badge.warning{background:rgba(255,193,7,0.45); color:#fff;}
-.apt-badge.rescheduled{background:rgba(255,255,255,0.45);}
-
-/* Badges para cards normais */
-.appointment-item:not([data-origin="triagem"][data-priority="urgent"]) .apt-badge {
-  background: rgba(0,0,0,0.08);
-  color: var(--color-text);
-  text-shadow: none;
-}
-.appointment-item:not([data-origin="triagem"][data-priority="urgent"]) .apt-badge.warning {
-  background: rgba(255,193,7,0.25);
-  color: var(--text-important-card);
-}
-.appointment-item:not([data-origin="triagem"][data-priority="urgent"]) .apt-badge.rescheduled {
-  background: rgba(0,0,0,0.06);
-  color: var(--text-rescheduled-card);
-}
-
-.apt-body{}
-.apt-content{
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-  font-size:.85rem; /* Aumentado de .78rem para .85rem */
-  line-height:1.4rem; /* Aumentado line height para 1.4rem para melhor espaçamento em português */
-  letter-spacing:.2px;
-  color:#fff;
-  text-shadow: var(--text-white-shadow);
-  font-weight: 500; /* Adicionado font-weight para melhor legibilidade */
-}
-
-/* Cores específicas para texto em modo escuro */
-:root[data-theme="dark"] .appointment-item[data-priority="normal"] .apt-content {
-  color: var(--text-normal-card);
-}
-:root[data-theme="dark"] .appointment-item[data-priority="important"] .apt-content {
-  color: var(--text-important-card);
-}
-:root[data-theme="dark"] .appointment-item[data-priority="urgent"] .apt-content {
-  color: var(--text-urgent-card);
-}
-:root[data-theme="dark"] .appointment-item[data-origin="triagem"]:not([data-priority="urgent"]) .apt-content {
-  color: var(--text-triagem-card);
-}
-:root[data-theme="dark"] .appointment-item[data-origin="financeiro"] .apt-content {
   color: var(--text-financeiro-card);
 }
-:root[data-theme="dark"] .appointment-item[data-priority="rescheduled"] .apt-content {
-  color: var(--text-rescheduled-card);
+
+/* Triagem rescheduled */
+.appointment-item[data-origin="triagem"][data-priority="rescheduled"] {
+  background-color: var(--color-triagem-rescheduled-bg) !important;
+  border-left: 5px solid var(--color-triagem-rescheduled) !important;
 }
 
-/* Melhoria na visibilidade do conteúdo quando expandido */
-.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-content:hover,
-.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-content:focus{
-  -webkit-line-clamp:unset;
-  overflow:visible;
-  background-color: rgba(0,0,0,0.08); /* Ajustado para melhor contraste */
-  padding: 4px 6px; /* Aumentado padding */
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-}
-
-/* Reschedule count dentro de triagem urgente */
-.appointment-item[data-origin="triagem"][data-priority="urgent"] .reschedule-count{
-  background:rgba(255,255,255,0.40); /* Aumentado opacidade */
-  box-shadow:0 1px 2px rgba(0,0,0,0.15);
-  padding:2px 6px;
-}
-
-/* ================= MODOS ALTERNATIVOS ================= */
-body[data-style="vibrant"] .appointment-item[data-origin="triagem"][data-priority="urgent"]::before{
-  background:var(--triagem-urgent-overlay);
-}
-body[data-glow-mode="triagem-wide"] .appointment-item[data-origin="triagem"][data-priority="urgent"]::before{
-  background:var(--triagem-urgent-overlay-wide);
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.15),
-    0 0 0 1px var(--triagem-urgent-glow-border),
-    0 0 18px 5px var(--triagem-urgent-glow-soft),
-    0 0 40px 14px var(--triagem-urgent-glow-far);
-}
-[data-disable-glow="true"] .appointment-item[data-origin="triagem"][data-priority="urgent"]::before{
-  box-shadow:none;
-}
-
-/* ================= ACOES / EDICAO ================= */
-.appointment-item .appointment-actions{
-  display:none;
-  gap:8px;
-  opacity:0;
-  transition:opacity var(--transition-medium) ease;
-}
-.appointments-card.edit-mode-active .appointment-actions{
-  display:flex;
-  opacity:1;
-}
-.appointments-card.edit-mode-active #add-appointment-btn{display:none;}
-.appointments-card.edit-mode-active #delete-all-btn{display:block;}
-
-/* ================= ACESSIBILIDADE ================= */
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"]::before{
-  background:#f2c2de!important;
-}
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"],
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-content{
-  color:#3a1730;
-}
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-time,
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-ticket {
-  color:#3a1730;
-  text-shadow: none;
-}
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .triagem-chip{
-  background:#ffffff;
-  color:#3a1730;
-  box-shadow:none;
-  text-shadow: none;
-}
-.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-badge {
-  background: #fff;
-  color: #3a1730;
-  text-shadow: none;
-}
-
-.hc-outline .calendar-days div[data-selected="true"]:not([data-priority="urgent"]):not([data-origin="triagem"][data-priority="urgent"]):not([data-origin="triagem"][data-priority="rescheduled"]){
-  box-shadow:0 0 0 2px var(--color-selected-border),0 0 0 4px #ffffff;
-}
-
-/* ================= RESPONSIVIDADE EXTRA ================= */
-@media (max-width:480px){
-  .calendar-weekdays div{font-size:.58rem;}
-  .calendar-days div{font-size:.85rem; border-width:1.5px;} /* Aumentado de .78rem para .85rem */
-  .calendar-days div[data-recurring="true"]::after{border-width:0 10px 10px 0;}
-  .appointment-item[data-origin="triagem"][data-priority="urgent"]{padding:14px 12px 10px;}
-  .apt-content{font-size:.8rem;} /* Aumentado de .75rem para .8rem */
-}
-
-/* Ajuste para modo escuro - melhorar contraste */
-:root[data-theme="dark"] .apt-content {
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-:root[data-theme="dark"] .apt-ticket,
-:root[data-theme="dark"] .apt-time,
-:root[data-theme="dark"] .apt-badge {
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-}
-
-/* Melhorar legibilidade nos cartões normais (não-triagem) */
-.appointment-item:not([data-origin="triagem"]) .apt-content {
-  font-weight: 500;
-  font-size: .85rem;
-}
-
-/* Texto mais forte para compromissos importantes e urgentes */
-.appointment-item[data-priority="important"] .apt-content,
-.appointment-item[data-priority="urgent"] .apt-content {
-  font-weight: 600;
-}
-
-/* ================= UTILIDADES ================= */
-.visually-hidden{
-  position:absolute!important;
-  width:1px;height:1px;
-  padding:0;margin:-1px;
-  overflow:hidden;
-  clip:rect(0 0 0 0);
-  white-space:nowrap;border:0;
-}
-
-/* ================= LEGACY FALLBACK (placeholders) ================= */
-.calendar-days div.urgent-day{}
-.calendar-days div.triagem-urgent-day{}
-.calendar-days div.triagem-rescheduled-day{}
-.appointment-item.priority-urgente{}
-.appointment-item.from-triagem.priority-urgente{}
-.appointment-item.remarcada{}
-.appointment-item.from-triagem.remarcada{}
-
-/* ================= GARANTIA SEM ANIMACOES ================= */
-.calendar-days div[data-priority="urgent"],
-.calendar-days div[data-origin="triagem"][data-priority="urgent"],
-.appointment-item[data-priority="urgent"],
-.appointment-item[data-origin="triagem"][data-priority="urgent"]{
-  animation:none!important;
-}
-
-.edit-only { display: none !important; } .appointments-card.edit-mode-active .edit-only { display: inline-block !important; }
-
-/* ================================================
-   OVERRIDES: TRIAGEM URGENTE MAIS SUAVE
-   (Colar no final do arquivo)
-   ================================================ */
-
-/* ---- Novo estilo: Terminando em branco como urgent normal ---- */
-:root {
-  /* Gradiente mais similar ao urgente normal, terminando em branco */
-  --triagem-urgent-overlay-soft: linear-gradient(125deg, #f5d6ec 0%, #f9e6f2 65%, #ffffff 82%);
-  --triagem-urgent-overlay: linear-gradient(125deg, #f0c5e4 0%, #f7dded 65%, #ffffff 82%);
-  --triagem-urgent-overlay-wide: linear-gradient(125deg, #ebbadd 0%, #f5d6ec 65%, #ffffff 82%);
-
-  /* Mantendo o chip mais discreto */
-  --triagem-chip-bg: rgba(120, 50, 95, 0.18);
-}
-
-/* Texto escurecido para compensar fundo claro */
+/* TRIAGEM URGENTE - ESTILO ESPECIAL */
 .appointment-item[data-origin="triagem"][data-priority="urgent"] {
-  box-shadow: 0 0 0 1px var(--triagem-urgent-glow-border),
-              0 0 5px 1px var(--triagem-urgent-glow-soft),
-              0 0 14px 4px var(--triagem-urgent-glow-far);
-  border-left: 6px solid var(--color-triagem-urgent)!important;
+  border-left: 6px solid var(--color-triagem-urgent) !important;
+  border-right: 0;
+  background: transparent;
+  color: var(--triagem-chip-text);
+  border-radius: 8px;
+  padding: 14px 16px 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(196,20,131,0.6), 0 0 5px 1px rgba(196,20,131,0.3);
 }
 
 .appointment-item[data-origin="triagem"][data-priority="urgent"]::before {
-  background: var(--triagem-urgent-overlay-soft);
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--triagem-urgent-overlay);
+  pointer-events: none;
+  opacity: 1;
+  z-index: 0;
+}
+
+.appointment-item[data-origin="triagem"][data-priority="urgent"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+.appointment-item[data-origin="triagem"][data-priority="urgent"]:hover::before {
+  filter: brightness(0.97);
+}
+
+.appointment-item[data-origin="triagem"][data-priority="urgent"][data-status="completed"]::before {
+  filter: saturate(.65) brightness(.9);
 }
 
 .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-content,
 .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-time,
 .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-ticket {
-  color: #552744;
+  color: var(--triagem-chip-text);
   text-shadow: none;
 }
 
-.appointment-item[data-origin="triagem"][data-priority="urgent"] .triagem-chip {
-  background: rgba(120,50,95,0.20);
-  color: #552744;
-  text-shadow: none;
+/* ================= ESTRUTURA INTERNA DOS ITENS ================= */
+.apt-header {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  row-gap: 6px;
+}
+
+.apt-icons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: .75rem;
+}
+
+.apt-icons i {
+  color: var(--color-text);
+}
+
+.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-icons i {
+  color: rgba(255,255,255,0.85);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+}
+
+.apt-time {
+  font-weight: 700;
+  font-size: .95rem;
+  letter-spacing: .5px;
+  color: var(--color-text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-time {
+  color: #fff;
+  text-shadow: var(--text-shadow);
+}
+
+.apt-time:hover,
+.apt-time:focus {
+  text-decoration: none;
+  filter: brightness(1.05);
+}
+
+.triagem-chip {
+  background: var(--triagem-chip-bg);
+  backdrop-filter: blur(2px);
+  color: var(--triagem-chip-text);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .7px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
   border: 1px solid rgba(120,50,95,0.25);
 }
 
-.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-badge {
-  background: rgba(120,50,95,0.15);
-  color: #552744;
-  text-shadow: none;
-  border: 1px solid rgba(120,50,95,0.18);
-}
-
-.appointment-item[data-origin="triagem"][data-priority="urgent"] .reschedule-count {
-  background: rgba(120,50,95,0.22);
-  color: #552744;
-  box-shadow: none;
-}
-
-/* Hover: leve aumento de contraste */
-.appointment-item[data-origin="triagem"][data-priority="urgent"]:hover::before {
-  filter: brightness(0.97);
-}
-
-/* Modo dark: ajustar para manter consistência */
-:root[data-theme="dark"] .appointment-item[data-origin="triagem"][data-priority="urgent"]::before {
-  background: linear-gradient(125deg, #693055 0%, #7d4064 65%, #1e293b 82%);
-}
-
-:root[data-theme="dark"] .appointment-item[data-origin="triagem"][data-priority="urgent"] {
-  box-shadow: 0 0 0 1px var(--triagem-urgent-glow-border),
-              0 0 5px 1px var(--triagem-urgent-glow-soft),
-              0 0 14px 4px var(--triagem-urgent-glow-far);
-}
-
-/* ================================================
-   CORREÇÃO: CHIP TRIAGEM PARA TODOS OS CARDS DE TRIAGEM
-   ================================================ */
-
-/* Remover o pseudo-elemento que estava duplicando o chip */
-.appointment-item[data-origin="triagem"]:not([data-priority="urgent"]) .apt-ticket::before {
-  content: none; /* Desativar o conteúdo que estava duplicando */
-}
-
-/* Estilo para o chip de triagem normal */
 .triagem-chip-normal {
   background: var(--triagem-normal-chip-bg);
   color: var(--triagem-normal-chip-text);
@@ -860,163 +651,648 @@ body[data-glow-mode="triagem-wide"] .appointment-item[data-origin="triagem"][dat
   vertical-align: middle;
 }
 
-/* Modo escuro para o chip de triagem normal */
-:root[data-theme="dark"] .triagem-chip-normal {
-  background: rgba(139, 92, 246, 0.15);
-  color: #d8b4fe;
-  border-color: rgba(139, 92, 246, 0.3);
+.apt-ticket {
+  font-weight: 700;
+  color: var(--color-text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
-/* Ajustes para espaçamento quando não há ticket */
-.appointment-item[data-origin="triagem"]:not([data-priority="urgent"]) .apt-ticket:empty .triagem-chip-normal {
-  margin-right: 0;
+.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-ticket {
+  color: #fff;
+  text-shadow: var(--text-shadow);
 }
 
-/* Ajuste para alinhar quando chip + ticket aparecem juntos */
-.apt-ticket .triagem-chip,
-.apt-ticket .triagem-chip-normal {
-  margin-right: 8px;
+.apt-ticket:hover {
+  text-decoration: underline;
+  opacity: 0.9;
 }
 
-/* =========================================================
-   MELHORIA DE VISUALIZAÇÃO PARA DIAS URGENTES NO CALENDÁRIO
-   =========================================================== */
-
-/* Estilo aprimorado para dias urgentes no calendário */
-.calendar-days div[data-priority="urgent"] {
-  color: var(--color-urgent);
-  font-weight: 800; /* Aumentado de 700 para 800 */
-  background-color: var(--color-urgent-bg);
-  border-color: var(--color-urgent);
-  box-shadow: 0 0 0 1px var(--urgent-glow-border),
-              0 0 4px 0 var(--urgent-glow-soft);
-  transform: scale(1.05); /* Leve aumento para chamar mais atenção */
-  z-index: 2; /* Ficar acima de outros dias */
-  position: relative;
+.apt-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-/* Pequeno indicador de urgente */
-.calendar-days div[data-priority="urgent"]::after {
-  content: "!";
-  position: absolute;
-  bottom: 2px;
-  right: 3px;
-  font-size: 8px;
-  font-weight: 900;
-  color: var(--color-urgent);
+.apt-badge {
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0,0,0,0.08);
+  color: var(--color-text);
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
-/* Hover sobre dias urgentes */
-.calendar-days div[data-priority="urgent"]:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 1px var(--urgent-glow-border),
-              0 0 6px 1px var(--urgent-glow-soft);
+.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-badge {
+  background: rgba(120,50,95,0.15);
+  color: var(--triagem-chip-text);
+  border: 1px solid rgba(120,50,95,0.18);
 }
 
-/* Melhorias para dias de triagem urgente */
-.calendar-days div[data-origin="triagem"][data-priority="urgent"] {
-  color: var(--color-triagem-urgent);
-  font-weight: 800;
-  background: var(--color-triagem-urgent-bg);
-  border-color: var(--color-triagem-urgent-border);
-  box-shadow: 0 0 0 1px var(--triagem-urgent-glow-border),
-              0 0 4px 0 var(--triagem-urgent-glow-soft);
-  transform: scale(1.05);
-  z-index: 2;
+.apt-badge.warning {
+  background: rgba(255,193,7,0.25);
+  color: var(--text-important-card);
 }
 
-/* Pequeno indicador de triagem urgente */
-.calendar-days div[data-origin="triagem"][data-priority="urgent"]::after {
-  content: "!";
+.apt-badge.rescheduled {
+  background: rgba(0,0,0,0.06);
+  color: var(--text-rescheduled-card);
+}
+
+.apt-body {
+  margin-top: 4px;
+}
+
+.apt-content {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: .85rem;
+  line-height: 1.4rem;
+  letter-spacing: .2px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-content {
+  color: var(--triagem-chip-text);
+}
+
+/* ================= AÇÕES E EDIÇÃO ================= */
+.appointment-actions {
+  display: none;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity var(--transition-medium) ease;
   position: absolute;
-  bottom: 2px;
-  right: 3px;
-  font-size: 8px;
-  font-weight: 900;
-  color: var(--color-triagem-urgent);
-  line-height: 1;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
 }
 
-/* Hover sobre dias de triagem urgente */
-.calendar-days div[data-origin="triagem"][data-priority="urgent"]:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 1px var(--triagem-urgent-glow-border),
-              0 0 6px 1px var(--triagem-urgent-glow-soft);
+.appointments-card.edit-mode-active .appointment-actions {
+  display: flex;
+  opacity: 1;
 }
 
-/* Adaptação para dispositivos pequenos */
-@media (max-width: 480px) {
+.appointments-card.edit-mode-active #add-appointment-btn {
+  display: none;
+}
+
+.appointments-card.edit-mode-active #delete-all-btn {
+  display: block;
+}
+
+.edit-only {
+  display: none !important;
+}
+
+.appointments-card.edit-mode-active .edit-only {
+  display: inline-block !important;
+}
+
+/* ================= RESPONSIVIDADE ================= */
+@media (max-width: 640px) {
+  .apt-header {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "time meta"
+      "icons chip"
+      "ticket ticket";
+    gap: 6px 10px;
+  }
+
+  .apt-icons { grid-area: icons; }
+  .apt-time { grid-area: time; }
+  .triagem-chip { grid-area: chip; }
+  .apt-ticket { grid-area: ticket; }
+  .apt-meta { grid-area: meta; justify-content: flex-end; }
+
+  .appointments-card,
+  .date-time-card {
+    padding: 8px 2vw;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .dashboard {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .calendar-header {
+    font-size: 1.05rem;
+    padding: 8px 0;
+  }
+
+  .calendar-weekdays, .calendar-days {
+    grid-template-columns: repeat(7, minmax(32px, 1fr));
+  }
+
+  .calendar-weekdays div {
+    font-size: .58rem;
+    padding: 7px 0;
+  }
+
+  .calendar-days div {
+    font-size: .85rem;
+    border-width: 1.5px;
+    min-width: 32px;
+    min-height: 32px;
+    margin: 2px;
+  }
+
+  .calendar-days div[data-recurring="true"]::after {
+    border-width: 0 10px 10px 0;
+  }
+
   .calendar-days div[data-priority="urgent"],
   .calendar-days div[data-origin="triagem"][data-priority="urgent"] {
-    transform: scale(1.03); /* Reduzindo o scale em telas menores */
+    transform: scale(1.03) !important;
   }
 
   .calendar-days div[data-priority="urgent"]:hover,
   .calendar-days div[data-origin="triagem"][data-priority="urgent"]:hover {
-    transform: scale(1.05);
+    transform: scale(1.05) !important;
+  }
+
+  .appointment-item[data-origin="triagem"][data-priority="urgent"] {
+    padding: 14px 8px 10px;
+  }
+
+  .apt-content {
+    font-size: .8rem;
+  }
+
+}
+
+@media (max-width: 480px) {
+  .calendar-container {
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .calendar-weekdays, .calendar-days {
+    grid-template-columns: repeat(7, 44px);
+  }
+  .calendar-days div {
+    min-width: 28px;
+    min-height: 28px;
+    font-size: .78rem;
+    margin: 1.5px;
+  }
+  .appointments-card,
+  .date-time-card {
+    padding: 6px 1vw;
+  }
+  .apt-header {
+    gap: 4px 6px;
+  }
+  .apt-content {
+    font-size: .75rem;
+    line-height: 1.2rem;
+  }
+  .main-options {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .main-option-card {
+    padding: 10px 8px;
+    font-size: .95rem;
   }
 }
 
-/* Modo escuro - ajustes específicos */
-:root[data-theme="dark"] .calendar-days div[data-priority="urgent"],
-:root[data-theme="dark"] .calendar-days div[data-origin="triagem"][data-priority="urgent"] {
-  box-shadow: 0 0 0 1px var(--urgent-glow-border),
-              0 0 5px 1px var(--urgent-glow-soft),
-              0 0 12px 2px var(--urgent-glow-far);
-}
-
-/* Versão acessível (sem animações ou transformações) */
+/* ================= ACESSIBILIDADE ================= */
 @media (prefers-reduced-motion: reduce) {
   .calendar-days div[data-priority="urgent"],
   .calendar-days div[data-origin="triagem"][data-priority="urgent"] {
-    transform: none;
+    transform: none !important;
     border-width: 2px;
   }
 
   .calendar-days div[data-priority="urgent"]:hover,
   .calendar-days div[data-origin="triagem"][data-priority="urgent"]:hover {
-    transform: none;
+    transform: none !important;
+  }
+
+  .appointment-item,
+  .calendar-days div {
+    transition: none;
   }
 }
 
-/* Compatibilidade com triangulo de recorrência */
-.calendar-days div[data-recurring="true"][data-priority="urgent"]::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: auto;
-  left: auto;
-  border-width: 0 15px 15px 0;
-  border-style: solid;
-  border-color: transparent var(--rec-urgent) transparent transparent;
-  font-size: initial;
-  font-weight: initial;
-  color: initial;
+/* ================= UTILIDADES E MELHORIAS ================= */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="urgent"]::after {
-  border-color: transparent var(--rec-triagem-urgent) transparent transparent;
+/* Melhor contraste para texto em modo escuro */
+:root[data-theme="dark"] .apt-content,
+:root[data-theme="dark"] .apt-ticket,
+:root[data-theme="dark"] .apt-time,
+:root[data-theme="dark"] .apt-badge {
+  text-shadow: var(--text-shadow);
 }
 
-/* Adicionar indicador de exclamação de volta para dias recorrentes */
-.calendar-days div[data-recurring="true"][data-priority="urgent"]::before,
-.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="urgent"]::before {
-  content: "!";
-  position: absolute;
-  bottom: 2px;
-  right: 3px;
-  font-size: 8px;
-  font-weight: 900;
-  line-height: 1;
-  z-index: 3;
+/* Contornos de alta visibilidade */
+.hc-outline .calendar-days div[data-selected="true"]:not([data-priority="urgent"]):not([data-origin="triagem"][data-priority="urgent"]):not([data-origin="triagem"][data-priority="rescheduled"]) {
+  box-shadow: 0 0 0 2px var(--color-selected-border), 0 0 0 4px #ffffff;
 }
 
-.calendar-days div[data-recurring="true"][data-priority="urgent"]::before {
-  color: var(--color-urgent);
+/* ================= FORÇA CONTRASTE (ACESSIBILIDADE) ================= */
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"]::before {
+  background: #f2c2de !important;
 }
 
-.calendar-days div[data-recurring="true"][data-origin="triagem"][data-priority="urgent"]::before {
-  color: var(--color-triagem-urgent);
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"],
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-content,
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-time,
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-ticket {
+  color: #3a1730 !important;
+  text-shadow: none !important;
+}
+
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .triagem-chip {
+  background: #ffffff !important;
+  color: #3a1730 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.force-text-contrast .appointment-item[data-origin="triagem"][data-priority="urgent"] .apt-badge {
+  background: #fff !important;
+  color: #3a1730 !important;
+  text-shadow: none !important;
+}
+
+/* ================= CORREÇÕES ESPECÍFICAS ================= */
+/* Garantir que o dia de hoje sempre tenha prioridade visual */
+.calendar-days div[data-today="true"] {
+  box-shadow: inset 0 0 0 2px var(--color-today-border);
+}
+
+/* Melhorar visibilidade dos chips de triagem */
+.triagem-chip,
+.triagem-chip-normal {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Garantir que o texto do calendário seja sempre legível */
+.calendar-days div {
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+}
+
+:root[data-theme="dark"] .calendar-days div {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Melhorar o contraste dos badges */
+.apt-badge {
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+:root[data-theme="dark"] .apt-badge {
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Correção para links de ticket */
+.apt-ticket-link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.apt-ticket-link:hover {
+  text-decoration: underline;
+  color: var(--color-text);
+}
+
+/* Melhorar a aparência dos botões de ação */
+.appointment-actions .btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Estados de hover para melhor feedback */
+.calendar-days div[data-priority="normal"]:hover:not([data-today="true"]):not([data-selected="true"]) {
+  background-color: var(--color-normal-bg);
+  filter: brightness(0.95);
+}
+
+.calendar-days div[data-priority="important"]:hover:not([data-today="true"]):not([data-selected="true"]) {
+  background-color: var(--color-important-bg);
+  filter: brightness(0.95);
+}
+
+.calendar-days div[data-priority="rescheduled"]:hover:not([data-today="true"]):not([data-selected="true"]) {
+  background-color: var(--color-rescheduled-bg);
+  filter: brightness(0.95);
+}
+
+.calendar-days div[data-origin="triagem"]:hover:not([data-priority="urgent"]):not([data-today="true"]):not([data-selected="true"]) {
+  background-color: var(--color-triagem-bg);
+  filter: brightness(0.95);
+}
+
+/* Garantir que elementos interativos tenham cursor pointer */
+.apt-time,
+.apt-ticket-link,
+.calendar-days div:not([data-outside="true"]) {
+  cursor: pointer;
+}
+
+/* Melhorar a legibilidade dos textos em fundos coloridos */
+.appointment-item[data-priority="urgent"] .apt-content,
+.appointment-item[data-priority="important"] .apt-content,
+.appointment-item[data-origin="triagem"] .apt-content {
+  font-weight: 600;
+}
+
+/* Adicionar um subtle box-shadow para separar melhor os items */
+.appointment-item {
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+
+.appointment-item:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Melhorar a aparência do scroll */
+#appointment-list::-webkit-scrollbar-thumb {
+  background: var(--color-border-neutral);
+  border-radius: 4px;
+}
+
+#appointment-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* Garantir que elementos com z-index funcionem corretamente */
+.appointment-item[data-origin="triagem"][data-priority="urgent"] {
+  isolation: isolate;
+}
+
+/* Melhorar a acessibilidade com focus states mais visíveis */
+.apt-time:focus-visible,
+.apt-ticket-link:focus-visible {
+  outline: 2px solid var(--color-today-border);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Garantir que o conteúdo seja sempre legível */
+.apt-content {
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Última correção: garantir que todos os elementos urgentes sejam destacados */
+.calendar-days div[data-priority="urgent"],
+.calendar-days div[data-origin="triagem"][data-priority="urgent"] {
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+:root[data-theme="dark"] .calendar-days div[data-priority="urgent"],
+:root[data-theme="dark"] .calendar-days div[data-origin="triagem"][data-priority="urgent"] {
+  box-shadow: 0 2px 8px rgba(248, 113, 113, 0.4);
+}
+
+/* ================= ESTILO MODERNO DO CALENDÁRIO ================= */
+.calendar-header {
+  padding: 12px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border-neutral);
+}
+
+.calendar-nav-btn {
+  background: var(--color-hover);
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  font-size: 1.2rem;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.calendar-nav-btn:hover {
+  background: var(--color-today-bg);
+  transform: translateY(-2px);
+}
+
+/* Grid mais espaçado e moderno */
+.calendar-weekdays {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-neutral);
+}
+
+.calendar-weekdays div {
+  padding: 10px 0;
+  font-size: .8rem;
+  letter-spacing: 0.8px;
+}
+
+/* Células mais modernas */
+.calendar-days div {
+  border: none;
+  border-radius: 12px;
+  margin: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.calendar-days div:hover:not([data-outside="true"]):not([data-selected="true"]) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Efeito para dia selecionado */
+.calendar-days div[data-selected="true"] {
+  box-shadow: 0 0 0 3px var(--color-selected-border), 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Efeito para o dia de hoje */
+.calendar-days div[data-today="true"] {
+  box-shadow: 0 0 0 3px var(--color-today-border), 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+/* ================= RESPONSIVIDADE MODERNA ================= */
+@media (max-width: 640px) {
+  .calendar-weekdays, .calendar-days {
+    grid-template-columns: repeat(7, minmax(40px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-container {
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .calendar-weekdays, .calendar-days {
+    grid-template-columns: repeat(7, 60px);
+  }
+}
+
+/* ================= MELHORIA VISUAL E ESPAÇAMENTO DOS CARDS NO MOBILE ================= */
+
+/* Cards principais (dashboard) */
+@media (max-width: 640px) {
+  .dashboard {
+    flex-direction: column;
+    gap: 18px !important;
+    padding-bottom: 6px;
+  }
+  .date-time-card,
+  .appointments-card {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 12px !important;
+    padding: 16px 8px 20px 8px !important;
+    margin: 0 auto 12px auto;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    background: var(--color-card-bg, #f8fafc);
+    transition: box-shadow .18s;
+  }
+  .date-time-card {
+    margin-bottom: 12px !important;
+  }
+  .appointments-card {
+    margin-top: 0 !important;
+  }
+
+  /* Títulos e botões */
+  .calendar-header h3,
+  #appointments-title {
+    font-size: 1.1rem !important;
+    margin-bottom: 10px !important;
+  }
+  .calendar-header,
+  .d-flex.justify-content-between {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .d-flex.gap-2 {
+    gap: 8px !important;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+
+  .appointment-item {
+    padding: 14px 7px !important;
+    margin-bottom: 10px !important;
+    border-radius: 10px !important;
+    font-size: 1rem !important;
+    gap: 8px !important;
+  }
+  .appointment-item:last-child {
+    margin-bottom: 0 !important;
+  }
+  .apt-content {
+    font-size: .93rem !important;
+    line-height: 1.55rem !important;
+    margin-bottom: 3px;
+  }
+  .apt-header {
+    gap: 8px 14px !important;
+    margin-bottom: 6px !important;
+  }
+}
+
+/* Cards de opções principais (main-options) */
+@media (max-width: 640px) {
+  .main-options {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    margin-top: 24px !important;
+    padding: 0 2vw;
+  }
+  .main-option-card {
+    background: var(--color-card-bg, #f8fafc);
+    border-radius: 14px !important;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.06);
+    padding: 20px 14px 16px 14px !important;
+    font-size: 1.03rem !important;
+    margin: 0;
+    min-width: 0;
+    transition: box-shadow .18s, background .18s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+  }
+  .main-option-card .option-icon {
+    font-size: 2.1rem !important;
+    margin-bottom: 8px !important;
+  }
+  .main-option-card h3 {
+    font-size: 1.13rem !important;
+    margin: 0 0 4px 0 !important;
+    font-weight: 700;
+  }
+  .main-option-card p {
+    font-size: 1.01rem !important;
+    color: var(--color-text-light, #4a5568);
+    margin: 0 !important;
+    text-align: center;
+    line-height: 1.45;
+  }
+}
+
+/* Footer mais espaçado em mobile */
+@media (max-width: 640px) {
+  .footer {
+    padding-bottom: 36px !important;
+    font-size: .98rem !important;
+    margin-top: 18px !important;
+  }
+}
+
+/* Botões mais confortáveis para toque */
+@media (max-width: 640px) {
+  .btn,
+  .calendar-nav-btn {
+    min-width: 46px !important;
+    min-height: 46px !important;
+    font-size: 1.13rem !important;
+    padding: 7px 12px !important;
+    border-radius: 11px !important;
+    touch-action: manipulation;
+  }
+}
+
+/* Efeito visual ao tocar (leve) */
+@media (hover: none) and (pointer: coarse) {
+  .main-option-card:active,
+  .date-time-card:active,
+  .appointments-card:active,
+  .appointment-item:active {
+    background: var(--color-selected-bg, #f0f6ff);
+    box-shadow: 0 1px 9px rgba(37,99,235,0.13) inset;
+    filter: brightness(0.98);
+  }
 }

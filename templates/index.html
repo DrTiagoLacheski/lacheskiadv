@@ -4,21 +4,195 @@
 
 {% block styles %}
     {{ super() }}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index_custom.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar_today.css') }}">
     <style>
         .header-logo {
             max-width: 350px;
             height: auto;
             margin-bottom: 10px;
         }
+
+        /* Espaçamento geral e melhor fluxo no mobile */
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 22px 14px 0 14px;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+
+        .date-time-card,
+        .appointments-card {
+            background: var(--color-card-bg, #f8fafc);
+            border-radius: 16px;
+            box-shadow: 0 2px 18px rgba(0,0,0,0.09), 0 1.5px 4px rgba(0,0,0,0.07);
+            padding: 28px 24px 24px 24px;
+            min-width: 340px;
+            max-width: 480px;
+            flex: 1 1 360px;
+            margin: 0 auto 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .appointments-card {
+            margin-top: 0;
+        }
+
+        .main-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 22px;
+            margin: 26px 0 0 0;
+        }
+        .main-option-card {
+            border-radius: 14px;
+            padding: 24px 18px 18px 18px;
+            font-size: 1.04rem;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* -------- MOBILE -------- */
+        @media (max-width: 800px) {
+            .dashboard {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .date-time-card,
+            .appointments-card {
+                min-width: 0;
+                max-width: 100%;
+                padding: 18px 7vw 18px 7vw;
+                border-radius: 14px;
+                margin-bottom: 12px;
+            }
+            .main-options {
+                gap: 14px;
+                margin-top: 18px;
+            }
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 3.5vw 0 0 0;
+            }
+            .dashboard {
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+            .date-time-card,
+            .appointments-card {
+                padding: 16px 2vw 14px 2vw;
+                min-width: 0;
+                max-width: 100%;
+                border-radius: 11px;
+                margin-bottom: 10px;
+            }
+            .main-options {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-top: 13px;
+                padding: 0 2vw;
+            }
+            .main-option-card {
+                border-radius: 10px;
+                padding: 16px 8px 13px 8px;
+                font-size: .98rem;
+            }
+        }
+        @media (max-width: 450px) {
+            .container {
+                padding: 0 0 0 0;
+            }
+            .dashboard {
+                gap: 7px;
+            }
+            .date-time-card,
+            .appointments-card {
+                padding: 10px 0 11px 0;
+                border-radius: 7px;
+                margin-bottom: 6px;
+            }
+            .main-options {
+                gap: 8px;
+                margin-top: 10px;
+                padding: 0 1vw;
+            }
+            .main-option-card {
+                padding: 10px 3px 8px 3px;
+                font-size: .93rem;
+            }
+        }
+
+        /* Cards de compromissos - espaçamento extra entre eles */
+        #appointment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 6px;
+        }
+        .appointment-item {
+            border-radius: 9px;
+            padding: 16px 10px;
+            margin: 0;
+            font-size: 1.01rem;
+        }
+        @media (max-width: 640px) {
+            #appointment-list {
+                gap: 16px;
+            }
+            .appointment-item {
+                font-size: 1.08rem;
+                padding: 17px 8px 15px 8px;
+                border-radius: 13px;
+            }
+        }
+        @media (max-width: 450px) {
+            #appointment-list {
+                gap: 12px;
+            }
+            .appointment-item {
+                font-size: 1.02rem;
+                padding: 12px 4px 12px 4px;
+                border-radius: 8px;
+            }
+        }
+        /* Ajuste para títulos e botões em cards */
+        .calendar-header h3,
+        #appointments-title {
+            font-size: 1.12rem;
+            margin: 0 0 9px 0;
+            line-height: 1.28;
+        }
+        .d-flex.gap-2 {
+            gap: 9px !important;
+            flex-wrap: wrap;
+        }
+        .calendar-header,
+        .d-flex.justify-content-between {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+        }
+        /* Botões de ação maiores para toque */
+        .btn,
+        .calendar-nav-btn {
+            min-width: 40px;
+            min-height: 40px;
+            font-size: 1.08rem;
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
-
 <div class="container">
     {% if mensagem_negada %}
         <div class="alert alert-danger" role="alert" style="margin-top:20px;">
@@ -28,15 +202,15 @@
 
     <header class="header">
         <img src="{{ url_for('static', filename='images/logolacheski.png') }}" alt="Logo Lacheski Advocacia" class="header-logo">
-        <p>Portal de Ferramentas e Gerenciamento</p>
+        <p style="font-size:1.04rem">Portal de Ferramentas e Gerenciamento</p>
     </header>
 
     <div class="dashboard">
         <div class="date-time-card">
             <div class="calendar-header">
-                <button id="prev-month-btn" class="calendar-nav-btn" aria-label="Mês anterior">&lt;</button>
+                <button id="prev-month-btn" class="calendar-nav-btn" aria-label="Mês anterior" type="button">&lt;</button>
                 <h3 id="month-year" aria-live="polite"></h3>
-                <button id="next-month-btn" class="calendar-nav-btn" aria-label="Próximo mês">&gt;</button>
+                <button id="next-month-btn" class="calendar-nav-btn" aria-label="Próximo mês" type="button">&gt;</button>
             </div>
             <div class="calendar-weekdays" aria-hidden="true">
                 <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
@@ -47,13 +221,13 @@
         </div>
 
         <div class="appointments-card" id="appointments-card">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 id="appointments-title" aria-live="polite">Compromissos do Dia</h3>
-                <div class="d-flex gap-2">
-                    <button id="delete-all-btn" class="btn btn-danger btn-sm edit-only">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h3 id="appointments-title" aria-live="polite" class="m-0">Compromissos do Dia</h3>
+                <div class="d-flex flex-wrap gap-2">
+                    <button id="delete-all-btn" class="btn btn-danger btn-sm edit-only" type="button">
                         <i class="bi bi-trash3-fill"></i> Excluir Todos
                     </button>
-                    <button id="export-calendar-btn" class="btn btn-outline-success btn-sm edit-only">
+                    <button id="export-calendar-btn" class="btn btn-outline-success btn-sm edit-only" type="button">
                         <i class="fa-solid fa-calendar-arrow-down"></i> Exportar
                     </button>
                     <form id="importCalendarForm" method="POST"
@@ -67,10 +241,10 @@
                         </button>
                     </form>
                     <button id="add-appointment-btn" class="btn btn-primary btn-sm rounded-circle"
-                            data-bs-toggle="modal" data-bs-target="#appointmentModal" aria-label="Adicionar compromisso">
+                            data-bs-toggle="modal" data-bs-target="#appointmentModal" aria-label="Adicionar compromisso" type="button">
                         <i class="bi bi-plus-lg"></i>
                     </button>
-                    <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle" aria-label="Alternar modo de edição">
+                    <button id="toggle-edit-mode-btn" class="btn btn-outline-secondary btn-sm rounded-circle" aria-label="Alternar modo de edição" type="button">
                         <i class="bi bi-gear-fill"></i>
                     </button>
                 </div>
@@ -154,8 +328,8 @@
   </div>
 </div>
 
-<footer class="footer">
-    <p>© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
+<footer class="footer" style="padding-bottom:55px;padding-top:18px;">
+    <p style="font-size:.98rem;">© 2025 Lacheski Advocacia - Todos os direitos reservados</p>
 </footer>
 {% endblock %}
 
@@ -168,14 +342,12 @@
             document.body.setAttribute('data-disable-animations', 'true');
         }
 
-        // Armazenar a preferência do usuário (caso seja implementado um botão de toggle)
         function toggleAnimations() {
             const currentState = document.body.getAttribute('data-disable-animations') === 'true';
             document.body.setAttribute('data-disable-animations', (!currentState).toString());
             localStorage.setItem('disable-animations', (!currentState).toString());
         }
 
-        // Verificar preferência salva
         const savedPreference = localStorage.getItem('disable-animations');
         if (savedPreference !== null) {
             document.body.setAttribute('data-disable-animations', savedPreference);
@@ -183,19 +355,18 @@
 
         // Modo escuro - verificar preferência do sistema
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.setAttribute('data-theme', 'dark');
+            if (!localStorage.getItem('theme')) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
         }
 
-        // Função para alternar o tema escuro/claro
         function toggleDarkMode() {
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
         }
 
-        // Verificar preferência salva para o tema
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
             document.documentElement.setAttribute('data-theme', savedTheme);

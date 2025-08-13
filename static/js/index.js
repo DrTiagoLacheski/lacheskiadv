@@ -124,6 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const fetchCalendarData = async (endpoint, expectObject=false) => {
     try{
       const r=await fetch(`/api/appointments/${endpoint}/${state.year}/${state.month+1}`);
+      if(r.status === 429) {
+        // Exibe mensagem de erro amigável ao usuário
+        showRateLimitError();
+        throw new Error('429 Too Many Requests');
+      }
       if(!r.ok) throw new Error(endpoint);
       return await r.json();
     }catch(e){
@@ -131,6 +136,26 @@ document.addEventListener('DOMContentLoaded', () => {
       return expectObject?{}:[];
     }
   };
+
+  // Função para mostrar mensagem de rate limit só uma vez
+  let rateLimitShown = false;
+  function showRateLimitError() {
+    if (rateLimitShown) return;
+    rateLimitShown = true;
+    const msg = document.createElement('div');
+    msg.className = 'alert alert-danger';
+    msg.style.position = 'fixed';
+    msg.style.top = '20px';
+    msg.style.left = '50%';
+    msg.style.transform = 'translateX(-50%)';
+    msg.style.zIndex = 9999;
+    msg.textContent = 'Você fez muitas requisições ao servidor. Aguarde alguns segundos e tente novamente.';
+    document.body.appendChild(msg);
+    setTimeout(() => {
+      msg.remove();
+      rateLimitShown = false;
+    }, 6000);
+  }
 
   const fetchAppointments = async dateStr => {
     dom.appointmentList.innerHTML='<p class="text-muted">A carregar...</p>';
@@ -334,6 +359,16 @@ document.addEventListener('DOMContentLoaded', () => {
       fetchCalendarData('active-days'),
       fetchCalendarData('recurring-days', true)
     ]);
+
+    // Se algum endpoint essencial falhou (por rate limit), não renderiza o calendário
+    if (
+      !Array.isArray(state.urgentDays) ||
+      !Array.isArray(state.importantDays) ||
+      !Array.isArray(state.activeDays) ||
+      typeof state.recurringDays !== 'object'
+    ) {
+      return;
+    }
 
     // Inicializar como arrays vazios para endpoints não implementados
     state.completedDays = [];
