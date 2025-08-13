@@ -59,6 +59,7 @@ def create_app():
     from routes.user import user_bp
     from routes.notificacoes import notificacoes_bp
     from routes.calendar_export_import import calendar_export_import_bp
+    from routes.api import api_bp
 
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -75,6 +76,7 @@ def create_app():
     app.register_blueprint(calendar_export_import_bp)
     app.register_blueprint(admin_bp, url_prefix='/modelo_procuracao')
     app.register_blueprint(scheduler_bp)
+    app.register_blueprint(api_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():

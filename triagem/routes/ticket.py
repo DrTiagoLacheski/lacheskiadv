@@ -437,7 +437,7 @@ def add_todo(ticket):
 
         for uid in user_ids:
             appointment = Appointment(
-                content=f"Tarefa: {content} (Caso #{ticket.id})",
+                content=f"Tarefa: {content} ",
                 appointment_date=todo_date,
                 appointment_time=todo_time if todo_time else "--:--",  # NOVO
                 user_id=uid,

@@ -369,3 +369,25 @@ def get_rescheduled_days(year, month):
 
     rescheduled_days = [int(day[0]) for day in rescheduled_query.all()]
     return jsonify(sorted(rescheduled_days))
+
+
+# Adicione este endpoint ao arquivo appointment.py
+
+@appointment_bp.route('/api/appointments/<int:appointment_id>/toggle-completion', methods=['PUT'])
+@login_required
+def toggle_appointment_completion(appointment_id):
+    """
+    Alterna o estado de conclusão de um compromisso (apenas para triagem).
+    """
+    appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.user_id != current_user.id:
+        return jsonify({"error": "Não autorizado"}), 403
+
+    data = request.get_json()
+    is_completed = data.get('is_completed', False)
+
+    # Atualizar o estado de conclusão
+    appointment.is_completed = is_completed
+
+    db.session.commit()
+    return jsonify(appointment.to_dict())

@@ -1,0 +1,335 @@
+/* Melhorias para visualização do dia atual (today) com melhor compatibilidade */
+
+/* Reset e ajuste básico para o dia atual */
+.calendar-days div[data-today="true"] {
+  position: relative;
+  font-weight: 700;
+  color: var(--color-text) !important;
+}
+
+/* Remover a borda anterior do dia atual que conflitava com urgentes */
+.calendar-days div[data-today="true"]::before {
+  content: none;
+}
+
+/* Adicionar marcador especial para dia atual */
+.calendar-days div[data-today="true"]::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 12px;
+  height: 12px;
+  border-top: 3px solid var(--color-today-border);
+  border-left: 3px solid var(--color-today-border);
+  border-radius: 3px 0 0 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Adicionar borda especial no canto inferior direito também */
+.calendar-days div[data-today="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-bottom: 3px solid var(--color-today-border);
+  border-right: 3px solid var(--color-today-border);
+  border-radius: 0 0 3px 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Destaque no hover */
+.calendar-days div[data-today="true"]:hover::before,
+.calendar-days div[data-today="true"]:hover::after {
+  border-color: var(--color-today-border);
+  opacity: 1;
+}
+
+/* ---- CASO ESPECIAL: HOJE + URGENTE ---- */
+
+/* Quando o dia é hoje E tem compromisso urgente */
+.calendar-days div[data-today="true"][data-priority="urgent"] {
+  /* Manter a cor do texto urgente */
+  color: var(--color-urgent) !important;
+  font-weight: 800;
+  /* Preservar background e borda do urgente */
+  background-color: var(--color-urgent-bg);
+  border-color: var(--color-urgent);
+  /* Adicionar box-shadow externa para destacar que é o dia atual */
+  box-shadow: 0 0 0 2px var(--color-today-border),
+              0 0 0 1px var(--urgent-glow-border),
+              0 0 4px 0 var(--urgent-glow-soft);
+  /* Manter a transformação scale do urgente, mas reduzir um pouco */
+  transform: scale(1.04);
+  z-index: 5; /* Acima de outros dias */
+}
+
+/* Melhorar a visibilidade dos cantos indicadores no combo hoje+urgente */
+.calendar-days div[data-today="true"][data-priority="urgent"]::before,
+.calendar-days div[data-today="true"][data-priority="urgent"]::after {
+  border-color: var(--color-today-border);
+  background-color: transparent;
+  opacity: 0.9;
+  z-index: 4;
+}
+
+/* Adicionar um indicador extra para reforçar "hoje" */
+.calendar-days div[data-today="true"][data-priority="urgent"] {
+  position: relative;
+}
+
+.calendar-days div[data-today="true"][data-priority="urgent"]::before {
+  content: "";
+  border-width: 4px;
+}
+
+.calendar-days div[data-today="true"][data-priority="urgent"]::after {
+  content: "";
+  border-width: 4px;
+}
+
+/* Ajuste para melhorar o hover no combo hoje+urgente */
+.calendar-days div[data-today="true"][data-priority="urgent"]:hover {
+  transform: scale(1.07);
+  box-shadow: 0 0 0 2px var(--color-today-border),
+              0 0 0 1px var(--urgent-glow-border),
+              0 0 7px 1px var(--urgent-glow-soft);
+}
+
+/* ---- CASO ESPECIAL: HOJE + TRIAGEM URGENTE ---- */
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"] {
+  color: var(--color-triagem-urgent) !important;
+  background: var(--color-triagem-urgent-bg);
+  border-color: var(--color-triagem-urgent-border);
+  box-shadow: 0 0 0 2px var(--color-today-border),
+              0 0 0 1px var(--triagem-urgent-glow-border),
+              0 0 4px 0 var(--triagem-urgent-glow-soft);
+}
+
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"]::before,
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"]::after {
+  border-color: var(--color-today-border);
+}
+
+/* ---- OUTRAS COMBINAÇÕES ---- */
+
+/* Ajustes para outros estados combinados com hoje */
+.calendar-days div[data-today="true"][data-priority="important"],
+.calendar-days div[data-today="true"][data-priority="normal"],
+.calendar-days div[data-today="true"][data-priority="rescheduled"] {
+  /* Preservar cores de texto e background dos estados */
+  box-shadow: 0 0 0 2px var(--color-today-border);
+}
+
+/* Garantir compatibilidade com seleção */
+.calendar-days div[data-today="true"][data-selected="true"] {
+  box-shadow: 0 0 0 2px var(--color-selected-border),
+              0 0 0 4px var(--color-today-border);
+}
+
+/* Garantir compatibilidade com recorrência */
+.calendar-days div[data-recurring="true"][data-today="true"]::before,
+.calendar-days div[data-recurring="true"][data-today="true"]::after {
+  z-index: 4; /* Acima do triângulo de recorrência */
+}
+
+/* Garantir compatibilidade com modo escuro */
+:root[data-theme="dark"] .calendar-days div[data-today="true"]::before,
+:root[data-theme="dark"] .calendar-days div[data-today="true"]::after {
+  border-color: var(--color-today-border);
+}
+
+:root[data-theme="dark"] .calendar-days div[data-today="true"][data-priority="urgent"] {
+  box-shadow: 0 0 0 2px var(--color-today-border),
+              0 0 0 1px var(--urgent-glow-border),
+              0 0 6px 1px var(--urgent-glow-soft),
+              0 0 12px 2px var(--urgent-glow-far);
+}
+
+/* Versão acessível (sem animações ou transformações) */
+@media (prefers-reduced-motion: reduce) {
+  .calendar-days div[data-today="true"][data-priority="urgent"],
+  .calendar-days div[data-today="true"][data-priority="urgent"]:hover {
+    transform: none;
+  }
+}
+
+body[data-disable-animations="true"] .calendar-days div[data-today="true"][data-priority="urgent"],
+body[data-disable-animations="true"] .calendar-days div[data-today="true"][data-priority="urgent"]:hover {
+  transform: none;
+}
+
+/* Melhorias para visualização do dia atual (today) com melhor compatibilidade */
+
+/* Cores e variáveis */
+:root {
+  --today-marker-color: rgba(37, 99, 235, 0.9);
+  --today-marker-size: 8px;
+  --today-marker-dark: rgba(56, 189, 248, 0.9);
+  --today-glow: 0 0 8px rgba(37, 99, 235, 0.4);
+  --today-urgent-glow: 0 0 0 2px var(--color-today-border), 0 0 8px var(--urgent-glow-soft);
+}
+
+/* Reset e configuração básica para o dia atual */
+.calendar-days div[data-today="true"] {
+  position: relative;
+  font-weight: 700;
+  color: var(--color-text) !important;
+}
+
+/* Remover a borda anterior do dia atual que conflitava com urgentes */
+.calendar-days div[data-today="true"]::before {
+  content: none;
+}
+
+/* Novo indicador do dia atual: ponto no canto superior esquerdo */
+.calendar-days div[data-today="true"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--today-marker-size);
+  height: var(--today-marker-size);
+  background-color: var(--today-marker-color);
+  border-radius: 50%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Novo indicador do dia atual: ponto no canto inferior direito */
+.calendar-days div[data-today="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: var(--today-marker-size);
+  height: var(--today-marker-size);
+  background-color: var(--today-marker-color);
+  border-radius: 50%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Borda luminosa sutil */
+.calendar-days div[data-today="true"] {
+  box-shadow: var(--today-glow);
+}
+
+/* HOJE + URGENTE: combinação especial para destacar ambos os estados */
+.calendar-days div[data-today="true"][data-priority="urgent"] {
+  /* Preservar aspecto urgente */
+  color: var(--color-urgent) !important;
+  font-weight: 800;
+  background-color: var(--color-urgent-bg);
+  border-color: var(--color-urgent);
+
+  /* Adicionar elementos que mostram que também é hoje */
+  box-shadow: var(--today-urgent-glow);
+  position: relative;
+  z-index: 5;
+}
+
+/* Os pontos de "hoje" ficam com cor contrastante */
+.calendar-days div[data-today="true"][data-priority="urgent"]::before,
+.calendar-days div[data-today="true"][data-priority="urgent"]::after {
+  background-color: var(--color-today-border);
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
+  width: calc(var(--today-marker-size) + 2px);
+  height: calc(var(--today-marker-size) + 2px);
+}
+
+/* HOJE + TRIAGEM URGENTE */
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"] {
+  color: var(--color-triagem-urgent) !important;
+  background: var(--color-triagem-urgent-bg);
+  border-color: var(--color-triagem-urgent-border);
+  box-shadow: 0 0 0 2px var(--color-today-border),
+              0 0 0 1px var(--triagem-urgent-glow-border),
+              0 0 4px 0 var(--triagem-urgent-glow-soft);
+}
+
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"]::before,
+.calendar-days div[data-today="true"][data-origin="triagem"][data-priority="urgent"]::after {
+  background-color: var(--color-today-border);
+}
+
+/* HOJE + OUTROS ESTADOS */
+.calendar-days div[data-today="true"][data-priority="important"],
+.calendar-days div[data-today="true"][data-priority="normal"],
+.calendar-days div[data-today="true"][data-priority="rescheduled"] {
+  box-shadow: 0 0 0 2px var(--color-today-border), var(--today-glow);
+}
+
+/* Compatibilidade com tema escuro */
+:root[data-theme="dark"] .calendar-days div[data-today="true"]::before,
+:root[data-theme="dark"] .calendar-days div[data-today="true"]::after {
+  background-color: var(--today-marker-dark);
+}
+
+:root[data-theme="dark"] .calendar-days div[data-today="true"] {
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+:root[data-theme="dark"] .calendar-days div[data-today="true"][data-priority="urgent"] {
+  box-shadow: 0 0 0 2px var(--color-today-border),
+              0 0 6px 1px var(--urgent-glow-soft),
+              0 0 10px 2px var(--urgent-glow-far);
+}
+
+/* Compatibilidade com dia selecionado */
+.calendar-days div[data-today="true"][data-selected="true"] {
+  box-shadow: 0 0 0 2px var(--color-selected-border), var(--today-glow);
+}
+
+/* Compatibilidade com recorrências */
+.calendar-days div[data-today="true"][data-recurring="true"]::before,
+.calendar-days div[data-today="true"][data-recurring="true"]::after {
+  z-index: 5;
+}
+
+/* Melhorar o cursor quando o mouse passa por cima */
+.calendar-days div[data-today="true"]:hover {
+  cursor: pointer;
+  filter: brightness(1.05);
+}
+
+/* Versão acessível (sem animações) */
+@media (prefers-reduced-motion: reduce) {
+  .calendar-days div[data-today="true"],
+  .calendar-days div[data-today="true"][data-priority="urgent"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+body[data-disable-animations="true"] .calendar-days div[data-today="true"],
+body[data-disable-animations="true"] .calendar-days div[data-today="true"][data-priority="urgent"] {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Adicionar um rótulo "HOJE" que aparece no hover do dia atual */
+.calendar-days div[data-today="true"]:hover::before {
+  content: "HOJE";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-today-border);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 3px;
+  z-index: 20;
+  letter-spacing: 0.5px;
+}
+
+/* Tooltip para dias urgentes */
+.calendar-days div[data-today="true"][data-priority="urgent"]:hover::before {
+  content: "HOJE · URGENTE";
+}

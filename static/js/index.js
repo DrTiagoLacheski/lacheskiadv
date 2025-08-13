@@ -319,100 +319,106 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ================= RENDER CALENDAR ================= */
   const renderCalendar = async () => {
+    // Lista de endpoints suportados pelo backend
+    const supportedEndpoints = ['urgent-days', 'important-days', 'active-days', 'recurring-days'];
+
+    // Obter dados apenas para endpoints suportados
     [
       state.urgentDays,
       state.importantDays,
       state.activeDays,
-      state.recurringDays,
-      state.completedDays,
-      state.rescheduledDays
+      state.recurringDays
     ] = await Promise.all([
       fetchCalendarData('urgent-days'),
       fetchCalendarData('important-days'),
       fetchCalendarData('active-days'),
-      fetchCalendarData('recurring-days',true),
-      fetchCalendarData('completed-days'),
-      fetchCalendarData('rescheduled-days')
+      fetchCalendarData('recurring-days', true)
     ]);
 
-    const firstDay = new Date(state.year,state.month,1).getDay();
-    const lastDate = new Date(state.year,state.month+1,0).getDate();
-    const lastPrev = new Date(state.year,state.month,0).getDate();
+    // Inicializar como arrays vazios para endpoints não implementados
+    state.completedDays = [];
+    state.rescheduledDays = [];
+
+    const firstDay = new Date(state.year, state.month, 1).getDay();
+    const lastDate = new Date(state.year, state.month + 1, 0).getDate();
+    const lastPrev = new Date(state.year, state.month, 0).getDate();
     dom.monthYearEl.textContent = `${MESES[state.month]} ${state.year}`;
 
-    let html='';
-    for(let i=firstDay;i>0;i--){
-      const d=lastPrev - i + 1;
-      html+=`<div class="prev-date" data-outside="true" data-day="${d}" aria-hidden="true">${d}</div>`;
+    let html = '';
+    for (let i = firstDay; i > 0; i--) {
+      const d = lastPrev - i + 1;
+      html += `<div class="prev-date" data-outside="true" data-day="${d}" aria-hidden="true">${d}</div>`;
     }
 
-    const today=new Date();
-    for(let day=1; day<=lastDate; day++){
-      const cellDate=new Date(state.year,state.month,day);
-      const iso=formatDate(cellDate);
-      const isToday=cellDate.toDateString()===today.toDateString();
-      const isSelected=cellDate.toDateString()===state.selectedDate.toDateString();
+    const today = new Date();
+    for (let day = 1; day <= lastDate; day++) {
+      const cellDate = new Date(state.year, state.month, day);
+      const iso = formatDate(cellDate);
+      const isToday = cellDate.toDateString() === today.toDateString();
+      const isSelected = cellDate.toDateString() === state.selectedDate.toDateString();
 
-      let p=null;
-      if(state.urgentDays.includes(day)) p='urgent';
-      else if(state.rescheduledDays.includes(day)) p='rescheduled';
-      else if(state.importantDays.includes(day)) p='important';
-      else if(state.activeDays.includes(day)) p='normal';
+      let p = null;
+      if (state.urgentDays.includes(day)) p = 'urgent';
+      else if (state.rescheduledDays.includes(day)) p = 'rescheduled';
+      else if (state.importantDays.includes(day)) p = 'important';
+      else if (state.activeDays.includes(day)) p = 'normal';
 
-      const recurringRaw=state.recurringDays[day];
-      let hasRecurring=false;
-      if(!p && recurringRaw){
-        hasRecurring=true;
-        p=normalizePriority(recurringRaw);
-      } else if(recurringRaw){
-        hasRecurring=true;
+      const recurringRaw = state.recurringDays[day];
+      let hasRecurring = false;
+      if (!p && recurringRaw) {
+        hasRecurring = true;
+        p = normalizePriority(recurringRaw);
+      } else if (recurringRaw) {
+        hasRecurring = true;
       }
 
-      const isCompleted=state.completedDays.includes(day);
-      const isRescheduled=state.rescheduledDays.includes(day);
+      const isCompleted = state.completedDays.includes(day);
+      const isRescheduled = state.rescheduledDays.includes(day);
 
-      const attrs=[
+      const attrs = [
         `data-day="${day}"`,
         `data-date="${iso}"`,
-        isToday?'data-today="true"':'',
-        isSelected?'data-selected="true"':'',
-        p?`data-priority="${p}"`:'',
-        hasRecurring?'data-recurring="true"':'',
-        isCompleted?'data-status="completed"':'',
-        isRescheduled?'data-rescheduled="true"':''
+        isToday ? 'data-today="true"' : '',
+        isSelected ? 'data-selected="true"' : '',
+        p ? `data-priority="${p}"` : '',
+        hasRecurring ? 'data-recurring="true"' : '',
+        isCompleted ? 'data-status="completed"' : '',
+        isRescheduled ? 'data-rescheduled="true"' : ''
       ].filter(Boolean).join(' ');
 
-      const legacy=[];
-      if(isToday) legacy.push(LEGACY_CLASSES.TODAY);
-      if(isSelected) legacy.push(LEGACY_CLASSES.SELECTED);
-      if(p==='urgent') legacy.push(LEGACY_CLASSES.URGENT);
-      else if(p==='important') legacy.push(LEGACY_CLASSES.IMPORTANT);
-      else if(p==='normal') legacy.push(LEGACY_CLASSES.HAS_APPOINTMENT);
-      if(hasRecurring) legacy.push(LEGACY_CLASSES.RECURRING, LEGACY_CLASSES.RECURRING_PREFIX+(p||'normal'));
-      if(isCompleted) legacy.push(LEGACY_CLASSES.COMPLETED);
-      if(isRescheduled) legacy.push(LEGACY_CLASSES.RESCHEDULED);
+      // Adicionar classe "current-day" para estilo especial do dia atual
+      const legacy = [];
+      if (isToday) legacy.push(LEGACY_CLASSES.TODAY, 'current-day');
+      if (isSelected) legacy.push(LEGACY_CLASSES.SELECTED);
+      if (p === 'urgent') legacy.push(LEGACY_CLASSES.URGENT);
+      else if (p === 'important') legacy.push(LEGACY_CLASSES.IMPORTANT);
+      else if (p === 'normal') legacy.push(LEGACY_CLASSES.HAS_APPOINTMENT);
+      if (hasRecurring) legacy.push(LEGACY_CLASSES.RECURRING, LEGACY_CLASSES.RECURRING_PREFIX + (p || 'normal'));
+      if (isCompleted) legacy.push(LEGACY_CLASSES.COMPLETED);
+      if (isRescheduled) legacy.push(LEGACY_CLASSES.RESCHEDULED);
 
-      let aria=`${day} de ${MESES[state.month]} de ${state.year}`;
-      if(p==='urgent') aria+=', urgente';
-      if(p==='important') aria+=', importante';
-      if(p==='rescheduled') aria+=', remarcado';
-      if(hasRecurring) aria+=', recorrente';
-      if(isCompleted) aria+=', concluído';
+      let aria = `${day} de ${MESES[state.month]} de ${state.year}`;
+      if (isToday) aria += ', hoje';
+      if (p === 'urgent') aria += ', urgente';
+      if (p === 'important') aria += ', importante';
+      if (p === 'rescheduled') aria += ', remarcado';
+      if (hasRecurring) aria += ', recorrente';
+      if (isCompleted) aria += ', concluído';
 
-      html+=`<div class="${legacy.join(' ')}" ${attrs} aria-label="${aria}">${day}</div>`;
+      html += `<div class="${legacy.join(' ')}" ${attrs} aria-label="${aria}">${day}</div>`;
     }
 
-    const used=firstDay+lastDate;
-    for(let i=1;i<=42-used;i++){
-      html+=`<div class="next-date" data-outside="true" data-day="${i}" aria-hidden="true">${i}</div>`;
+    const used = firstDay + lastDate;
+    for (let i = 1; i <= 42 - used; i++) {
+      html += `<div class="next-date" data-outside="true" data-day="${i}" aria-hidden="true">${i}</div>`;
     }
 
-    dom.daysEl.innerHTML=html;
+    dom.daysEl.innerHTML = html;
 
-    dom.daysEl.querySelectorAll('div:not([data-outside="true"])').forEach(cell=>{
-      cell.addEventListener('click',()=>{
-        const d=parseInt(cell.dataset.day,10);
-        state.selectedDate=new Date(state.year,state.month,d);
+    dom.daysEl.querySelectorAll('div:not([data-outside="true"])').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const d = parseInt(cell.dataset.day, 10);
+        state.selectedDate = new Date(state.year, state.month, d);
         fetchAppointments(formatDate(state.selectedDate));
         renderCalendar();
       });
@@ -511,32 +517,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Toggle completed (somente triagem)
-    dom.appointmentList.addEventListener('click',e=>{
-      const item=e.target.closest('.appointment-item');
-      if(!item) return;
-      if(e.target.closest('.appointment-actions, .edit-btn, .delete-btn, .time-edit-link')) return;
-      if(item.dataset.origin==='triagem'){
-        const id=item.dataset.id;
-        const isDone=item.dataset.status==='completed';
-        fetch(`/api/appointments/${id}/toggle-completion`,{
-          method:'PUT',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({is_completed:!isDone})
+    dom.appointmentList.addEventListener('click', e => {
+      const item = e.target.closest('.appointment-item');
+
+      if (!item) return;
+      if (e.target.closest('.apt-ticket-link')) return;
+      if (e.target.closest('.appointment-actions, .edit-btn, .delete-btn, .time-edit-link')) return;
+      if (item.dataset.origin === 'triagem') {
+        const id = item.dataset.id;
+        const isDone = item.dataset.status === 'completed';
+
+        // Feedback visual durante a atualização
+        item.style.opacity = '0.7';
+
+        fetch(`/api/appointments/${id}/toggle-completion`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            // Adicionar CSRF token se estiver usando Flask-WTF
+            'X-CSRFToken': getCsrfToken()
+          },
+          body: JSON.stringify({is_completed: !isDone}),
+          // Importante: adicionar credentials para que cookies de sessão sejam enviados
+          credentials: 'same-origin'
         })
-        .then(r=>{
-          if(!r.ok) throw new Error();
-          if(isDone){
-            delete item.dataset.status;
-            item.classList.remove('completed');
-          }else{
-            item.dataset.status='completed';
-            item.classList.add('completed');
-          }
-          renderCalendar();
-        })
-        .catch(err=>console.error('Erro toggle completion',err));
+            .then(r => {
+              // Restaurar opacidade
+              item.style.opacity = '1';
+
+              if (!r.ok) {
+                console.error(`Erro na resposta: ${r.status} ${r.statusText}`);
+                throw new Error(`Erro ${r.status}: ${r.statusText}`);
+              }
+
+              return r.json();
+            })
+            .then(data => {
+              console.log('Toggle realizado com sucesso:', data);
+
+              if (isDone) {
+                delete item.dataset.status;
+                item.classList.remove('completed');
+              } else {
+                item.dataset.status = 'completed';
+                item.classList.add('completed');
+              }
+              renderCalendar();
+            })
+            .catch(err => {
+              console.error('Erro toggle completion:', err);
+              item.style.opacity = '1';
+
+              // Exibir mensagem de erro ao usuário
+              const errorMsg = document.createElement('div');
+              errorMsg.className = 'alert alert-danger mt-2 mb-2';
+              errorMsg.textContent = 'Erro ao atualizar status. Tente novamente.';
+              errorMsg.style.fontSize = '0.8rem';
+              errorMsg.style.padding = '0.25rem 0.5rem';
+
+              item.appendChild(errorMsg);
+              setTimeout(() => errorMsg.remove(), 3000);
+            });
       }
     });
+
+// Função auxiliar para obter CSRF token, se estiver usando Flask-WTF
+    function getCsrfToken() {
+      const tokenElement = document.querySelector('meta[name="csrf-token"]');
+      return tokenElement ? tokenElement.getAttribute('content') : '';
+    }
 
     // Export / Import
     if(dom.exportCalendarBtn){

@@ -107,6 +107,7 @@ class Appointment(db.Model):
     todo_id = db.Column(db.Integer, db.ForeignKey('todo_item.id'), nullable=True)
     todo = db.relationship('TodoItem', backref='appointment', uselist=False)
     source = db.Column(db.String(20), nullable=True)
+    is_completed = db.Column(db.Boolean, default=False, nullable=False)
 
     def to_dict(self):
         # Se o appointment veio de tarefa, inclua o ticket id e título
@@ -115,6 +116,11 @@ class Appointment(db.Model):
         if self.todo_id and self.todo and self.todo.ticket:
             ticket_id = self.todo.ticket.id
             ticket_title = self.todo.ticket.title
+
+        # Determinar o status de conclusão
+
+        completed_status = self.todo.is_completed if self.todo_id and self.todo else self.is_completed
+
         return {
             'id': self.id,
             'content': self.content,
@@ -122,11 +128,13 @@ class Appointment(db.Model):
             'time': self.appointment_time,
             'priority': self.priority,
             'recurring': self.is_recurring,
+            'is_completed': completed_status,
             'todo_id': self.todo_id,
-            'is_completed': self.todo.is_completed if self.todo_id and self.todo else False,
             'source': self.source,
             'ticket_id': ticket_id,
             'ticket_title': ticket_title,
+            'remarcada_count': self.remarcada_count,
+            'data_original': self.data_original.strftime('%Y-%m-%d') if self.data_original else None,
         }
 
 class TodoItem(db.Model):
