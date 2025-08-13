@@ -30,3 +30,6 @@ Flask-Migrate
 
 #Escrever por Extenso
 num2words
+
+#Biblioteca que aceita html para gerar pdf
+weasyprint

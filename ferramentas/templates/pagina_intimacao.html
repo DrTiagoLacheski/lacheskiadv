@@ -1,0 +1,386 @@
+{% extends "base_ferramentas.html" %}
+
+{% block title %}Gerador de Intimação - Ferramentas Jurídicas{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .intimacao-container {
+            max-width: 490px;
+            margin: 30px auto 0 auto;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.07);
+            padding: 2.5rem 1.5rem 2rem 1.5rem;
+        }
+        .intimacao-container h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.3rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .intimacao-form label {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        .intimacao-form input, .intimacao-form textarea, .intimacao-form select {
+            display: block;
+            width: 100%;
+            border-radius: 7px;
+            border: 1px solid #ccd0d5;
+            padding: 9px 11px;
+            margin-bottom: 1.2rem;
+            font-size: 1rem;
+            background: #f9fafb;
+            transition: border-color 0.2s;
+        }
+        .intimacao-form select {
+            cursor: pointer;
+            background: #f2f7fb;
+        }
+        .intimacao-form input:focus, .intimacao-form textarea:focus, .intimacao-form select:focus {
+            border-color: #2563eb;
+            outline: none;
+        }
+        .oab-select-group {
+            margin-bottom: 1.2rem;
+            background: #f6f8fd;
+            border: 1px solid #e5eaf3;
+            border-radius: 7px;
+            padding: 1rem 1rem 0.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .oab-select-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1846b2;
+            letter-spacing: .01em;
+        }
+        .oab-select-info {
+            font-size: 0.95em;
+            color: #5d647b;
+            margin-bottom: 0.5rem;
+        }
+        .intimacao-form button {
+            width: 100%;
+            padding: 11px 0;
+            border: none;
+            border-radius: 7px;
+            font-size: 1.09rem;
+            font-weight: 700;
+            background: #2563eb;
+            color: #fff;
+            transition: background .15s;
+        }
+        .intimacao-form button:hover, .intimacao-form button:focus {
+            background: #1846b2;
+        }
+        .intimacao-preview {
+            margin-top: 2.2rem;
+            background: #f1f6fe;
+            border-radius: 7px;
+            padding: 1.4rem 1.2rem;
+            font-size: 1rem;
+            color: #222;
+            box-shadow: 0 1px 4px rgba(37,99,235,0.08);
+        }
+        .intimacao-preview h2 {
+            text-align: center;
+            font-size: 1.12rem;
+            margin-bottom: 1.2rem;
+            letter-spacing: .05em;
+        }
+        .error-message {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            padding: 10px;
+            border-radius: 7px;
+            margin-bottom: 15px;
+            border: 1px solid #f87171;
+        }
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+        .btn-loading:after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-top: -10px;
+            margin-left: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            animation: spin 0.8s infinite linear;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            .intimacao-container {
+                border-radius: 8px;
+                padding: 1rem 2vw 1.5rem 2vw;
+            }
+            .oab-select-group {
+                padding: 0.7rem 0.7rem 0.4rem 0.7rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="intimacao-container">
+    <h1>Gerador de Intimação de Testemunha</h1>
+
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+    <form class="intimacao-form" id="intimacaoForm" autocomplete="off">
+        <label for="vara">Enderecamento</label>
+        <input type="text" id="vara" name="vara" placeholder="Ex: 2ª Vara do Trabalho de Curitiba" required>
+
+        <label for="processo">Nome/Número do Processo</label>
+        <input type="text" id="processo" name="processo" placeholder="Ex: 0001234-56.2024.5.09.0012" required>
+
+        <label for="cliente">Nome do Cliente</label>
+        <input type="text" id="cliente" name="cliente" placeholder="Ex: João da Silva" required>
+
+        <label for="testemunha">Nome da Testemunha</label>
+        <input type="text" id="testemunha" name="testemunha" placeholder="Ex: Maria de Souza" required>
+
+        <label for="cpf_testemunha">CPF da Testemunha</label>
+        <input type="text" id="cpf_testemunha" name="cpf_testemunha" placeholder="Ex: 123.456.789-00" required>
+
+        <label for="telefone_testemunha">Telefone/Whatsapp da Testemunha</label>
+        <input type="text" id="telefone_testemunha" name="telefone_testemunha" placeholder="Ex: (41) 99999-9999" required>
+
+        <label for="endereco_testemunha">Endereço da Testemunha (opcional)</label>
+        <input type="text" id="endereco_testemunha" name="endereco_testemunha" placeholder="Ex: Rua das Flores, 123, Bairro Centro, Curitiba - PR">
+
+        <label for="data_audiencia">Data da Audiência</label>
+        <input type="date" id="data_audiencia" name="data_audiencia" required>
+
+        <label for="hora_audiencia">Hora da Audiência</label>
+        <input type="time" id="hora_audiencia" name="hora_audiencia" required>
+
+        <div class="oab-select-group">
+            <div class="oab-select-label">OAB para assinatura</div>
+            <div class="oab-select-info">
+                {% if oabs|length == 0 %}
+                    Nenhuma OAB cadastrada para seu perfil.
+                {% elif oabs|length == 1 %}
+                    Apenas uma OAB está cadastrada para você.
+                {% else %}
+                    Selecione qual OAB aparecerá na assinatura do documento.
+                {% endif %}
+            </div>
+            <select id="oab_escolhida" name="oab_escolhida">
+                {% if oabs|length == 0 %}
+                    <option value="">(Nenhuma OAB cadastrada)</option>
+                {% elif oabs|length == 1 %}
+                    <option value="{{ oabs[0]['numero'] }}">{{ oabs[0]['numero'] }}</option>
+                {% else %}
+                    {% set pre_selected = false %}
+                    {% for oab in oabs %}
+                        {% set numero = oab['numero'] %}
+                        {% set uf = numero.split('/')[-1].strip() if '/' in numero else '' %}
+                        <option value="{{ numero }}" {% if not pre_selected and uf == "RO" %}{% set pre_selected = true %}selected{% endif %}>
+                            {{ numero }}
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+
+        <button type="button" id="btnGerar" onclick="gerarIntimacao()">Gerar Intimação</button>
+        <button type="button" id="btnPDF" onclick="baixarPDF()" style="margin-top:10px;background:#1846b2;">Baixar como PDF</button>
+    </form>
+
+    <div id="intimacaoPreview" class="intimacao-preview" style="display: none;">
+        <h2>Modelo de Intimação</h2>
+        <div id="intimacaoTexto"></div>
+        <button type="button" onclick="copiarIntimacao()" style="margin-top:14px;background:#0d9488;">Copiar texto</button>
+    </div>
+</div>
+<script>
+function getFormData() {
+    return {
+        vara: document.getElementById('vara').value.trim(),
+        processo: document.getElementById('processo').value.trim(),
+        cliente: document.getElementById('cliente').value.trim(),
+        testemunha: document.getElementById('testemunha').value.trim(),
+        cpf_testemunha: document.getElementById('cpf_testemunha').value.trim(),
+        telefone_testemunha: document.getElementById('telefone_testemunha').value.trim(),
+        endereco_testemunha: document.getElementById('endereco_testemunha').value.trim(),
+        data_audiencia: document.getElementById('data_audiencia').value,
+        hora_audiencia: document.getElementById('hora_audiencia').value,
+        oab_escolhida: document.getElementById('oab_escolhida') ? document.getElementById('oab_escolhida').value : ""
+    };
+}
+
+function mostrarErro(mensagem) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = mensagem;
+    errorDiv.style.display = 'block';
+
+    // Scroll to the error message
+    errorDiv.scrollIntoView({ behavior: "smooth" });
+}
+
+function esconderErro() {
+    document.getElementById('errorMessage').style.display = 'none';
+}
+
+function setLoading(buttonId, isLoading) {
+    const button = document.getElementById(buttonId);
+    if (isLoading) {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+    } else {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+    }
+}
+
+function validarFormulario() {
+    const data = getFormData();
+    const camposObrigatorios = [
+        { campo: 'vara', nome: 'Vara' },
+        { campo: 'processo', nome: 'Processo' },
+        { campo: 'cliente', nome: 'Cliente' },
+        { campo: 'testemunha', nome: 'Testemunha' },
+        { campo: 'cpf_testemunha', nome: 'CPF da Testemunha' },
+        { campo: 'telefone_testemunha', nome: 'Telefone da Testemunha' },
+        { campo: 'data_audiencia', nome: 'Data da Audiência' },
+        { campo: 'hora_audiencia', nome: 'Hora da Audiência' }
+    ];
+
+    for (const { campo, nome } of camposObrigatorios) {
+        if (!data[campo]) {
+            mostrarErro(`O campo "${nome}" é obrigatório.`);
+            document.getElementById(campo).focus();
+            return false;
+        }
+    }
+
+    esconderErro();
+    return true;
+}
+
+function gerarIntimacao() {
+    if (!validarFormulario()) return;
+
+    setLoading('btnGerar', true);
+    const data = getFormData();
+
+    fetch("/intimacao", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(r => {
+        if (!r.ok) {
+            return r.json().then(err => {
+                throw new Error(err.error || `Erro (${r.status}): Falha ao gerar intimação`);
+            });
+        }
+        return r.json();
+    })
+    .then(resp => {
+        if(resp.success){
+            // Mostra negrito no preview
+            document.getElementById('intimacaoTexto').innerHTML = resp.texto;
+            document.getElementById('intimacaoPreview').style.display = 'block';
+            setTimeout(function() {
+                document.getElementById('intimacaoPreview').scrollIntoView({ behavior: "smooth" });
+            }, 150);
+        } else {
+            mostrarErro(resp.error || "Erro ao gerar o texto.");
+        }
+    })
+    .catch(error => {
+        console.error("Erro:", error);
+        mostrarErro(error.message || "Erro ao comunicar com o servidor.");
+    })
+    .finally(() => {
+        setLoading('btnGerar', false);
+    });
+}
+
+function baixarPDF() {
+    if (!validarFormulario()) return;
+
+    setLoading('btnPDF', true);
+    const data = getFormData();
+    data.gerar_pdf = true;
+
+    fetch("/intimacao", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(resp => {
+        if(!resp.ok) {
+            // Try to get error message from JSON response
+            return resp.json()
+                .then(err => {
+                    throw new Error(err.error || `Erro (${resp.status}): Falha ao gerar PDF`);
+                })
+                .catch(e => {
+                    // If it's not a JSON response, throw a generic error
+                    if (e instanceof SyntaxError) {
+                        throw new Error(`Erro (${resp.status}): Falha ao gerar PDF`);
+                    }
+                    throw e;
+                });
+        }
+
+        // Check if the response is JSON (error) or blob (PDF)
+        const contentType = resp.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            return resp.json().then(data => {
+                throw new Error(data.error || "Erro ao gerar PDF.");
+            });
+        }
+
+        return resp.blob();
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "intimacao_testemunha.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => window.URL.revokeObjectURL(url), 2500);
+    })
+    .catch(error => {
+        console.error("Erro:", error);
+        mostrarErro(error.message || "Erro ao gerar PDF.");
+    })
+    .finally(() => {
+        setLoading('btnPDF', false);
+    });
+}
+
+function copiarIntimacao() {
+    let temp = document.createElement('textarea');
+    // Remove tags para copiar texto limpo
+    temp.value = document.getElementById('intimacaoTexto').innerText;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    alert('Intimação copiada para a área de transferência!');
+}
+</script>
+{% endblock %}
