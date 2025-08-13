@@ -19,28 +19,22 @@ calendar_export_import_bp = Blueprint(
 def export_calendar_appointments():
     """
     Exporta todos os compromissos criados diretamente pelo usuário no calendário,
-    ou seja, source == None ou source == ''.
-    Versão atualizada para incluir todos os novos campos.
+    compatível com o modelo atual.
     """
     appointments = Appointment.query.filter_by(user_id=current_user.id) \
         .filter((Appointment.source == None) | (Appointment.source == '')).all()
 
     data = []
     for a in appointments:
-        # Usar o métod to_dict() do modelo para garantir consistência e obter todos os campos
+        # Usar o mod to_dict() do modelo para garantir compatibilidade
         appointment_dict = a.to_dict()
-
-        # Adicionar campos extras que não estão em to_dict() mas são importantes para o export
-        appointment_dict.update({
-            "data_original": a.data_original.strftime('%Y-%m-%d') if a.data_original else None,
-            "remarcada_count": a.remarcada_count or 0
-        })
-
+        # Adicionar campos extras que possam não estar em to_dict()
+        appointment_dict["data_original"] = a.data_original.strftime('%Y-%m-%d') if a.data_original else None
+        appointment_dict["remarcada_count"] = a.remarcada_count or 0
         data.append(appointment_dict)
 
     mem_zip = BytesIO()
     with zipfile.ZipFile(mem_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
-        # Adicionar metadados com versão para compatibilidade futura
         metadata = {
             "version": "2.0",
             "export_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -48,13 +42,9 @@ def export_calendar_appointments():
             "username": current_user.username
         }
         zf.writestr('metadata.json', json.dumps(metadata, ensure_ascii=False, indent=2))
-
-        # Exportar dados dos compromissos
         zf.writestr('calendar_appointments.json', json.dumps(data, ensure_ascii=False, indent=2))
 
     mem_zip.seek(0)
-
-    # Criar nome de arquivo com timestamp
     filename = f'calendar_appointments_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
 
     return send_file(
@@ -70,7 +60,7 @@ def export_calendar_appointments():
 def import_calendar_appointments():
     """
     Importa compromissos do calendário a partir de um arquivo ZIP contendo calendar_appointments.json.
-    Versão atualizada para suportar todos os novos campos do modelo Appointment.
+    Compatível com o modelo atual.
     """
     if request.method == 'POST':
         file = request.files.get('calendar_zip')
@@ -81,16 +71,9 @@ def import_calendar_appointments():
         try:
             mem_zip = BytesIO(file.read())
             with zipfile.ZipFile(mem_zip, 'r') as zf:
-                # Verificar se o arquivo de dados existe
                 if 'calendar_appointments.json' not in zf.namelist():
                     flash('Arquivo calendar_appointments.json não encontrado no ZIP.', 'danger')
                     return redirect(request.url)
-
-                # Verificar metadados (se existirem)
-                version = "1.0"  # Versão padrão para arquivos antigos
-                if 'metadata.json' in zf.namelist():
-                    metadata = json.loads(zf.read('metadata.json').decode('utf-8'))
-                    version = metadata.get('version', "1.0")
 
                 # Carregar dados dos compromissos
                 json_data = zf.read('calendar_appointments.json').decode('utf-8')
@@ -108,26 +91,19 @@ def import_calendar_appointments():
                     ).first()
 
                     if existing:
-                        # Atualizar compromisso existente se configurado para isso
-                        # (pode ser uma opção definida pelo usuário no futuro)
                         update_existing = request.form.get('update_existing') == 'true'
-
                         if update_existing:
                             existing.appointment_time = a.get("time")
                             existing.priority = a.get("priority", "Normal")
                             existing.is_recurring = a.get("recurring", False)
-
-                            # Processar campos novos (somente se presentes no arquivo importado)
-                            if "data_original" in a and a["data_original"]:
+                            # Campos extras
+                            if a.get("data_original"):
                                 existing.data_original = datetime.strptime(a["data_original"], "%Y-%m-%d").date()
-
                             if "remarcada_count" in a:
                                 existing.remarcada_count = a.get("remarcada_count", 0)
-
                             updated_count += 1
                         continue
 
-                    # Criar novo compromisso
                     new_appointment = Appointment(
                         content=a.get("content"),
                         appointment_date=datetime.strptime(a.get("date"), "%Y-%m-%d").date(),
@@ -137,12 +113,10 @@ def import_calendar_appointments():
                         user_id=current_user.id,
                         source=None
                     )
-
-                    # Processar campos adicionais da versão 2.0+
-                    if version >= "2.0":
-                        if a.get("data_original"):
-                            new_appointment.data_original = datetime.strptime(a["data_original"], "%Y-%m-%d").date()
-
+                    # Campos extras
+                    if a.get("data_original"):
+                        new_appointment.data_original = datetime.strptime(a["data_original"], "%Y-%m-%d").date()
+                    if "remarcada_count" in a:
                         new_appointment.remarcada_count = a.get("remarcada_count", 0)
 
                     db.session.add(new_appointment)
@@ -150,7 +124,6 @@ def import_calendar_appointments():
 
                 db.session.commit()
 
-                # Mensagem de resultado
                 result_message = f'Importação concluída: {imported_count} compromisso(s) adicionados'
                 if updated_count > 0:
                     result_message += f' e {updated_count} atualizado(s)'
