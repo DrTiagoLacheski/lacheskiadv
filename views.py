@@ -587,3 +587,4 @@ def appointments_debug():
     <p>Total: {len(rows)} compromissos.</p>
     """
     return html
+

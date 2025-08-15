@@ -55,6 +55,7 @@ def create_app():
     from ferramentas.routes.recibo import recibo_bp
     from ferramentas.routes.modelos_doc import admin_bp
     from ferramentas.routes.intimacao import intimacao_bp
+    from ferramentas.routes.req_habilitacao import habilitacao_bp
     from routes.appointment import appointment_bp
     from routes.admin_associado import admin_associado_bp
     from routes.user import user_bp
@@ -79,6 +80,7 @@ def create_app():
     app.register_blueprint(scheduler_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(intimacao_bp)
+    app.register_blueprint(habilitacao_bp)
 
     # --- CONFIGURAÇÕES FINAIS ---
     with app.app_context():
