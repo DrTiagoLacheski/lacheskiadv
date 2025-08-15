@@ -77,6 +77,24 @@
         .intimacao-form button:hover, .intimacao-form button:focus {
             background: #1846b2;
         }
+        .btn-voltar {
+            width: 100%;
+            background: #e0e7ef;
+            color: #263159;
+            font-weight: 500;
+            margin-top: 1.2em;
+            margin-bottom: 0.2em;
+            border-radius: 7px;
+            border: none;
+            padding: 11px 0;
+            font-size: 1.08em;
+            box-shadow: none;
+            transition: background 0.18s, color 0.18s;
+        }
+        .btn-voltar:hover, .btn-voltar:focus {
+            background: #c1d1e7;
+            color: #1846b2;
+        }
         .intimacao-preview {
             margin-top: 2.2rem;
             background: #f1f6fe;
@@ -196,7 +214,7 @@
             </select>
         </div>
 
-        <button type="button" id="btnGerar" onclick="gerarIntimacao()">Gerar Intimação</button>
+        <button type="button" id="btnGerar" onclick="gerarIntimacao()" style="display:none;">Gerar Intimação</button>
         <button type="button" id="btnPDF" onclick="baixarPDF()" style="margin-top:10px;background:#1846b2;">Baixar como PDF</button>
     </form>
 
@@ -205,6 +223,8 @@
         <div id="intimacaoTexto"></div>
         <button type="button" onclick="copiarIntimacao()" style="margin-top:14px;background:#0d9488;">Copiar texto</button>
     </div>
+
+    <button type="button" class="btn-voltar" onclick="window.history.back()">&larr; Voltar</button>
 </div>
 <script>
 function getFormData() {
@@ -270,6 +290,9 @@ function validarFormulario() {
     esconderErro();
     return true;
 }
+
+// O botão "Gerar Intimação" está inicialmente oculto (display:none).
+// Remova o atributo style="display:none;" para torná-lo visível quando desejar.
 
 function gerarIntimacao() {
     if (!validarFormulario()) return;
